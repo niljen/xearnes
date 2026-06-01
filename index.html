@@ -1,0 +1,2776 @@
+﻿<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xearnes</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0f2c;--card:#0d1235;--border:#2a2f6c;--accent:#ffd700;--accent2:#ffe44d;--text:#e0e0ff;--text2:#aaaacc;--danger:#f85149;--radius:12px}
+body{background:var(--bg);color:var(--text);font-family:Segoe UI,system-ui,sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.logo{font-size:1.5rem;font-weight:800;letter-spacing:3px;color:#ffd700;text-shadow:0 0 12px rgba(255,215,0,.6)}
+.badge{font-size:.65rem;background:var(--accent);color:#000;padding:2px 7px;border-radius:20px;font-weight:700;margin-left:4px}
+.header-btns{margin-left:auto;display:flex;gap:8px;align-items:center}
+.lang-btn{background:var(--border);color:var(--text);border:none;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:.8rem;transition:.2s}
+.lang-btn.active{background:var(--accent);color:#000;font-weight:700}
+.icon-btn{background:none;border:1px solid var(--border);color:var(--text2);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+.icon-btn:hover,.icon-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.speaking-dot{display:none;width:8px;height:8px;border-radius:50%;background:var(--accent2);margin-left:6px}
+.speaking-dot.active{display:inline-block;animation:wave 1s infinite}
+@keyframes wave{0%,100%{opacity:1}50%{opacity:.2}}
+.main{display:flex;flex:1;overflow:hidden}
+.voice-panel{width:240px;background:var(--card);border-right:1px solid var(--border);padding:14px;overflow-y:auto;flex-shrink:0;display:none;flex-direction:column;gap:14px}
+.voice-panel.open{display:flex}
+.vp-title{font-size:.78rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.vp-select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:.74rem;cursor:pointer}
+.vp-row{display:flex;align-items:center;gap:8px}
+.vp-label{font-size:.74rem;color:var(--text2);min-width:44px}
+.vp-val{font-size:.74rem;color:var(--accent);min-width:30px;text-align:right}
+input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
+.vp-test{width:100%;background:var(--accent);color:#000;border:none;border-radius:8px;padding:7px;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s}
+.vp-check-row{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--text2)}
+.vp-info{font-size:.68rem;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 7px;word-break:break-word;line-height:1.4}
+.hist-panel{width:220px;background:var(--card);border-left:1px solid var(--border);display:none;flex-direction:column;flex-shrink:0;overflow:hidden}
+.hist-panel.open{display:flex}
+.hist-header{padding:12px 14px;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:space-between}
+.hist-clear{background:none;border:none;color:var(--danger);cursor:pointer;font-size:.75rem;padding:2px 6px;border-radius:6px}
+.hist-list{overflow-y:auto;flex:1;padding:8px}
+.hist-item{padding:6px 8px;border-radius:7px;font-size:.72rem;margin-bottom:4px;cursor:pointer;transition:.2s;line-height:1.4}
+.hist-item:hover{background:var(--border)}
+.hist-item .hi-role{font-weight:700;font-size:.65rem;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.hist-item.user .hi-role{color:var(--accent)}
+.hist-item.bot .hi-role{color:var(--accent2)}
+.hist-item .hi-text{color:var(--text2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.hist-item .hi-time{color:var(--border);font-size:.62rem;margin-top:2px}
+.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.chat{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.chat::-webkit-scrollbar{width:5px}
+.chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg{max-width:78%;padding:11px 16px;border-radius:var(--radius);font-size:.9rem;line-height:1.55;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.msg.bot{background:#1a2060;border:1px solid #2a2f6c;border-radius:var(--radius) var(--radius) var(--radius) 4px;align-self:flex-start;color:#d0d8ff}
+.msg.user{background:var(--accent);color:#0a0f2c;font-weight:500;border-radius:var(--radius) var(--radius) 4px var(--radius);align-self:flex-end}
+.msg .meta{font-size:.65rem;margin-top:4px}
+.msg.bot .meta{color:var(--text2)}
+.msg.user .meta{color:rgba(0,0,0,.5);text-align:right}
+.wiki-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-top:6px;font-size:.8rem}
+.wiki-card .wc-title{font-weight:700;color:var(--accent);margin-bottom:4px}
+.wiki-card .wc-text{color:var(--text2);line-height:1.5}
+.wiki-card .wc-link{color:var(--accent);font-size:.72rem;display:inline-block;margin-top:4px;text-decoration:none}
+.img-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:6px;text-align:center}
+.img-card .ic-prompt{font-size:.75rem;color:var(--accent);margin-bottom:6px;font-style:italic}
+.img-card .ic-img{max-width:100%;border-radius:6px;display:block;margin:0 auto;transition:opacity .6s}
+.img-card .ic-loading{font-size:.72rem;color:var(--text2);margin-top:4px}
+.weather-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:6px}
+.wt-city{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:4px}
+.wt-desc{font-size:.9rem;margin-bottom:8px}
+.wt-stats{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--text2)}
+.tr-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:6px}
+.tr-from{font-size:.75rem;color:var(--text2);margin-bottom:4px}
+.tr-result{font-size:1.1rem;font-weight:700;color:var(--accent2)}
+.quiz-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:6px}
+.qz-q{font-size:.9rem;font-weight:600;margin-bottom:10px;line-height:1.5}
+.qz-opt{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 12px;margin-bottom:6px;cursor:pointer;font-size:.85rem;transition:.2s}
+.qz-opt:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+.wod-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:6px}
+.wod-word{font-size:1.2rem;font-weight:800;color:var(--accent);margin-bottom:4px}
+.wod-def{font-size:.85rem;color:var(--text2);line-height:1.5}
+[data-theme="light"]{--bg:#f0f4ff;--card:#fff;--border:#dde1ff;--accent:#6c63ff;--accent2:#a29bfe;--text:#2d2d4e;--text2:#7a7a9a;--danger:#e53935}
+[data-theme="light"] .logo{color:#6c63ff;text-shadow:none}
+[data-theme="light"] .msg.bot{background:#eef0ff;border:1px solid #dde1ff;color:#2d2d4e}
+[data-theme="light"] .msg.user{background:#6c63ff;color:#fff}
+[data-theme="light"] header{background:#6c63ff}
+[data-theme="light"] .lang-btn{background:#5a52e0;color:#fff}
+[data-theme="light"] .lang-btn.active{background:#fff;color:#6c63ff}
+.input-bar{background:var(--card);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;align-items:flex-end;flex-shrink:0}
+.input-bar textarea{flex:1;background:#131840;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.9rem;font-family:inherit;resize:none;min-height:42px;max-height:120px;line-height:1.4;transition:.2s}
+.input-bar textarea:focus{outline:none;border-color:var(--accent)}
+.send-btn{background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 18px;font-size:.9rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;min-height:42px}
+.send-btn:hover{filter:brightness(1.15)}
+.mic-btn{background:var(--border);color:var(--text);border:none;border-radius:10px;width:42px;height:42px;font-size:1.2rem;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mic-btn:hover{background:var(--accent);color:#000}
+.mic-btn.recording{background:var(--danger);color:#fff;animation:micpulse 1s infinite}
+@keyframes micpulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(248,81,73,.4)}50%{transform:scale(1.12);box-shadow:0 0 0 8px rgba(248,81,73,0)}}
+.typing{display:flex;gap:4px;align-items:center;padding:8px 14px}
+.typing span{width:7px;height:7px;background:var(--text2);border-radius:50%;animation:bounce .8s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.welcome{text-align:center;padding:30px 20px}
+.welcome .wl-icon{font-size:3rem;margin-bottom:12px}
+.welcome h2{font-size:1.3rem;margin-bottom:8px}
+.welcome p{color:var(--text2);font-size:.85rem;line-height:1.6;max-width:360px;margin:0 auto}
+.welcome .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:14px}
+.welcome .chip{background:var(--card);border:1px solid var(--border);padding:6px 12px;border-radius:20px;font-size:.78rem;cursor:pointer;transition:.2s;color:var(--text2)}
+.welcome .chip:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+@media(max-width:640px){.voice-panel{position:fixed;top:0;left:0;bottom:0;z-index:100;width:260px}.hist-panel{position:fixed;top:0;right:0;bottom:0;z-index:100;width:240px}.msg{max-width:92%}}
+/* ── MINI POPUP ── */
+.popup-btn{position:fixed;bottom:22px;right:22px;z-index:1000;width:54px;height:54px;border-radius:50%;background:var(--accent);color:#000;border:none;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:.2s;display:flex;align-items:center;justify-content:center}
+.popup-btn:hover{transform:scale(1.1);filter:brightness(1.15)}
+.popup-btn .pb-badge{position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--danger);border-radius:50%;display:none}
+.popup-btn .pb-badge.show{display:block}
+.mini-popup{position:fixed;bottom:88px;right:22px;z-index:1000;width:320px;height:420px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;transform:scale(0);transform-origin:bottom right;transition:transform .2s ease,opacity .2s ease;opacity:0;pointer-events:none}
+.mini-popup.open{transform:scale(1);opacity:1;pointer-events:all}
+.mp-header{background:var(--accent);color:#000;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mp-logo{font-weight:800;font-size:.95rem;letter-spacing:2px;flex:1}
+.mp-close{background:none;border:none;color:#000;font-size:1.1rem;cursor:pointer;padding:2px 6px;border-radius:6px;opacity:.7}
+.mp-close:hover{opacity:1;background:rgba(0,0,0,.15)}
+.mp-shortcut{font-size:.6rem;opacity:.6}
+.mp-chat{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px}
+.mp-chat::-webkit-scrollbar{width:3px}
+.mp-chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.mp-msg{max-width:86%;padding:8px 12px;border-radius:10px;font-size:.82rem;line-height:1.45;animation:fadeIn .15s ease}
+.mp-msg.bot{background:#1a2060;border:1px solid #2a2f6c;align-self:flex-start;color:#d0d8ff;border-radius:10px 10px 10px 2px}
+.mp-msg.user{background:var(--accent);color:#000;font-weight:500;align-self:flex-end;border-radius:10px 10px 2px 10px}
+.mp-bar{padding:8px 10px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}
+.mp-bar input{flex:1;background:#131840;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:.82rem;font-family:inherit}
+.mp-bar input:focus{outline:none;border-color:var(--accent)}
+.mp-send{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 13px;font-size:.82rem;font-weight:700;cursor:pointer}
+[data-theme="light"] .mp-msg.bot{background:#eef0ff;border:1px solid #dde1ff;color:#2d2d4e}
+[data-theme="light"] .mp-header{background:#6c63ff;color:#fff}
+[data-theme="light"] .mp-close{color:#fff}
+/* ── SÉLECTEUR LANGUE ── */
+.lang-select{background:var(--border);color:var(--text);border:1px solid var(--accent);border-radius:20px;padding:5px 12px;font-size:.82rem;cursor:pointer;outline:none;font-weight:600;max-width:130px}
+.lang-select option{background:#0d1235;color:#e0e0ff}
+[data-theme="light"] .lang-select{background:#5a52e0;color:#fff;border-color:#5a52e0}
+[data-theme="light"] .lang-select option{background:#fff;color:#2d2d4e}
+/* ── THÈMES COULEURS ── */
+[data-color="purple"]{--accent:#9b59b6;--accent2:#a569bd;--border:#3d2060}
+[data-color="red"]{--accent:#e74c3c;--accent2:#ec7063;--border:#602020}
+[data-color="green"]{--accent:#27ae60;--accent2:#2ecc71;--border:#1a6040}
+[data-color="blue"]{--accent:#2980b9;--accent2:#3498db;--border:#1a4060}
+[data-color="orange"]{--accent:#e67e22;--accent2:#f39c12;--border:#604020}
+/* ── SCORE ── */
+.score-badge{background:var(--accent);color:#000;font-weight:800;font-size:.8rem;padding:4px 10px;border-radius:20px;cursor:pointer}
+/* ── PENDU ── */
+.pendu-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:6px;text-align:center}
+.pendu-word{font-size:1.8rem;letter-spacing:8px;font-weight:700;color:var(--accent);margin:10px 0}
+.pendu-letters{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px}
+.pendu-key{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.85rem;font-weight:600;transition:.2s}
+.pendu-key:hover{background:var(--accent);color:#000}
+.pendu-key.used{opacity:.3;pointer-events:none}
+.pendu-fig{font-size:2.5rem;margin:8px 0}
+/* ── DÉFI ── */
+.defi-card{background:var(--bg);border:2px solid var(--accent);border-radius:10px;padding:14px;margin-top:6px}
+.defi-timer{font-size:1.4rem;font-weight:800;color:var(--accent);text-align:center;margin-bottom:8px}
+/* ── RECETTE ── */
+.recipe-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:6px}
+.recipe-title{font-size:1.1rem;font-weight:800;color:var(--accent);margin-bottom:6px}
+.recipe-step{margin:4px 0;font-size:.84rem;color:var(--text2)}
+/* ── AVATAR ── */
+.xearnes-avatar{font-size:1.6rem;cursor:pointer;transition:.2s}
+.xearnes-avatar:hover{transform:scale(1.2)}
+/* ── PARTAGER ── */
+.share-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:3px 8px;border-radius:6px;font-size:.72rem;cursor:pointer;margin-top:5px;transition:.2s}
+.share-btn:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+/* ── HISTOIRE INTERACTIVE ── */
+.story-choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.story-btn{background:var(--card);border:1px solid var(--accent);color:var(--accent);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:.82rem;transition:.2s}
+.story-btn:hover{background:var(--accent);color:#000}
+/* ── ANIMATION BOT ── */
+@keyframes botPop{0%{opacity:0;transform:translateY(8px) scale(.97)}60%{transform:translateY(-2px) scale(1.01)}100%{opacity:1;transform:none}}
+.msg.bot{animation:botPop .3s ease}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center">
+    <span class="logo">Xearnes</span><span class="badge">AI</span>
+    <span class="speaking-dot" id="speakDot"></span>
+  </div>
+  <div class="header-btns">
+    <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#129302;</span>
+    <select id="colorSelect" class="lang-select" style="max-width:92px" onchange="setColorTheme(this.value)" title="Couleur">
+      <option value="">&#11088; Defaut</option>
+      <option value="blue">&#128309; Bleu</option>
+      <option value="purple">&#128995; Violet</option>
+      <option value="green">&#128994; Vert</option>
+      <option value="red">&#128308; Rouge</option>
+      <option value="orange">&#128992; Orange</option>
+    </select>
+    <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
+      <option value="sv">&#127480;&#127466; Svenska</option>
+      <option value="fr">&#127467;&#127479; Francais</option>
+      <option value="en">&#127468;&#127463; English</option>
+      <option value="es">&#127466;&#127480; Espanol</option>
+      <option value="de">&#127465;&#127466; Deutsch</option>
+      <option value="it">&#127470;&#127481; Italiano</option>
+      <option value="pt">&#127477;&#127481; Portugues</option>
+      <option value="ja">&#127471;&#127477; Nihongo</option>
+      <option value="zh">&#127464;&#127475; Zhongwen</option>
+      <option value="ar">&#127480;&#127462; Arabi</option>
+      <option value="ru">&#127479;&#127482; Russkiy</option>
+    </select>
+    <span class="score-badge" id="scoreBadge" onclick="showScoreInfo()" title="Ton score">&#11088; 0</span>
+    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Mode jour/nuit">&#9728;</button>
+    <button class="icon-btn" id="fullBtn" onclick="toggleFullscreen()" title="Plein ecran">&#9974;</button>
+    <button class="icon-btn" id="voiceBtn" onclick="toggleVoicePanel()">&#128266;</button>
+    <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()">&#128214;</button>
+  </div>
+</header>
+<div class="main">
+  <div class="voice-panel" id="voicePanel">
+    <div>
+      <div class="vp-title">&#128266; Voix</div>
+      <select class="vp-select" id="voiceSelect" onchange="onVoiceChange()"></select>
+      <div class="vp-info" id="voiceInfo" style="margin-top:6px">Chargement...</div>
+    </div>
+    <div>
+      <div class="vp-title">&#127930; Vitesse</div>
+      <div class="vp-row">
+        <span class="vp-label">Lent</span>
+        <input type="range" id="voiceRate" min="0.5" max="1.6" step="0.05" value="0.9"
+          oninput="document.getElementById(&quot;rateVal&quot;).textContent=parseFloat(this.value).toFixed(2)">
+        <span class="vp-val" id="rateVal">0.90</span>
+      </div>
+    </div>
+    <div>
+      <div class="vp-title">&#127925; Tonalite</div>
+      <div class="vp-row">
+        <span class="vp-label">Grave</span>
+        <input type="range" id="voicePitch" min="0.5" max="2.0" step="0.05" value="1.05"
+          oninput="document.getElementById(&quot;pitchVal&quot;).textContent=parseFloat(this.value).toFixed(2)">
+        <span class="vp-val" id="pitchVal">1.05</span>
+      </div>
+    </div>
+    <button class="vp-test" onclick="testVoice()">&#127897; Tester</button>
+    <div class="vp-check-row">
+      <input type="checkbox" id="autoVoice" checked>
+      <label for="autoVoice">Voix automatique</label>
+    </div>
+  </div>
+  <div class="chat-wrap">
+    <div class="chat" id="chat">
+      <div class="welcome" id="welcome">
+        <div class="wl-icon">&#129302;</div>
+        <h2 id="welcomeTitle">Xearnes</h2>
+        <p id="welcomeDesc">...</p>
+        <div class="chips" id="chips"></div>
+      </div>
+    </div>
+    <div class="input-bar">
+      <textarea id="userInput" rows="1"
+        onkeydown="if(event.key===&quot;Enter&quot;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg()}"
+        oninput="autoResize(this)" placeholder="Skriv ett meddelande..."></textarea>
+      <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Parler">&#127908;</button>
+      <button class="send-btn" id="sendBtn" onclick="sendMsg()">Skicka</button>
+    </div>
+  </div>
+  <div class="hist-panel" id="histPanel">
+    <div class="hist-header">
+      &#128214; <span id="histTitle">Historik</span>
+      <button class="hist-clear" onclick="clearHistory()">&#128465; Vider</button>
+    </div>
+    <div class="hist-list" id="histList"></div>
+  </div>
+</div>
+<!-- MINI POPUP -->
+<button class="popup-btn" id="popupBtn" onclick="togglePopup()" title="Xearnes Mini (Ctrl+Shift+X)">
+  &#129302;
+  <span class="pb-badge" id="popupBadge"></span>
+</button>
+<div class="mini-popup" id="miniPopup">
+  <div class="mp-header">
+    <span class="mp-logo">XEARNES</span>
+    <span class="mp-shortcut">Ctrl+Shift+X</span>
+    <button class="mp-close" onclick="togglePopup()">&#10005;</button>
+  </div>
+  <div class="mp-chat" id="mpChat"></div>
+  <div class="mp-bar">
+    <input type="text" id="mpInput" placeholder="Pose une question..."
+      onkeydown="if(event.key==='Enter')sendMiniMsg()">
+    <button class="mp-send" onclick="sendMiniMsg()">&#10148;</button>
+  </div>
+</div>
+<script>
+window.onerror=function(m,s,l){var d=document.createElement("div");d.style="position:fixed;top:0;left:0;right:0;padding:12px;background:#f85149;color:#fff;font:bold 13px monospace;z-index:9999;white-space:pre-wrap";d.textContent="ERREUR JS ligne "+l+": "+m;document.body.appendChild(d);};
+"use strict";
+var langs={
+ sv:{code:"sv-SE",send:"Skicka",placeholder:"Skriv ett meddelande...",
+  welcomeTitle:"Hej! Jag är Xearnes",
+  welcomeDesc:"Ställ mig en fråga på svenska, franska eller engelska!",
+  chips:["Vad heter du?","Hur mår du?","Vad är ABBA?","Berätta ett skämt","Vad är Minecraft?"],
+  histTitle:"Historik",testPhrase:"Hej! Jag heter Xearnes och jag pratar svenska. Välkommen!",
+  defaults:["Hmm, det vet jag inte riktigt. Kan du fråga på ett annat sätt?",
+            "Intressant fråga! Tyvärr har jag inget bra svar just nu.",
+            "Det är svårt, men jag lär mig hela tiden!",
+            "Förlåt, jag förstår inte. Kan du förklara mer?"],
+  thinking:"Tänker"},
+ fr:{code:"fr-FR",send:"Envoyer",placeholder:"Ecris un message...",
+  welcomeTitle:"Bonjour ! Je suis Xearnes",
+  welcomeDesc:"Pose-moi une question en francais, suedois ou anglais !",
+  chips:["Ouvre YouTube","Actualites Figaro","Raconte une blague","Mode defi quiz","Histoire interactive","20 questions"],
+  histTitle:"Historique",testPhrase:"Bonjour ! Je suis Xearnes et je parle francais. Bienvenue !",
+  defaults:["Hmm, je ne suis pas sur. Tu peux reformuler ?",
+            "Bonne question ! Pas de reponse parfaite.",
+            "Je ne sais pas encore tout, mais j\u0027apprends vite !",
+            "Je n\u0027ai pas bien compris. Tu peux expliquer autrement ?"],
+  thinking:"Je reflechis"},
+ en:{code:"en-US",send:"Send",placeholder:"Type a message...",
+  welcomeTitle:"Hey! I am Xearnes",
+  welcomeDesc:"Ask me anything in English, Swedish or French!",
+  chips:["Open YouTube","Sydsvenskan news","Tell me a joke","Quiz challenge","Interactive story","20 questions"],
+  histTitle:"History",testPhrase:"Hello! I am Xearnes and I speak English. Welcome!",
+  defaults:["Hmm, I am not sure. Can you rephrase?","Good question! I do not have a perfect answer.",
+            "I am still learning! Try something else.","I did not quite understand. Can you explain?"],
+  thinking:"Thinking"},
+ es:{code:"es-ES",send:"Enviar",placeholder:"Escribe un mensaje...",
+  welcomeTitle:"Hola! Soy Xearnes",
+  welcomeDesc:"Hazme una pregunta en espanol o en otro idioma!",
+  chips:["Como te llamas?","Como estas?","Que es ABBA?","Cuentame un chiste","Que es Minecraft?"],
+  histTitle:"Historial",testPhrase:"Hola! Soy Xearnes y hablo espanol. Bienvenido!",
+  defaults:["Hmm, no estoy seguro. Puedes reformular?","Buena pregunta! No tengo una respuesta perfecta.","Todavia estoy aprendiendo! Intenta otra cosa.","No entendi bien. Puedes explicar?"],
+  thinking:"Pensando"},
+ de:{code:"de-DE",send:"Senden",placeholder:"Schreib eine Nachricht...",
+  welcomeTitle:"Hallo! Ich bin Xearnes",
+  welcomeDesc:"Stell mir eine Frage auf Deutsch oder einer anderen Sprache!",
+  chips:["Wie heisst du?","Wie geht es dir?","Was ist ABBA?","Erzahl mir einen Witz","Was ist Minecraft?"],
+  histTitle:"Verlauf",testPhrase:"Hallo! Ich bin Xearnes und ich spreche Deutsch. Willkommen!",
+  defaults:["Hmm, ich bin nicht sicher. Kannst du es anders formulieren?","Gute Frage! Ich habe keine perfekte Antwort.","Ich lerne noch! Versuch etwas anderes.","Ich habe nicht ganz verstanden. Kannst du erklaren?"],
+  thinking:"Ich denke"},
+ it:{code:"it-IT",send:"Invia",placeholder:"Scrivi un messaggio...",
+  welcomeTitle:"Ciao! Sono Xearnes",
+  welcomeDesc:"Fammi una domanda in italiano o in un altra lingua!",
+  chips:["Come ti chiami?","Come stai?","Cos e ABBA?","Raccontami una barzelletta","Cos e Minecraft?"],
+  histTitle:"Cronologia",testPhrase:"Ciao! Sono Xearnes e parlo italiano. Benvenuto!",
+  defaults:["Hmm, non sono sicuro. Puoi riformulare?","Bella domanda! Non ho una risposta perfetta.","Sto ancora imparando! Prova qualcos altro.","Non ho capito bene. Puoi spiegare?"],
+  thinking:"Sto pensando"},
+ pt:{code:"pt-PT",send:"Enviar",placeholder:"Escreve uma mensagem...",
+  welcomeTitle:"Ola! Eu sou Xearnes",
+  welcomeDesc:"Faz-me uma pergunta em portugues ou noutra lingua!",
+  chips:["Como te chamas?","Como estas?","O que e o ABBA?","Conta-me uma piada","O que e o Minecraft?"],
+  histTitle:"Historico",testPhrase:"Ola! Eu sou Xearnes e falo portugues. Bem-vindo!",
+  defaults:["Hmm, nao tenho a certeza. Podes reformular?","Boa pergunta! Nao tenho uma resposta perfeita.","Ainda estou a aprender! Tenta outra coisa.","Nao percebi bem. Podes explicar?"],
+  thinking:"A pensar"},
+ ja:{code:"ja-JP",send:"送る",placeholder:"メッセージを書いて...",
+  welcomeTitle:"こんにちは！私はXearnesです",
+  welcomeDesc:"日本語または他の言語で質問してください！",
+  chips:["あなたの名前は？","元気ですか？","ABBAとは？","冠談を教えて","Minecraftとは？"],
+  histTitle:"履歴",testPhrase:"こんにちは！私はXearnesです。日本語を話します。ようこそ！",
+  defaults:["Hmm, wakarimasen. Chigau iikade kiite kudasai.","Ii shitsumon! Kanpekina kotae wa arimasen.","Mada manande imasu!","Yoku wakarimasen. Setsumei dekimasu ka?"],
+  thinking:"考えています"},
+ zh:{code:"zh-CN",send:"发送",placeholder:"写一条消息...",
+  welcomeTitle:"你好！我是Xearnes",
+  welcomeDesc:"用中文或其他语言问我问题！",
+  chips:["你叫什么名字？","你好吗？","ABBA是什么？","说个笑话","游戏Minecraft是什么？"],
+  histTitle:"历史",testPhrase:"你好！我是Xearnes，我说普通话。欢迎！",
+  defaults:["嗯，我不确定。你能换个方式问吗？","好问题！我没有完美的答案。","我还在学习！","我没有完全理解。你能解释吗？"],
+  thinking:"我在想"},
+ ar:{code:"ar-SA",send:"إرسال",placeholder:"اكتب رسالة...",
+  welcomeTitle:"مرحبا！ أنا Xearnes",
+  welcomeDesc:"اسألني سؤالاً بالعربية أو بلغة أخرى！",
+  chips:["ما اسمك？","كيف حالك？","ما هو ABBA？","احكِ لي نكتة","Minecraft ما هو？"],
+  histTitle:"السجل",testPhrase:"مرحبا！ أنا Xearnes وأتحدث العربية. أهلاً وسهلاً！",
+  defaults:["هممم، لست متأكداً. هل يمكنك إعادة الصياغة？","سؤال جيد！ ليس لديّ إجابة مثالية.","لا زلت أتعلم！","لم أفهم جيداً. هل يمكنك الشرح？"],
+  thinking:"أفكر"},
+ ru:{code:"ru-RU",send:"Отправить",placeholder:"Напиши сообщение...",
+  welcomeTitle:"Привет! Я Xearnes",
+  welcomeDesc:"Задай мне вопрос на русском или другом языке!",
+  chips:["Как тебя зовут?","Как дела?","Что такое ABBA?","Расскажи шутку","Minecraft - что это?"],
+  histTitle:"История",testPhrase:"Привет! Я Xearnes и говорю по-русски. Добро пожаловать!",
+  defaults:["Хмм, я не уверен. Можешь перефразировать?","Хороший вопрос! У меня нет идеального ответа.","Я ещё учусь!","Я не совсем понял. Можешь объяснить?"],
+  thinking:"Думаю"}
+};
+var currentLang=localStorage.getItem("xn_lang")||"sv";
+var allVoices=[],selectedVoiceIndex=0,fullHist=[],userName=localStorage.getItem("xn_name")||"";
+try{fullHist=JSON.parse(localStorage.getItem("xn_hist")||"[]");}catch(e){fullHist=[];}
+var learnedFacts={};
+try{learnedFacts=JSON.parse(localStorage.getItem("xn_learn")||"{}");}catch(e){learnedFacts={};}
+var convHistory=[];
+var lastTopic={sv:null,fr:null,en:null,es:null,de:null,it:null,pt:null,ja:null,zh:null,ar:null,ru:null};
+var awaitingCorrection=false;
+var correctionContext=null;
+var kb={
+ sv:[
+  {p:["vad heter du","vad ar ditt namn"],r:["Jag heter Xearnes! Trevligt att träffas!","Mitt namn är Xearnes - din svenska AI-kompis!"]},
+  {p:["vad ar du","vem ar du"],r:["Jag är Xearnes, en AI-chatbot som älskar svenska!","Jag är en intelligent chatbot!"]},
+  {p:["hur mar du","mar du bra"],r:["Jag mår jättebra, tack! Hur mår du?","Fantastiskt! Redo att svara på alla dina frågor!"]},
+  {p:["vad ar sverige"],r:["Sverige är ett nordeuropeiskt land känt för natur, ABBA, IKEA, Volvo och Nobel-priset!"]},
+  {p:["stockholm"],r:["Stockholm är Sveriges huvudstad byggd på 14 öar! Kallas Nordens Venedig."]},
+  {p:["abba","vad ar abba"],r:["ABBA är ett av världens mest framgångsrika popband! Bildades i Stockholm 1972. Dancing Queen och Mamma Mia är odödliga!"]},
+  {p:["avicii","tim bergling"],r:["Avicii (Tim Bergling, 1989-2018) var en legendarisk svensk DJ från Stockholm. Hits: Wake Me Up, Levels."]},
+  {p:["minecraft"],r:["Minecraft skapades av svenske Markus Notch Persson 2011! Över 238 miljoner kopior sålda. Mojang är baserat i Stockholm."]},
+  {p:["ikea"],r:["IKEA grundades av Ingvar Kamprad 1943 i Älmhult! Världens största möbelkoncern!"]},
+  {p:["volvo"],r:["Volvo grundades 1927 i Göteborg och uppfann trepunktsbältet 1959 - räddat miljoner liv!"]},
+  {p:["spotify"],r:["Spotify grundades av Daniel Ek i Stockholm 2006! Världens största musikstreamingtjänst."]},
+  {p:["vikingar","vikingarna"],r:["Vikingarna var skandinaviska sjöfarare 793-1066 e.Kr.! Svenska vikingar reste österut till Ryssland."]},
+  {p:["nobelpriset","nobel"],r:["Nobelpriset instiftades av Alfred Nobel och delas ut i Stockholm varje år!"]},
+  {p:["midsommar"],r:["Midsommar firas i juni! Man dansar runt midsommarstången, äter sill och jordgubbar."]},
+  {p:["lucia"],r:["Lucia firas 13 december! En tjej med ljuskrona sjunger Sankta Lucia."]},
+  {p:["surstrommning"],r:["Surströmming är fermenterad sill - en av världens starkast luktande maträtter!"]},
+  {p:["kottbullar"],r:["Svenska köttbullar är världsberömda! Med potatismos, lingonsylt och brunsås."]},
+  {p:["kanelbullar"],r:["Kanelbullen är ett av Sveriges mest älskade bakverk! Den 4 oktober firas Kanelbullens dag!"]},
+  {p:["zlatan"],r:["Zlatan Ibrahimovic är Sveriges mest kände fotbollsspelare! PSG, Manchester United, Barcelona."]},
+  {p:["bjorn borg"],r:["Björn Borg vann Wimbledon 5 gånger i rad! En av tennishistoriens största."]},
+  {p:["greta thunberg"],r:["Greta Thunberg är en svensk klimataktivist fran Stockholm, född 2003. Startade Fridays for Future 2018."]},
+  {p:["astrid lindgren","pippi"],r:["Astrid Lindgren (1907-2002) skapade Pippi Långstrump! Böcker översatta till 107 språk."]},
+  {p:["svenska spraket"],r:["Svenska talas av ca 10 miljoner människor! Typiska bokstäver: å, ä, ö!"]},
+  {p:["algen"],r:["Älgen är Sveriges nationella djur! Kan väga upp till 700 kg - skogens konung."]},
+  {p:["ishockey","hockey"],r:["Ishockey är en stor sport i Sverige! Sverige har vunnit VM många gånger."]},
+  {p:["sol","solen","solsystemet"],r:["Solen är en stjärna i mitten av vårt solsystem! 4,6 miljarder år gammal och 1,4 miljoner km i diameter!"]},
+  {p:["mars","marsplaneten"],r:["Mars är den röda planeten! Ungefär halvså stor som Jorden. NASAs rover Perseverance utforskar den just nu!"]},
+  {p:["jupiter"],r:["Jupiter är solsystemets största planet! 1300 jordklot ryms inuti den. Den har hela 95 kända månar!"]},
+  {p:["svart hal","svart hål","black hole"],r:["Svarta hål har så stark gravitation att inte ens ljuset kan fly! De bildas när massiva stjärnor kollapsar."]},
+  {p:["rymden","universum","kosmos","galaxer"],r:["Universum är ca 13,8 miljarder år gammalt! Det finns fler stjärnor än sandkorn på alla jordens stränder."]},
+  {p:["manen","månen"],r:["Månen är Jordens enda naturliga satellit! Neil Armstrong gick på månen 20 juli 1969."]},
+  {p:["dinosaurier","dinosaurus","tyrannosaurus","t rex","trex"],r:["Dinosaurierna levde för 230-66 miljoner år sedan! T-Rex var 12 m lång med 60 tänder. De dog ut pga ett asteroidnedslag."]},
+  {p:["haj","hajar"],r:["Hajar har funnits i 450 miljoner år! De har upp till 3000 tänder och kan lukta blod på 1,5 km avstånd."]},
+  {p:["val","blåval","valar"],r:["Blåvalen är det största djuret som levt - upp till 33 m! Hjärtat är lika stort som en bil."]},
+  {p:["delfin","delfiner"],r:["Delfiner är superintelligenta! De har namn på varandra, leker och kan lösa komplexa problem."]},
+  {p:["lejon","tiger","gepard"],r:["Lejonet är känt som 'djungelns kung'! Det kan springa i 80 km/h och lever i flockar kallade 'stolthet'."]},
+  {p:["internet","world wide web"],r:["Internet skapades 1969 som ARPANET! World Wide Web uppfanns av Tim Berners-Lee 1989."]},
+  {p:["ai","artificiell intelligens","konstgjord intelligens"],r:["AI (Artificiell Intelligens) är datorer som kan lära sig! Djupinlärning och neurala nätverk gör AI smartare varje dag."]},
+  {p:["dna","dna molekyl","gen","gener"],r:["DNA är livets kod! Varje människa har 3 miljarder baspar. Sträck ut allt DNA från en enda cell - det blir 2 meter!"]},
+  {p:["hjarnan","hjärnan","hjärna","neuroner"],r:["Hjärnan väger bara 1,4 kg men använder 20% av kroppens energi! Den har 86 miljarder nervceller."]},
+  {p:["egypten","faraon","pyramiderna","hieroglyfer"],r:["Det forntida Egypten varade i 3000 år! Gizapyramiderna byggdes ca 2560 f.Kr - ett av världens sju underverk!"]},
+  {p:["andra varldskriget","världskriget","ww2"],r:["Andra världskriget (1939-1945) var historiens dödligaste konflikt. Ca 70-85 miljoner människor omkom."]},
+  {p:["fotosyntes","fotosyntesen"],r:["Fotosyntes: växter omvandlar solljus + vatten + CO2 → socker + syre! Utan den: inget liv på Jorden!"]},
+  {p:["havet","oceanen","mariangraven","hav"],r:["Jordens hav täcker 71% av ytan! Mariangraven i Stilla havet är 11 km djup - djupare än Everest är hög!"]},
+  {p:["pi","3.14","cirkeln"],r:["Pi (π ≈ 3,14159...) är förhållandet mellan en cirkels omkrets och diameter! Det har oändligt många decimaler."]},
+  {p:["gravitation","tyngdkraft","newton"],r:["Gravitation håller allt ihop! Newton förstod den när ett äpple föll på hans huvud år 1666."]},
+  {p:["skamt","rolig","kul","skratta"],r:[
+   "Varför träffar inte trädet på sina vänner? För det har inga grenar att gå!",
+   "Vad heter Kalle när han simmar? Kalle Anka!",
+   "Hur gör en bläckfisk när den skrattar? Den faller i åtta delar!",
+   "Varför gick den matematiska boken till psykologen? Den hade för många problem!"
+  ]}
+ ],
+ fr:[
+  {p:["comment tu t appelles","quel est ton nom"],r:["Je m\u0027appelle Xearnes ! Ravi de te rencontrer !","Mon nom est Xearnes - ton assistant IA !"]},
+  {p:["comment tu vas","ca va"],r:["Je vais super bien, merci ! Et toi ?","Excellent ! Pret a repondre a toutes tes questions !"]},
+  {p:["tu es intelligent","tu est intelligent"],r:["Je fais de mon mieux pour etre intelligent !","Merci du compliment !"]},
+  {p:["suede","la suede"],r:["La Suede est un pays d\u0027Europe du Nord connu pour ABBA, IKEA, Volvo et le Prix Nobel !"]},
+  {p:["abba"],r:["ABBA est l\u0027un des groupes pop les plus celebres au monde ! Forme a Stockholm en 1972 !"]},
+  {p:["minecraft"],r:["Minecraft a ete cree par le Suedois Markus Persson en 2011 ! Plus de 238 millions de copies vendues."]},
+  {p:["ikea"],r:["IKEA a ete fondee en 1943 en Suede ! Le plus grand magasin de meubles au monde."]},
+  {p:["spotify"],r:["Spotify a ete fonde par Daniel Ek a Stockholm en 2006 ! Le service de streaming numero 1 mondial."]},
+  {p:["volvo"],r:["Volvo a ete fondee a Goteborg en 1927 et a invente la ceinture de securite en 1959 !"]},
+  {p:["vikings","les vikings"],r:["Les Vikings etaient des navigateurs scandinaves de 793 a 1066 ! Les Suedois voyageaient vers la Russie."]},
+  {p:["prix nobel","nobel"],r:["Le Prix Nobel a ete cree par Alfred Nobel. Remis chaque annee a Stockholm."]},
+  {p:["greta thunberg"],r:["Greta Thunberg est une militante climatique suedoise, nee en 2003. Elle a lance Fridays for Future en 2018."]},
+  {p:["astrid lindgren","pippi"],r:["Astrid Lindgren a cree Fifi Brindacere ! Livres traduits en 107 langues."]},
+  {p:["zlatan"],r:["Zlatan Ibrahimovic est le footballeur suedois le plus celebre ! PSG, Manchester United, Barcelona."]},
+  {p:["soleil","le soleil"],r:["Le Soleil est une etoile au centre de notre systeme solaire ! Il a 4,6 milliards d annees et 1,4 million de km de diametre !"]},
+  {p:["mars","planete mars","la planete rouge"],r:["Mars est la planete rouge ! Elle est deux fois plus petite que la Terre. Le rover Perseverance de la NASA l explore en ce moment !"]},
+  {p:["jupiter","la planete jupiter"],r:["Jupiter est la plus grande planete du systeme solaire ! 1300 Terres rentreraient dedans. Elle a 95 lunes connues !"]},
+  {p:["trou noir","trous noirs"],r:["Les trous noirs ont une gravite si forte que meme la lumiere ne peut pas s echapper ! Ils se forment quand des etoiles geantes s effondrent."]},
+  {p:["univers","cosmos","l espace","espace","galaxie","galaxies"],r:["L univers a environ 13,8 milliards d annees ! Il y a plus d etoiles dans l univers que de grains de sable sur toutes les plages de la Terre."]},
+  {p:["lune","la lune"],r:["La Lune est le seul satellite naturel de la Terre ! Neil Armstrong a marche dessus le 20 juillet 1969."]},
+  {p:["dinosaures","dinosaure","tyrannosaure","t rex","trex"],r:["Les dinosaures ont vecu de -230 a -66 millions d annees ! Le T-Rex mesurait 12 metres. Ils ont disparu a cause d un asteroide."]},
+  {p:["requin","requins"],r:["Les requins existent depuis 450 millions d annees ! Ils ont jusqu a 3000 dents et peuvent sentir le sang a 1,5 km."]},
+  {p:["baleine","baleines","baleine bleue"],r:["La baleine bleue est le plus grand animal du monde ! Elle peut mesurer 33 metres et peser 200 tonnes. Son coeur est gros comme une voiture !"]},
+  {p:["dauphin","dauphins"],r:["Les dauphins sont tres intelligents ! Ils se donnent des noms, jouent et peuvent resoudre des problemes complexes."]},
+  {p:["lion","lions","tigre","guepard"],r:["Le lion est le roi de la savane ! Il peut courir a 80 km/h. Les lionnes chassent en groupe."]},
+  {p:["internet","le web","world wide web"],r:["Internet a ete cree en 1969 comme ARPANET ! Le World Wide Web a ete invente par Tim Berners-Lee en 1989."]},
+  {p:["intelligence artificielle","ia","ai","robot intelligent"],r:["L intelligence artificielle permet aux ordinateurs d apprendre ! Les reseaux de neurones rendent l IA plus intelligente chaque jour."]},
+  {p:["adn","molecule adn","genes","gene"],r:["L ADN est le code de la vie ! Chaque humain a 3 milliards de paires de bases. Etire, l ADN d une seule cellule ferait 2 metres !"]},
+  {p:["cerveau","le cerveau","neurones"],r:["Le cerveau pese environ 1,4 kg mais consomme 20% de l energie du corps ! Il a 86 milliards de neurones."]},
+  {p:["egypte ancienne","pharaon","pyramide","les pyramides","hieroglyphes"],r:["L Egypte ancienne a dure 3000 ans ! Les pyramides de Gizeh ont ete construites vers 2560 av. J.-C. C est une des 7 merveilles du monde !"]},
+  {p:["deuxieme guerre mondiale","seconde guerre","ww2","guerre mondiale"],r:["La Seconde Guerre mondiale (1939-1945) a fait entre 70 et 85 millions de victimes. Le conflit le plus meurtrier de l histoire."]},
+  {p:["photosynthese","la photosynthese"],r:["La photosynthese transforme la lumiere, l eau et le CO2 en sucre et en oxygene ! Sans elle, la vie serait impossible sur Terre."]},
+  {p:["ocean","mer","les oceans","mariannes"],r:["Les oceans couvrent 71% de la Terre ! La fosse des Mariannes est a 11 km de profondeur - plus profond que l Everest est haut !"]},
+  {p:["pi","3.14","nombre pi"],r:["Pi (pi ≈ 3,14159...) est le rapport entre la circonference d un cercle et son diametre ! Il a une infinite de decimales."]},
+  {p:["gravitation","gravite","pesanteur","newton"],r:["La gravitation est la force qui maintient tout ensemble ! Newton l a comprise quand une pomme lui est tombee sur la tete en 1666."]},
+  {p:["france","la france","francais"],r:["La France est le pays le plus visite au monde ! 68 millions d habitants, la Tour Eiffel et plus de 1200 sortes de fromages !"]},
+  {p:["paris","tour eiffel","capitale"],r:["Paris est la capitale de la France ! La Tour Eiffel a ete construite en 1889 par Gustave Eiffel. Elle mesure 330 metres !"]},
+  {p:["harry potter","poudlard","hermione","voldemort"],r:["Harry Potter est une serie de 7 livres creee par J.K. Rowling ! Harry decouvre qu il est un sorcier. Plus de 500 millions de livres vendus dans le monde !"]},
+  {p:["star wars","jedi","dark vador","yoda"],r:["Star Wars a ete cree par George Lucas en 1977 ! La Force unit tout l univers. Dark Vador est l un des mechants les plus iconiques du cinema."]},
+  {p:["pokemon","pikachu","pokeball"],r:["Pokemon a ete cree au Japon en 1996 ! Il y a plus de 1000 Pokemon differents. Pikachu est le plus celebre ! Le jeu Pokemon GO a revolutionne le mobile."]},
+  {p:["fortnite"],r:["Fortnite est un jeu battle royale cree par Epic Games en 2017 ! 100 joueurs s affrontent. Plus de 350 millions de joueurs dans le monde !"]},
+  {p:["roblox"],r:["Roblox est une plateforme de jeux creee en 2006 ! Les joueurs creent leurs propres jeux. Plus de 200 millions d utilisateurs actifs !"]},
+  {p:["mario","super mario"],r:["Super Mario a ete cree par Nintendo et Shigeru Miyamoto en 1985 ! Mario est le personnage de jeu video le plus reconnu au monde."]},
+  {p:["einstein","relativite"],r:["Albert Einstein (1879-1955) a developpe la theorie de la relativite ! E=mc2 est la formule la plus celebre. Prix Nobel de physique en 1921."]},
+  {p:["marie curie","curie"],r:["Marie Curie (1867-1934) est la seule personne a avoir recu deux Prix Nobel ! Elle a decouvert le polonium et le radium. Pionniere des femmes en science."]},
+  {p:["atome","proton","neutron"],r:["Un atome est la plus petite partie de la matiere ! Il contient un noyau (protons + neutrons) et des electrons. Il y a 118 elements differents."]},
+  {p:["vitesse lumiere","lumiere voyage"],r:["La lumiere voyage a 300 000 km par seconde ! C est la vitesse maximale de l univers. La Lune est a 1,3 secondes-lumiere de la Terre."]},
+  {p:["rechauffement climatique","changement climatique"],r:["Le rechauffement climatique est cause par les emissions de CO2 ! La temperature a augmente de 1,1 degre depuis 1880. Un defi urgent pour toute l humanite."]},
+  {p:["grande muraille","muraille de chine"],r:["La Grande Muraille de Chine fait plus de 21 000 km de long ! Construite entre le 5eme et 17eme siecle. Une des 7 nouvelles merveilles du monde !"]},
+  {p:["chine","pekin"],r:["La Chine est le pays le plus peuple avec 1,4 milliard d habitants ! Pekin est la capitale. Deuxieme economie mondiale apres les USA."]},
+  {p:["usa","etats unis","amerique","washington"],r:["Les Etats-Unis ont 331 millions d habitants ! Washington D.C. est la capitale. Premiere puissance economique et militaire mondiale."]},
+  {p:["elon musk","spacex","tesla"],r:["Elon Musk est co-fondateur de Tesla et fondateur de SpaceX ! Son but est de coloniser Mars. Une des personnalites les plus influentes du monde tech."]},
+  {p:["google"],r:["Google a ete fonde par Larry Page et Sergey Brin en 1998 dans un garage ! Aujourd hui 8,5 milliards de recherches par jour dans le monde."]},
+  {p:["youtube"],r:["YouTube a ete cree en 2005 et rachete par Google en 2006 ! 500 heures de video sont mises en ligne chaque minute. Plus de 2 milliards d utilisateurs."]},
+  {p:["elephant","elephants"],r:["L elephant d Afrique est le plus grand animal terrestre ! Il pese jusqu a 7 tonnes. Sa trompe peut soulever 350 kg et il a une memoire extraordinaire."]},
+  {p:["football","coupe du monde","fifa"],r:["Le football est le sport le plus populaire avec 4 milliards de fans ! La Coupe du Monde a lieu tous les 4 ans. Le Bresil est le pays le plus titre (5 fois)."]},
+  {p:["jeux olympiques","olympiques"],r:["Les Jeux Olympiques modernes ont ete relances en 1896 a Athenes ! Ils reunissent plus de 200 pays tous les 4 ans pour la paix et le sport."]},
+  {p:["iss","station spatiale","astronaute"],r:["La Station Spatiale Internationale orbite a 400 km d altitude ! Elle tourne autour de la Terre 16 fois par jour et accueille des astronautes en permanence."]},
+  {p:["blague","une blague","raconte moi une blague","fais moi rire"],r:[
+   "Pourquoi les plongeurs plongent-ils toujours en arriere ? Parce que sinon ils tomberaient dans le bateau !",
+   "Comment appelle-t-on un chat tombe dans un pot de peinture le jour de Noel ? Un chat-peint de Noel !",
+   "Pourquoi les mathematiciens ont-ils peur des forets ? A cause des racines !",
+   "Qu\u0027est-ce qu\u0027un canif ? Un petit fien !"
+  ]}
+ ],
+ en:[
+  {p:["what is your name","who are you"],r:["My name is Xearnes! Nice to meet you!","I am Xearnes - your AI chat companion!"]},
+  {p:["how are you","are you okay"],r:["I am doing great, thanks! How about you?","Wonderful! Ready to answer all your questions!"]},
+  {p:["are you smart","are you intelligent"],r:["I try my best! I have learned a lot","Thank you! I aim to be as helpful as possible"]},
+  {p:["what is sweden","sweden"],r:["Sweden is a Northern European country famous for ABBA, IKEA, Volvo, Minecraft, and the Nobel Prize!"]},
+  {p:["what is abba","abba"],r:["ABBA is one of the world\u0027s most successful pop groups! Formed in Stockholm 1972 with Dancing Queen!"]},
+  {p:["minecraft"],r:["Minecraft was created by Swedish developer Markus Persson in 2011! One of the best-selling games ever."]},
+  {p:["ikea"],r:["IKEA was founded by Ingvar Kamprad in 1943 in Sweden! The world\u0027s largest furniture retailer."]},
+  {p:["spotify"],r:["Spotify was founded by Daniel Ek in Stockholm in 2006! The world\u0027s largest music streaming service."]},
+  {p:["volvo"],r:["Volvo was founded in Gothenburg 1927 and invented the 3-point seatbelt in 1959!"]},
+  {p:["vikings"],r:["The Vikings were Scandinavian seafarers 793-1066 AD! Swedish Vikings traveled east to Russia."]},
+  {p:["greta thunberg"],r:["Greta Thunberg is a Swedish climate activist from Stockholm, born 2003. She started Fridays for Future in 2018."]},
+  {p:["zlatan"],r:["Zlatan Ibrahimovic is Sweden\u0027s most famous footballer! Known for spectacular goals."]},
+  {p:["astrid lindgren","pippi"],r:["Astrid Lindgren (1907-2002) created Pippi Longstocking! Books translated into 107 languages."]},
+  {p:["the sun","solar system","our star"],r:["The Sun is a star at the center of our solar system! It is 4.6 billion years old and 1.4 million km in diameter!"]},
+  {p:["mars","the red planet"],r:["Mars is the red planet! About half the size of Earth. NASA Perseverance rover is exploring it right now!"]},
+  {p:["jupiter","gas giant"],r:["Jupiter is the largest planet! So big that 1,300 Earths could fit inside. It has 95 known moons!"]},
+  {p:["black hole","black holes"],r:["Black holes have gravity so strong that even light cannot escape! They form when massive stars collapse."]},
+  {p:["universe","cosmos","galaxy","galaxies"],r:["The universe is about 13.8 billion years old! There are more stars than grains of sand on all beaches of Earth."]},
+  {p:["the moon","moon landing"],r:["The Moon is Earth's only natural satellite! Neil Armstrong walked on it on July 20, 1969."]},
+  {p:["dinosaurs","dinosaur","t-rex","tyrannosaurus rex"],r:["Dinosaurs lived 230-66 million years ago! The T-Rex was 12m long with 60 teeth. They went extinct after an asteroid impact."]},
+  {p:["shark","sharks"],r:["Sharks have existed for 450 million years! They have up to 3,000 teeth and can smell blood from 1.5 km away."]},
+  {p:["blue whale","whale"],r:["The blue whale is the largest animal ever! Up to 33m long and 200 tonnes. Its heart is the size of a car!"]},
+  {p:["dolphin","dolphins"],r:["Dolphins are super intelligent! They give each other names, play games, and solve complex problems."]},
+  {p:["internet","the web","world wide web"],r:["The internet started in 1969 as ARPANET! The World Wide Web was invented by Tim Berners-Lee in 1989."]},
+  {p:["artificial intelligence","machine learning"],r:["AI lets computers learn from data! Deep learning and neural networks make AI smarter every day."]},
+  {p:["dna","genetics","genes"],r:["DNA is the code of life! Every human has 3 billion base pairs. Stretched out, one cell's DNA would be 2 metres long!"]},
+  {p:["the brain","neurons","neuroscience"],r:["The brain weighs 1.4 kg but uses 20% of body energy! It has 86 billion neurons firing every second."]},
+  {p:["ancient egypt","pyramids","pharaoh","hieroglyphs"],r:["Ancient Egypt lasted 3,000 years! The pyramids at Giza were built around 2560 BC. One of the 7 Wonders of the World!"]},
+  {p:["world war 2","world war two","ww2","wwii"],r:["World War II (1939-1945) was the deadliest conflict in history. Around 70-85 million people lost their lives."]},
+  {p:["photosynthesis","how plants work"],r:["Photosynthesis is how plants turn sunlight, water, and CO2 into sugar and oxygen! Without it, life on Earth is impossible."]},
+  {p:["ocean","oceans","the sea","mariana trench"],r:["Oceans cover 71% of Earth! The Mariana Trench is 11 km deep, deeper than Mount Everest is tall!"]},
+  {p:["pi","3.14","circles math"],r:["Pi = 3.14159... is the ratio of a circle circumference to its diameter! It has infinitely many decimal places."]},
+  {p:["gravity","gravitation"],r:["Gravity holds everything together! Newton understood it when an apple fell on his head in 1666."]},
+  {p:["eiffel tower","paris france"],r:["The Eiffel Tower was built in Paris in 1889! It stands 330 metres tall, designed by Gustave Eiffel."]},
+  {p:["ancient rome","roman empire","colosseum"],r:["The Roman Empire lasted over 1,000 years! At its peak it covered most of Europe. The Colosseum held 50,000 spectators!"]},
+  {p:["harry potter","hogwarts","hermione","voldemort"],r:["Harry Potter is a series of 7 books by J.K. Rowling! Harry discovers he is a wizard and enters Hogwarts. Over 500 million books sold worldwide!"]},
+  {p:["star wars","jedi","darth vader","yoda","luke"],r:["Star Wars was created by George Lucas in 1977! The Force connects the universe. Darth Vader is one of the most iconic villains in cinema history."]},
+  {p:["pokemon","pikachu","pokeball","trainer"],r:["Pokemon was created in Japan in 1996! There are over 1000 different Pokemon. Pikachu is the most famous! Pokemon GO revolutionized mobile gaming."]},
+  {p:["fortnite"],r:["Fortnite is a battle royale game created by Epic Games in 2017! 100 players compete on an island. Over 350 million players worldwide!"]},
+  {p:["roblox"],r:["Roblox is a gaming platform created in 2006! Players create their own games. Over 200 million active users worldwide!"]},
+  {p:["mario","super mario"],r:["Super Mario was created by Nintendo and Shigeru Miyamoto in 1985! Mario is the most recognized video game character in the world."]},
+  {p:["einstein","theory of relativity"],r:["Albert Einstein (1879-1955) developed the theory of relativity! E=mc2 is the most famous formula in physics. Nobel Prize in 1921."]},
+  {p:["marie curie","curie"],r:["Marie Curie (1867-1934) is the only person to receive two Nobel Prizes! She discovered polonium and radium. A pioneer for women in science."]},
+  {p:["atom","proton","neutron","electron"],r:["An atom is the smallest part of matter! It contains a nucleus (protons and neutrons) surrounded by electrons. There are 118 different elements."]},
+  {p:["speed of light","light travels"],r:["Light travels at 300,000 km per second! That is the maximum speed in the universe. The Moon is 1.3 light-seconds from Earth."]},
+  {p:["climate change","global warming","co2"],r:["Climate change is caused by CO2 emissions! Global temperature has risen 1.1 degrees since 1880. One of humanity's most urgent challenges."]},
+  {p:["great wall","great wall of china"],r:["The Great Wall of China stretches over 21,000 km! Built between the 5th and 17th centuries. One of the 7 new wonders of the world!"]},
+  {p:["china","beijing"],r:["China is the most populated country with 1.4 billion people! Beijing is the capital. Second largest economy in the world after the USA."]},
+  {p:["india","new delhi","mumbai"],r:["India is the most populated country in the world with 1.43 billion people! New Delhi is the capital. The world's largest democracy."]},
+  {p:["usa","united states","america","washington dc"],r:["The United States has 331 million people! Washington D.C. is the capital. The world's largest economy and military power."]},
+  {p:["elon musk","spacex","tesla"],r:["Elon Musk co-founded Tesla and founded SpaceX! His goal is to colonize Mars. One of the most influential figures in the tech world."]},
+  {p:["google"],r:["Google was founded by Larry Page and Sergey Brin in 1998 in a garage! Today there are 8.5 billion searches per day around the world."]},
+  {p:["youtube"],r:["YouTube was created in 2005 and bought by Google in 2006! 500 hours of video are uploaded every minute. Over 2 billion users."]},
+  {p:["elephant","elephants"],r:["The African elephant is the largest land animal! It weighs up to 7 tonnes. Its trunk can lift 350 kg and it has an extraordinary memory."]},
+  {p:["football","soccer","world cup","fifa"],r:["Football is the world most popular sport with 4 billion fans! The World Cup takes place every 4 years. Brazil is the most titled nation with 5 wins."]},
+  {p:["olympics","olympic games"],r:["The modern Olympic Games were revived in 1896 in Athens! They bring together over 200 countries every 4 years for peace and sport."]},
+  {p:["iss","space station","astronaut"],r:["The International Space Station orbits at 400 km altitude! It circles Earth 16 times per day and permanently hosts astronauts from around the world."]},
+  {p:["joke","tell me a joke","make me laugh"],r:[
+   "Why don\u0027t scientists trust atoms? Because they make up everything!",
+   "Why did the bicycle fall over? Because it was two-tired!",
+   "What do you call a fish without eyes? A fsh!",
+   "Why did the scarecrow win an award? Outstanding in his field!"
+  ]}
+ ]
+};
+kb.es=[
+  {p:["como te llamas","como se llama","cual es tu nombre"],r:["Me llamo Xearnes ! Encantado de conocerte !","Mi nombre es Xearnes - tu asistente de IA !"]},
+  {p:["como estas","como te va"],r:["Muy bien, gracias ! Y tu ?","Genial ! Listo para responder tus preguntas !"]},
+  {p:["que es suecia","suecia"],r:["Suecia es un pais del norte de Europa famoso por ABBA, IKEA, Volvo, Minecraft y el Premio Nobel !"]},
+  {p:["que es abba","abba"],r:["ABBA es uno de los grupos de pop mas exitosos del mundo ! Formado en Estocolmo en 1972."]},
+  {p:["minecraft"],r:["Minecraft fue creado por el sueco Markus Persson en 2011 ! Mas de 238 millones de copias vendidas."]},
+  {p:["einstein","relatividad"],r:["Albert Einstein (1879-1955) desarrollo la teoria de la relatividad ! E=mc2 es la formula mas famosa de la fisica."]},
+  {p:["harry potter","hogwarts"],r:["Harry Potter es una serie de 7 libros de J.K. Rowling ! Harry descubre que es un mago. Mas de 500 millones de libros vendidos !"]},
+  {p:["pokemon","pikachu"],r:["Pokemon fue creado en Japon en 1996 ! Hay mas de 1000 Pokemon diferentes. Pikachu es el mas famoso !"]},
+  {p:["chiste","cuento un chiste","hazme reir"],r:["Por que los pajaros no usan Facebook ? Porque ya tienen Twitter !","Que le dice un limon a otro ? Limonada de amigos !"]}
+];
+kb.de=[
+  {p:["wie heisst du","wie ist dein name"],r:["Ich heisse Xearnes ! Schon dich kennenzulernen !","Mein Name ist Xearnes - dein KI-Assistent !"]},
+  {p:["wie geht es dir","wie gehts"],r:["Mir geht es super, danke ! Und dir ?","Wunderbar ! Bereit, deine Fragen zu beantworten !"]},
+  {p:["was ist schweden","schweden"],r:["Schweden ist ein nordeuropaisches Land bekannt fur ABBA, IKEA, Volvo, Minecraft und den Nobelpreis !"]},
+  {p:["was ist abba","abba"],r:["ABBA ist eine der erfolgreichsten Popgruppen der Welt ! Gegrundet 1972 in Stockholm."]},
+  {p:["minecraft"],r:["Minecraft wurde 2011 vom Schweden Markus Persson entwickelt ! Uber 238 Millionen Exemplare verkauft."]},
+  {p:["einstein","relativitat"],r:["Albert Einstein (1879-1955) entwickelte die Relativitatstheorie ! E=mc2 ist die beruhmteste Formel der Physik."]},
+  {p:["harry potter","hogwarts"],r:["Harry Potter ist eine Reihe von 7 Buchern von J.K. Rowling ! Harry entdeckt, dass er ein Zauberer ist. Uber 500 Millionen Bucher verkauft !"]},
+  {p:["witz","einen witz","mach mich lachen"],r:["Warum konnen Piraten das Alphabet nicht? Weil sie immer auf dem C bleiben !","Was macht ein Krokodil, wenn es Mittagessen will? Es isst zu Mittag !"]}
+];
+kb.it=[
+  {p:["come ti chiami","qual e il tuo nome"],r:["Mi chiamo Xearnes ! Piacere di conoscerti !","Il mio nome e Xearnes - il tuo assistente IA !"]},
+  {p:["come stai","come va"],r:["Sto benissimo, grazie ! E tu ?","Fantastico ! Pronto a rispondere a tutte le tue domande !"]},
+  {p:["cos e la svezia","svezia"],r:["La Svezia e un paese del Nord Europa famoso per ABBA, IKEA, Volvo, Minecraft e il Premio Nobel !"]},
+  {p:["cos e abba","abba"],r:["ABBA e uno dei gruppi pop di maggior successo al mondo ! Formato a Stoccolma nel 1972."]},
+  {p:["minecraft"],r:["Minecraft e stato creato dallo svedese Markus Persson nel 2011 ! Piu di 238 milioni di copie vendute."]},
+  {p:["einstein","relativita"],r:["Albert Einstein (1879-1955) ha sviluppato la teoria della relativita ! E=mc2 e la formula piu famosa della fisica."]},
+  {p:["barzelletta","dimmi una barzelletta","fammi ridere"],r:["Perche i matematici non vanno al mare? Perche hanno paura delle radici !","Cosa dice un fagiolo pigro? Borlotto !"]}
+];
+kb.pt=[
+  {p:["como te chamas","qual e o teu nome"],r:["Chamo-me Xearnes ! Prazer em conhecer-te !","O meu nome e Xearnes - o teu assistente de IA !"]},
+  {p:["como estas","como te sentes"],r:["Estou muito bem, obrigado ! E tu ?","Fantastico ! Pronto para responder a todas as tuas perguntas !"]},
+  {p:["o que e a suecia","suecia"],r:["A Suecia e um pais do norte da Europa famoso pelo ABBA, IKEA, Volvo, Minecraft e o Premio Nobel !"]},
+  {p:["o que e o abba","abba"],r:["ABBA e um dos grupos pop mais bem-sucedidos do mundo ! Formado em Estocolmo em 1972."]},
+  {p:["minecraft"],r:["Minecraft foi criado pelo sueco Markus Persson em 2011 ! Mais de 238 milhoes de copias vendidas."]},
+  {p:["piada","conta uma piada","faz-me rir"],r:["O que e que o zero disse para o oito? Legal o cinto !","Porque e que os professores usam oculos? Para controlar as turmas !"]}
+];
+var typos={
+ sv:{"dom ":"de ","dej ":"dig ","mej ":"mig ","int ":"inte ","mycke":"mycket"},
+ fr:{"inteligent":"intelligent","intiligent":"intelligent","koi":"quoi","pk":"pourquoi","sava":"ca va"},
+ en:{"ur ":"you are ","wat ":"what ","thx":"thanks","idk":"i dont know"}
+};
+var stopWords={
+ sv:["ar","du","jag","det","en","ett","och","som","hur","vad","var","nar","om"],
+ fr:["est","tu","je","le","la","les","un","une","des","et","de","du","ce","que","qui","ca","comment","pourquoi"],
+ en:["is","the","a","an","what","who","are","you","i","it","be","do","does","how","why","when"]
+};
+var posW={sv:["smart","intelligent","bra","snabb","rolig","stark","klok","cool","fantastisk"],
+          fr:["intelligent","smart","fort","beau","rapide","gentil","super","cool","genial"],
+          en:["smart","intelligent","fast","good","great","cool","awesome","nice","clever"]};
+var negW={sv:["dum","trog","dalig","samst","lat","trakig"],
+          fr:["bete","nul","stupide","lent","moche","mauvais"],
+          en:["dumb","stupid","slow","bad","ugly","lazy","boring"]};
+function normalize(t){return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();}
+function fixTypos(t,l){var m=typos[l]||{};Object.keys(m).forEach(function(k){t=t.split(k).join(m[k]);});return t;}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function fmt(ts){var d=new Date(ts);return("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
+function detectArDu(n,lang){
+  var m,adj;
+  if(lang==="sv"){m=n.match(/(?:ar du|du ar|aru)\s+(.+)/);if(!m)return null;adj=m[1];
+    if(posW.sv.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Ja, jag försöker vara "+adj+"! ","Tack! Jag gör mitt bästa! "]);
+    if(negW.sv.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Nej, jag tror inte det!","Hoppas inte det! Varför frågar du?"]);
+    return "Hmm, kanske? Vad tycker du om mig?";}
+  if(lang==="fr"){m=n.match(/(?:tu es|es-tu|t es|tu est)\s+(.+)/);if(!m)return null;adj=m[1];
+    if(posW.fr.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Oui, j\u0027essaie ! ","Merci ! Je fais de mon mieux ! "]);
+    if(negW.fr.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Non, je ne pense pas !","J\u0027espere que non ! Pourquoi ?"]);
+    return "Hmm, peut-etre ?";}
+  if(lang==="en"){m=n.match(/(?:are you|you are)\s+(.+)/);if(!m)return null;adj=m[1];
+    if(posW.en.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Yes, I try! ","Thanks! Doing my best! "]);
+    if(negW.en.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["No, I don\u0027t think so!","I hope not! Why ask?"]);
+    return "Hmm, maybe?";}
+  return null;
+}
+function bestMatch(n,lang){
+  var base=kb[lang]||[];var best=null,bs=0;
+  for(var i=0;i<base.length;i++){var e=base[i],s=0;
+    for(var j=0;j<e.p.length;j++){var ph=e.p[j];
+      if(n.indexOf(ph)!==-1){s+=ph.split(" ").length*3;}
+      else{ph.split(" ").forEach(function(w){if(w.length>2&&n.indexOf(w)!==-1)s++;});}}
+    if(s>bs){bs=s;best=e;}}
+  return bs>=2?{entry:best,score:bs}:null;
+}
+function tryMath(t){
+  var s=t.replace(/\bplus\b/g,"+").replace(/\bmoins\b/g,"-").replace(/\bfois\b/g,"*").replace(/\btimes\b/g,"*").replace(/\bminus\b/g,"-");
+  var m=s.match(/(-?\d+(?:\.\d+)?)\s*([\+\-\*\/])\s*(-?\d+(?:\.\d+)?)/);if(!m)return null;
+  var a=parseFloat(m[1]),op=m[2],b=parseFloat(m[3]);
+  if(op==="/"&&b===0)return currentLang==="fr"?"Division par zero !":currentLang==="sv"?"Kan inte dividera med noll!":"Division by zero!";
+  var res=op==="+"?a+b:op==="-"?a-b:op==="*"?a*b:a/b;
+  return "Calcul: "+m[1]+" "+op+" "+m[3]+" = "+Math.round(res*10000)/10000;
+}
+function getWikiQuery(n,lang){
+  var stops=stopWords[lang]||[];
+  return n.split(" ").filter(function(w){return w.length>2&&stops.indexOf(w)===-1;}).slice(0,4).join(" ");
+}
+function fetchWiki(q,lang,cb){
+  var wl={sv:"sv",fr:"fr",en:"en",es:"es",de:"de",it:"it",pt:"pt",ja:"ja",zh:"zh",ar:"ar",ru:"ru"}[lang]||"en";
+  fetch("https://"+wl+".wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(q.replace(/\s+/g,"_")))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.extract&&d.extract.length>20){
+        var raw=d.extract;
+        var maxLen=400;
+        var cut=raw;
+        if(raw.length>maxLen){
+          var sub=raw.slice(0,maxLen);
+          var lastDot=Math.max(sub.lastIndexOf(". "),sub.lastIndexOf("! "),sub.lastIndexOf("? "));
+          cut=lastDot>50?raw.slice(0,lastDot+1):sub+"...";
+        }
+        cb({title:d.title,extract:cut,url:d.content_urls&&d.content_urls.desktop?d.content_urls.desktop.page:"#"});
+      }
+      else cb(null);
+    }).catch(function(){cb(null);});
+}
+function extractSubject(n,lang){
+  var pats,m,s;
+  if(lang==="fr"){
+    pats=[
+      /c est quoi\s+(.+)/,
+      /qu est ce que\s+(.+)/,
+      /qu est ce qui\s+(.+)/,
+      /c est qui\s+(.+)/,
+      /qui est\s+(.+)/,
+      /qui a cree\s+(.+)/,
+      /qui a invente\s+(.+)/,
+      /ou est\s+(.+)/,
+      /ou se trouve\s+(.+)/,
+      /comment fonctionne\s+(.+)/,
+      /comment marche\s+(.+)/,
+      /comment faire\s+(.+)/,
+      /parle moi de\s+(.+)/,
+      /explique moi\s+(.+)/,
+      /dis moi\s+(.+)/,
+      /raconte moi\s+(.+)/,
+      /tu peux m expliquer\s+(.+)/,
+      /peux tu expliquer\s+(.+)/,
+      /j ai entendu parler de\s+(.+)/,
+      /kesako\s+(.+)/,
+      /c est quoi le\s+(.+)/,
+      /c est quoi la\s+(.+)/,
+      /tu connais\s+(.+)/,
+      /tu sais quoi c est\s+(.+)/,
+      /ca veut dire quoi\s+(.+)/,
+      /info sur\s+(.+)/,
+      /recherche\s+(.+)/,
+      /cherche\s+(.+)/
+    ];
+  }else if(lang==="sv"){
+    pats=[
+      /vad ar\s+(.+)/,
+      /vem ar\s+(.+)/,
+      /var ar\s+(.+)/,
+      /var finns\s+(.+)/,
+      /hur fungerar\s+(.+)/,
+      /beratta om\s+(.+)/,
+      /vad vet du om\s+(.+)/
+    ];
+  }else{
+    pats=[
+      /what is\s+(.+)/,
+      /what are\s+(.+)/,
+      /what was\s+(.+)/,
+      /who is\s+(.+)/,
+      /who was\s+(.+)/,
+      /where is\s+(.+)/,
+      /how does\s+(.+)/,
+      /how do\s+(.+)/,
+      /tell me about\s+(.+)/,
+      /explain\s+(.+)/,
+      /describe\s+(.+)/,
+      /when was\s+(.+)/,
+      /when did\s+(.+)/
+    ];
+  }
+  for(var i=0;i<pats.length;i++){
+    m=n.match(pats[i]);
+    if(m&&m[1]){
+      s=m[1].replace(/[?!.]+$/,"").trim();
+      s=s.replace(/^(le |la |les |l |un |une |des |the |a |an |en |ett |det )/i,"");
+      s=s.split(" ").slice(0,4).join(" ");
+      if(s.length>1)return s;
+    }
+  }
+  return null;
+}
+function fetchWikiChain(queries,lang,cb){
+  if(!queries.length){cb(null);return;}
+  fetchWiki(queries[0],lang,function(res){
+    if(res){cb(res);}else{fetchWikiChain(queries.slice(1),lang,cb);}
+  });
+}
+var smallTalk={
+  sv:[
+    {p:["hej ","hejsan","hallå","halla ","tjena","tja ","god morgon","god kvall"],r:["Hej! Vad kan jag hjälpa dig med? 😊","Hallå! Kul att du chattar med mig!","Hej hej! Vad vill du veta?"]},
+    {p:["hejda","adjö","vi ses","ha det"],r:["Hejdå! Ha det bra! 👋","Vi ses! Kom tillbaka när du vill!"]},
+    {p:["tack","tackar","tack sa mycket"],r:["Varsågod! 😊","Kul att jag kunde hjälpa!","Alltid till tjänst!"]},
+    {p:["bra","kanon","super ","coolt","häftigt","najs","awesome"],r:["Kul att du tycker det! 🌟","Tack! Du är också cool!"]}
+  ],
+  fr:[
+    {p:["bonjour","salut ","coucou","bonsoir","bjr ","slt "],r:["Bonjour ! Comment puis-je t'aider ? 😊","Salut ! Qu'est-ce que tu veux savoir ?","Hey ! Je suis la !"]},
+    {p:["au revoir","bye ","ciao","tchao","a bientot"],r:["Au revoir ! A bientot ! 👋","Tchao ! Reviens quand tu veux !"]},
+    {p:["merci","merci beaucoup"],r:["De rien ! 😊","Avec plaisir !","C est normal, je suis la pour ca !"]},
+    {p:["super ","genial","trop bien","incroyable","ouah ","wow "],r:["Merci ! Tu es sympa ! 🌟","C est trop cool !"]},
+    {p:["oui ","ouais","d accord","dac "],r:["Super ! Tu veux savoir autre chose ? 😊","Parfait !"]}
+  ],
+  en:[
+    {p:["hello ","hi ","hey ","good morning","howdy","hiya "],r:["Hello! How can I help? 😊","Hey! What would you like to know?","Hi! Ask me anything!"]},
+    {p:["bye ","goodbye","see you","later ","farewell"],r:["Goodbye! Come back anytime! 👋","See you! Have a great day!"]},
+    {p:["thanks","thank you","thx "],r:["You're welcome! 😊","Happy to help!","Anytime!"]},
+    {p:["cool ","awesome","great ","amazing","wow "],r:["Thanks! You're awesome too! 🌟","Glad you think so!"]},
+    {p:["yes ","yeah ","yep ","okay "],r:["Great! What else would you like to know?","Awesome! Anything else?"]}
+  ],
+  es:[
+    {p:["hola ","buenos ","buenas ","saludos "],r:["Hola! Como puedo ayudarte? 😊","Hola! Que quieres saber?"]},
+    {p:["adios ","hasta luego","chao "],r:["Adios! Hasta pronto! 👋","Hasta luego! Vuelve cuando quieras!"]},
+    {p:["gracias","muchas gracias"],r:["De nada! 😊","Con mucho gusto!"]},
+    {p:["genial ","increible","fantastico","wow "],r:["Genial! 🌟","Me alegra que te guste!"]}
+  ],
+  de:[
+    {p:["hallo ","guten tag","servus ","moin "],r:["Hallo! Wie kann ich helfen? 😊","Hi! Was mochtest du wissen?"]},
+    {p:["tschuss ","auf wiedersehen","bye "],r:["Tschuss! Bis bald! 👋","Auf Wiedersehen!"]},
+    {p:["danke ","vielen dank"],r:["Bitte sehr! 😊","Gern geschehen!"]},
+    {p:["super ","toll ","klasse ","wow "],r:["Super! 🌟","Freut mich!"]}
+  ],
+  it:[
+    {p:["ciao ","buongiorno","salve ","buonasera "],r:["Ciao! Come posso aiutarti? 😊","Ciao! Cosa vuoi sapere?"]},
+    {p:["arrivederci","addio ","bye "],r:["Arrivederci! A presto! 👋","Ciao ciao!"]},
+    {p:["grazie ","mille grazie"],r:["Prego! 😊","Con piacere!"]},
+    {p:["ottimo ","fantastico","benissimo","wow "],r:["Fantastico! 🌟","Sono contento!"]}
+  ],
+  pt:[
+    {p:["ola ","bom dia","boa tarde","boa noite"],r:["Ola! Como posso ajudar? 😊","Ola! O que queres saber?"]},
+    {p:["adeus ","ate logo","tchau "],r:["Adeus! Ate breve! 👋","Tchau! Volta quando quiseres!"]},
+    {p:["obrigado","obrigada","muito obrigado"],r:["De nada! 😊","Com prazer!"]},
+    {p:["otimo ","incrivel","fantastico","uau "],r:["Otimo! 🌟","Que bom!"]}
+  ]
+};
+function detectSmallTalk(n,lang){
+  if(n.split(" ").length>7)return null;
+  var padded=" "+n+" ";
+  var entries=smallTalk[lang]||[];
+  for(var i=0;i<entries.length;i++){
+    var e=entries[i];
+    for(var j=0;j<e.p.length;j++){
+      if(padded.indexOf(e.p[j])!==-1)return pick(e.r);
+    }
+  }
+  return null;
+}
+// ── DÉTECTION AUTOMATIQUE DE LANGUE ──
+function detectInputLang(text){
+  // Scripts non-latins : detection par codes Unicode echappes
+  if(/[ぁ-ヿ]/.test(text))return "ja";
+  if(/[一-鿿]/.test(text))return "zh";
+  if(/[؀-ۿ]/.test(text))return "ar";
+  if(/[Ѐ-ӿ]/.test(text))return "ru";
+  var t=(" "+text.toLowerCase()+" ");
+  var sv=0,fr=0,en=0,es=0,de=0,it=0,pt=0;
+  // Suédois
+  if(/[åäö]/.test(t))sv+=5;
+  ["vad är","hur är","jag är","vad heter","hur mår","tack ","hej "].forEach(function(w){if(t.indexOf(w)!==-1)sv+=2;});
+  [" och "," men "," som "," ett "," den "," det "," på "," till "," av "].forEach(function(w){if(t.indexOf(w)!==-1)sv++;});
+  // Français
+  if(/[éèêàâùûîïçœ]/.test(t))fr+=4;
+  ["bonjour","bonsoir","merci ","pourquoi","je suis","tu es","c est","qu est"].forEach(function(w){if(t.indexOf(w)!==-1)fr+=2;});
+  [" je "," tu "," il "," le "," la "," les "," est "," de "," du "," et "," en "].forEach(function(w){if(t.indexOf(w)!==-1)fr++;});
+  // Anglais
+  [" what "," how "," who "," where "," when "," why "," is "," are "," do "," can "].forEach(function(w){if(t.indexOf(w)!==-1)en+=2;});
+  [" the "," and "," for "," you "," this "," that "," with "," have "].forEach(function(w){if(t.indexOf(w)!==-1)en++;});
+  // Espagnol
+  if(/[¿¡ñ]/.test(t))es+=5;
+  ["hola ","gracias","como estas","buenos","por favor","que es"].forEach(function(w){if(t.indexOf(w)!==-1)es+=2;});
+  [" que "," con "," una "," para "," por "," los "," las "," del "," muy "].forEach(function(w){if(t.indexOf(w)!==-1)es++;});
+  // Allemand
+  if(/[äöüß]/.test(t)&&!/[åæø]/.test(t))de+=4;
+  ["guten ","danke ","bitte ","wie geht","ich bin","was ist","kannst du"].forEach(function(w){if(t.indexOf(w)!==-1)de+=2;});
+  [" ich "," sie "," das "," und "," ist "," mit "," auf "," hat "," bin "].forEach(function(w){if(t.indexOf(w)!==-1)de++;});
+  // Italien
+  ["ciao ","grazie","prego ","come stai","sono ","mi chiamo"].forEach(function(w){if(t.indexOf(w)!==-1)it+=2;});
+  [" che "," con "," per "," una "," non "," mi "," si "," ho "].forEach(function(w){if(t.indexOf(w)!==-1)it++;});
+  if(/[àèéìòù]/.test(t)&&fr<3)it+=2;
+  // Portugais
+  if(/[ãõâê]/.test(t)&&fr<2)pt+=4;
+  ["ola ","obrigado","bom dia","boa tarde","como se"].forEach(function(w){if(t.indexOf(w)!==-1)pt+=2;});
+  [" com "," uma "," nao "," por "," os "," as "].forEach(function(w){if(t.indexOf(w)!==-1)pt++;});
+  var scores={sv:sv,fr:fr,en:en,es:es,de:de,it:it,pt:pt};
+  var best=null,bscore=2;
+  Object.keys(scores).forEach(function(k){if(scores[k]>bscore){bscore=scores[k];best=k;}});
+  return best;
+}
+// ── THEME ──
+function toggleTheme(){
+  var isDark=document.documentElement.getAttribute("data-theme")!=="light";
+  document.documentElement.setAttribute("data-theme",isDark?"light":"dark");
+  document.getElementById("themeBtn").textContent=isDark?"☽":"☀";
+  localStorage.setItem("xn_theme",isDark?"light":"dark");
+}
+// ── STORIES ──
+var storyParts={
+  fr:{i:["Il était une fois","Dans un monde magique,","Un beau matin,"],a:["découvrit un trésor caché","rencontra un ami mystérieux","sauva le village","reçut un pouvoir magique"],t:["Mais soudain, tout changea.","Une surprise l attendait.","Un danger approchait."],e:["vécut heureux pour toujours.","devint une légende.","partagea son secret avec le monde."]},
+  sv:{i:["Det var en gång","I ett magiskt land,","En vacker dag,"],a:["hittade en magisk skatt","träffade en hemlig vän","räddade byn","fick en magisk kraft"],t:["Men plötsligt ändrades allt.","En överraskning väntade.","En fara närmade sig."],e:["levde lycklig i alla sina dagar.","blev en legend.","delade sin hemlighet med världen."]},
+  en:{i:["Once upon a time,","In a magical world,","One fine morning,"],a:["discovered a hidden treasure","met a mysterious friend","saved the village","received a magical power"],t:["But suddenly, everything changed.","A surprise was waiting.","But danger was approaching."],e:["lived happily ever after.","became a legend.","shared the secret with the world."]}
+};
+function detectStory(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:raconte|invente|ecris|fais)\s+(?:moi\s+)?(?:une?\s+)?(?:histoire|conte)\s+(?:sur|de|avec)?\s*(.+)?/);
+  else if(lang==="sv")m=n.match(/(?:beratta|hitta pa)\s+(?:en?\s+)?(?:historia|saga)\s+(?:om\s+)?(.+)?/);
+  else m=n.match(/(?:tell|write|make up|create)\s+(?:me\s+)?(?:a\s+)?(?:story|tale)\s+(?:about\s+)?(.+)?/);
+  if(m)return(m[1]||"aventure").trim();return null;
+}
+function generateStory(subject,lang){
+  var d=storyParts[lang]||storyParts.en;
+  var h=subject.charAt(0).toUpperCase()+subject.slice(1);
+  return pick(d.i)+" "+h+" "+pick(d.a)+". "+pick(d.t)+" "+h+" "+pick(d.e);
+}
+// ── POEMS ──
+var poemTpl={
+  fr:[["{s} brille dans la nuit","Comme une étoile au ciel","Son éclat nous éblouit","Et tout devient plus beau"],["{s} danse dans le vent","Libre comme l horizon","Chaque jour est un moment","Rempli d émotions"]],
+  sv:[["{s} lyser i natten","Som en stjärna på himlen","Dess sken vi har fattat","Och allt blir mer vackert"],["{s} dansar i vinden","Fri som horisonten","Varje dag vi finner","En stund full av känslor"]],
+  en:[["{s} shines in the night","Like a star in the sky","Its glow is so bright","As time passes by"],["{s} dances in the wind","Free as the horizon","Each day we begin","With hope on the rise"]]
+};
+function detectPoem(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:ecris|fais|compose|invente)\s+(?:moi\s+)?(?:un?\s+)?(?:poeme|poesie)\s+(?:sur|de|avec)?\s*(.+)?/);
+  else if(lang==="sv")m=n.match(/(?:skriv|gor)\s+(?:en?\s+)?(?:dikt|poem)\s+(?:om\s+)?(.+)?/);
+  else m=n.match(/(?:write|make|create|compose)\s+(?:me\s+)?(?:a\s+)?(?:poem|poetry)\s+(?:about\s+)?(.+)?/);
+  if(m)return(m[1]||"la vie").trim();return null;
+}
+function generatePoem(subject,lang){
+  var d=poemTpl[lang]||poemTpl.en;var t=pick(d);
+  var c=subject.charAt(0).toUpperCase()+subject.slice(1);
+  return "<em>"+t.map(function(l){return l.replace("{s}",c);}).join("<br>")+"</em>";
+}
+// ── CONVERTISSEUR ──
+var convTable={"km_mile":0.621371,"mile_km":1.60934,"miles_km":1.60934,"km_miles":0.621371,"kg_pound":2.20462,"pound_kg":0.453592,"kg_livre":2.20462,"livre_kg":0.453592,"metre_foot":3.28084,"foot_metre":0.3048,"feet_metre":0.3048,"metre_feet":3.28084,"cm_inch":0.393701,"inch_cm":2.54,"litre_gallon":0.264172,"gallon_litre":3.78541};
+function detectConversion(n){
+  var m=n.match(/(\d+(?:[.,]\d+)?)\s*(km|kilometre|kilometer|miles?|kg|kilogramme|kilogram|pounds?|livres?|metres?|meters?|feet|foot|pied|cm|centimetre|centimeter|pouces?|inches?|inch|litres?|liters?|gallons?)\s+(?:en|in|to|till)\s*(km|kilometre|kilometer|miles?|kg|kilogramme|kilogram|pounds?|livres?|metres?|meters?|feet|foot|pied|cm|centimetre|centimeter|pouces?|inches?|inch|litres?|liters?|gallons?)/i);
+  if(!m)return null;
+  var val=parseFloat(m[1].replace(",","."));
+  var fn=function(s){return s.toLowerCase().replace(/s$/,"").replace(/kilometre|kilometer/,"km").replace(/kilogramme|kilogram/,"kg").replace(/metre|meter/,"metre").replace(/centimetre|centimeter/,"cm").replace(/pied|feet|foot/,"foot").replace(/litre|liter/,"litre").replace(/livre|pound/,function(x){return x==="livre"?"livre":"pound"}).replace(/pouce|inch|inches/,"inch");};
+  var from=fn(m[2]),to=fn(m[3]);
+  if((from==="celsius"||from==="degre")&&to==="fahrenheit")return{val:val,result:Math.round((val*9/5+32)*100)/100,from:m[2],to:m[3]};
+  if(from==="fahrenheit"&&(to==="celsius"||to==="degre"))return{val:val,result:Math.round(((val-32)*5/9)*100)/100,from:m[2],to:m[3]};
+  var factor=convTable[from+"_"+to];if(factor===undefined)return null;
+  return{val:val,result:Math.round(val*factor*10000)/10000,from:m[2],to:m[3]};
+}
+// ── HEURE MONDIALE ──
+var cityTZ={paris:"Europe/Paris",france:"Europe/Paris",london:"Europe/London",londres:"Europe/London","new york":"America/New_York",tokyo:"Asia/Tokyo",japon:"Asia/Tokyo",japan:"Asia/Tokyo",beijing:"Asia/Shanghai",chine:"Asia/Shanghai",sydney:"Australia/Sydney",australie:"Australia/Sydney",dubai:"Asia/Dubai",stockholm:"Europe/Stockholm",suede:"Europe/Stockholm",sweden:"Europe/Stockholm",moscow:"Europe/Moscow",moscou:"Europe/Moscow","los angeles":"America/Los_Angeles",berlin:"Europe/Berlin",rome:"Europe/Rome",madrid:"Europe/Madrid",cairo:"Africa/Cairo",egypte:"Africa/Cairo",mumbai:"Asia/Kolkata",inde:"Asia/Kolkata",seoul:"Asia/Seoul",toronto:"America/Toronto"};
+function detectWorldTime(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:quelle heure|heure il est|heure est il)\s+(?:est.il\s+)?(?:a |au |en |dans )\s*(.+)/);
+  else if(lang==="sv")m=n.match(/(?:vad ar klockan|klockan)\s+(?:i |pa )\s*(.+)/);
+  else m=n.match(/(?:what time|time)\s+(?:is it\s+)?(?:in |at )\s*(.+)/);
+  if(m&&m[1]){
+    var city=m[1].replace(/[?!.]+$/,"").trim().toLowerCase();
+    var tz=cityTZ[city];
+    if(!tz){var ks=Object.keys(cityTZ);for(var i=0;i<ks.length;i++){if(city.indexOf(ks[i])!==-1||ks[i].indexOf(city)!==-1){tz=cityTZ[ks[i]];break;}}}
+    if(tz)return{city:m[1].trim(),tz:tz};
+  }return null;
+}
+function getWorldTime(tz,lang){
+  var loc={sv:"sv-SE",fr:"fr-FR",en:"en-GB",es:"es-ES",de:"de-DE",it:"it-IT",pt:"pt-PT",ja:"ja-JP",zh:"zh-CN",ar:"ar-SA",ru:"ru-RU"};
+  try{return new Intl.DateTimeFormat(loc[lang]||"en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date());}catch(e){return null;}
+}
+// ── MINUTEUR ──
+var xTimer=null;
+function detectTimer(n,lang){
+  var m=n.match(/(\d+)\s*(minute|min|seconde|sec|second|minut|sekund)/i);
+  if(!m)return null;
+  var num=parseInt(m[1]),unit=m[2].toLowerCase();
+  return{sec:unit[0]==="s"?num:num*60,label:num+" "+m[2]};
+}
+function startTimer(sec,label,lang){
+  if(xTimer)clearInterval(xTimer);
+  var rem=sec;
+  xTimer=setInterval(function(){rem--;if(rem<=0){clearInterval(xTimer);xTimer=null;var done=lang==="fr"?"⏰ Terminé ! "+label+" écoulées !":lang==="sv"?"⏰ Klart! "+label+" har gått!":"⏰ Done! "+label+" elapsed!";addMsg(done,"bot");if(document.getElementById("autoVoice")&&document.getElementById("autoVoice").checked)speakText(done);}},1000);
+  return lang==="fr"?"⏱️ Minuteur de "+label+" lancé !":lang==="sv"?"⏱️ Timer på "+label+" startad!":"⏱️ "+label+" timer started!";
+}
+// ── MOT DU JOUR ──
+var wodData={
+  fr:[{w:"Éphémère",d:"Qui dure très peu de temps. Ex: La beauté éphémère des fleurs."},{w:"Sérénité",d:"État de calme parfait. Ex: Il ressentait une grande sérénité."},{w:"Fulgurance",d:"Quelque chose qui brille très vite, comme un éclair."},{w:"Mélancolie",d:"Une tristesse douce et rêveuse."},{w:"Virtuose",d:"Quelqu un qui maîtrise parfaitement un art ou une technique."},{w:"Perspicace",d:"Qui comprend les choses rapidement et avec finesse."},{w:"Lumineux",d:"Qui brille, plein de lumière."}],
+  sv:[{w:"Lagom",d:"Inte för mycket, inte för lite - precis rätt! (Il n existe pas de mot équivalent en français!)"},{w:"Fröjd",d:"Stor glädje och lycka. Ex: Han kände stor fröjd."},{w:"Vemod",d:"En mild sorgsenhet, melankolisk känsla."},{w:"Skymning",d:"Tiden precis efter solnedgången, när det börjar bli mörkt."},{w:"Fika",d:"En paus med kaffe och fikabröd - en viktig svensk tradition!"}],
+  en:[{w:"Ephemeral",d:"Lasting a very short time. Ex: The ephemeral beauty of cherry blossoms."},{w:"Serendipity",d:"Finding something good without looking for it."},{w:"Resilient",d:"Able to recover quickly from difficulties."},{w:"Wanderlust",d:"A strong desire to travel and explore the world."},{w:"Luminous",d:"Full of light, glowing brightly."},{w:"Melancholy",d:"A gentle, thoughtful sadness."}]
+};
+function detectWod(n,lang){
+  if(lang==="fr")return n.indexOf("mot du jour")!==-1||n.indexOf("nouveau mot")!==-1;
+  if(lang==="sv")return n.indexOf("dagens ord")!==-1||n.indexOf("ord for dagen")!==-1;
+  return n.indexOf("word of the day")!==-1||n.indexOf("new word")!==-1;
+}
+function getWod(lang){var w=wodData[lang]||wodData.en;return w[new Date().getDate()%w.length];}
+function buildWodHtml(wod){return "<div class='wod-card'><div class='wod-word'>"+wod.w+"</div><div class='wod-def'>"+wod.d+"</div></div>";}
+// ── DEVINETTES ──
+var riddleData={
+  fr:[{q:"J ai des mains mais pas de bras, un visage mais pas de tête. Qu est-ce que je suis ?",a:"horloge"},{q:"Plus je sèche, plus je suis mouillée. Qu est-ce que je suis ?",a:"serviette"},{q:"Je parle sans bouche et entends sans oreilles. Qu est-ce que je suis ?",a:"echo"},{q:"Je disparais dès que tu prononces mon nom. Qu est-ce que je suis ?",a:"silence"},{q:"Plus je suis grande, moins on me voit. Qu est-ce que je suis ?",a:"obscurite"}],
+  sv:[{q:"Jag har händer men inga armar, ett ansikte men inget huvud. Vad är jag ?",a:"klocka"},{q:"Jag pratar utan mun och hör utan öron. Vad är jag ?",a:"eko"},{q:"Ju mer jag torkar, desto blötare blir jag. Vad är jag ?",a:"handduk"}],
+  en:[{q:"I have hands but no arms, a face but no head. What am I?",a:"clock"},{q:"The more you take, the more you leave behind. What am I?",a:"footsteps"},{q:"I speak without a mouth and hear without ears. What am I?",a:"echo"},{q:"I disappear when you say my name. What am I?",a:"silence"},{q:"The more there is, the less you see. What am I?",a:"darkness"}]
+};
+var currentRiddle=null;
+function detectRiddle(n,lang){
+  if(lang==="fr")return n.indexOf("devinette")!==-1||n.indexOf("enigme")!==-1;
+  if(lang==="sv")return n.indexOf("gata")!==-1||n.indexOf("gissa")!==-1;
+  return n.indexOf("riddle")!==-1||n.indexOf("enigma")!==-1;
+}
+function startRiddle(lang){var l=riddleData[lang]||riddleData.en;currentRiddle=l[Math.floor(Math.random()*l.length)];return currentRiddle.q;}
+function checkRiddle(n,lang){
+  if(!currentRiddle)return null;
+  if(n.indexOf(currentRiddle.a)!==-1){var ok=lang==="fr"?"Bravo ! C est \""+currentRiddle.a+"\" ! Tu es fort !":lang==="sv"?"Bra jobbat! Det är \""+currentRiddle.a+"\"!":"Correct! It is \""+currentRiddle.a+"\"! Well done!";currentRiddle=null;return ok;}
+  if(n.indexOf("reponse")!==-1||n.indexOf("answer")!==-1||n.indexOf("svar")!==-1||n.indexOf("je sais pas")!==-1){var ans=lang==="fr"?"La réponse était : \""+currentRiddle.a+"\"":lang==="sv"?"Svaret var: \""+currentRiddle.a+"\"":"The answer was: \""+currentRiddle.a+"\"";currentRiddle=null;return ans;}
+  return lang==="fr"?"Pas tout à fait... Essaie encore ! (tape réponse pour savoir)":lang==="sv"?"Inte riktigt... Försök igen!":"Not quite... Try again! (type answer to reveal)";
+}
+// ── QUIZ ──
+var currentQuiz=null,quizOpts=[];
+function detectQuiz(n,lang){
+  if(lang==="fr")return n.indexOf("quiz")!==-1||n.indexOf("teste moi")!==-1||n.indexOf("interroge moi")!==-1;
+  if(lang==="sv")return n.indexOf("quiz")!==-1||n.indexOf("testa mig")!==-1;
+  return n.indexOf("quiz")!==-1||n.indexOf("test me")!==-1||n.indexOf("trivia")!==-1;
+}
+function fetchQuiz(lang,cb){
+  fetch("https://opentdb.com/api.php?amount=1&type=multiple")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.results||!d.results.length){cb(null);return;}
+      var q=d.results[0],div=document.createElement("div");
+      div.innerHTML=q.question;var question=div.textContent;
+      quizOpts=q.incorrect_answers.slice();quizOpts.push(q.correct_answer);
+      quizOpts.sort(function(){return Math.random()-.5;});
+      div.innerHTML=q.correct_answer;
+      currentQuiz={q:question,a:div.textContent.toLowerCase(),opts:quizOpts.slice()};
+      cb(currentQuiz);
+    }).catch(function(){cb(null);});
+}
+function buildQuizHtml(quiz,lang){
+  var html="<div class='quiz-card'><div class='qz-q'>"+quiz.q+"</div>";
+  ["A","B","C","D"].forEach(function(l,i){var div=document.createElement("div");div.innerHTML=quiz.opts[i]||"";html+="<div class='qz-opt' onclick='answerQuiz(\""+l+"\")'>"+l+". "+div.textContent+"</div>";});
+  return html+"</div>";
+}
+function answerQuiz(letter){var inp=document.getElementById("userInput");if(inp){inp.value=letter;sendMsg();}}
+function checkQuizAnswer(n,lang){
+  if(!currentQuiz)return null;
+  var idx=["a","b","c","d"].indexOf(n.trim());
+  if(idx===-1){for(var i=0;i<quizOpts.length;i++){var div=document.createElement("div");div.innerHTML=quizOpts[i];if(n.indexOf(div.textContent.toLowerCase())!==-1){idx=i;break;}}}
+  if(idx===-1)return null;
+  var div=document.createElement("div");div.innerHTML=quizOpts[idx];
+  var correct=div.textContent.toLowerCase()===currentQuiz.a||quizOpts[idx]===currentQuiz.a;
+  var res=correct?(lang==="fr"?"🎉 Bonne réponse ! C est : "+currentQuiz.a:lang==="sv"?"🎉 Rätt! Svaret är: "+currentQuiz.a:"🎉 Correct! The answer is: "+currentQuiz.a):(lang==="fr"?"❌ Mauvaise ! La bonne était : "+currentQuiz.a:lang==="sv"?"❌ Fel! Rätt svar: "+currentQuiz.a:"❌ Wrong! Correct answer: "+currentQuiz.a);
+  currentQuiz=null;return res;
+}
+// ── IMAGES IA ──
+function detectImageRequest(n,lang){
+  var pats;
+  if(lang==="fr")pats=[/(?:dessine|génère|genere|crée|cree|fais|une image de)\s+(?:moi\s+)?(?:une?\s+)?(?:image\s+(?:de\s+)?)?(.+)/];
+  else if(lang==="sv")pats=[/(?:rita|skapa|visa mig en bild av)\s+(?:mig\s+)?(?:en?\s+)?(?:bild\s+(?:av|på)\s*)?(.+)/];
+  else pats=[/(?:draw|generate|create|make|show me)\s+(?:me\s+)?(?:an?\s+)?(?:image\s+(?:of\s+)?)?(.+)/,/image of\s+(.+)/];
+  for(var i=0;i<pats.length;i++){var m=n.match(pats[i]);if(m&&m[1]&&m[1].trim().length>1)return m[1].trim();}
+  return null;
+}
+function buildImageHtml(prompt,lang){
+  var url="https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)+"?width=400&height=300&nologo=true";
+  var lbl=lang==="fr"?"Image IA :":lang==="sv"?"AI-bild:":"AI image:";
+  var loading=lang==="fr"?"Génération...":lang==="sv"?"Skapar...":"Generating...";
+  return "<div class='img-card'><div class='ic-prompt'>"+lbl+" "+prompt+"</div><img class='ic-img' src='"+url+"' alt='"+prompt+"' style='opacity:0' onload='this.style.opacity=1;this.nextSibling.style.display=\"none\"'><div class='ic-loading'>"+loading+"</div></div>";
+}
+// ── TRADUCTION ──
+var langNames={
+  anglais:"en",english:"en",engelska:"en",
+  francais:"fr",français:"fr",french:"fr",franska:"fr",
+  suedois:"sv",suédois:"sv",swedish:"sv",svenska:"sv",
+  espagnol:"es",spanish:"es",spanska:"es",
+  allemand:"de",german:"de",tyska:"de",
+  italien:"it",italian:"it",italienska:"it",
+  japonais:"ja",japanese:"ja",japanska:"ja",
+  chinois:"zh",chinese:"zh",kinesiska:"zh",
+  arabe:"ar",arabic:"ar",arabiska:"ar",
+  portugais:"pt",portuguese:"pt",russe:"ru",russian:"ru",
+  en:"en",fr:"fr",sv:"sv",es:"es",de:"de",it:"it",ja:"ja",zh:"zh"
+};
+function detectTranslation(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:traduis?|comment dit.on)\s+(.+?)\s+en\s+(\w+)/);
+  else if(lang==="sv")m=n.match(/oversatt\s+(.+?)\s+till\s+(\w+)/);
+  else m=n.match(/(?:translate|how do you say)\s+(.+?)\s+(?:to|in)\s+(\w+)/);
+  if(m&&m[1]&&m[2]){var to=langNames[m[2].toLowerCase()];if(to)return{text:m[1].trim(),to:to};}
+  return null;
+}
+function fetchTranslation(text,from,to,cb){
+  fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair="+from+"|"+to)
+    .then(function(r){return r.json();})
+    .then(function(d){cb(d.responseStatus===200?d.responseData.translatedText:null);})
+    .catch(function(){cb(null);});
+}
+function buildTranslationHtml(original,result,toLang){
+  return "<div class='tr-card'><div class='tr-from'>"+original+"</div><div class='tr-result'>"+result+"</div></div>";
+}
+// ── MÉTÉO ──
+var wtCodes={0:"☀️ ",1:"🌤️ ",2:"⛅ ",3:"☁️ ",45:"🌫️ ",51:"🌦️ ",61:"🌧️ ",63:"🌧️ ",65:"🌧️ ",71:"❄️ ",80:"🌦️ ",95:"⛈️ "};
+var wtDesc={
+  0:{fr:"Ciel dégagé",sv:"Klart",en:"Clear sky"},
+  1:{fr:"Principalement clair",sv:"Mest klart",en:"Mainly clear"},
+  2:{fr:"Partiellement nuageux",sv:"Delvis molnigt",en:"Partly cloudy"},
+  3:{fr:"Nuageux",sv:"Molnigt",en:"Overcast"},
+  45:{fr:"Brouillard",sv:"Dimma",en:"Foggy"},
+  51:{fr:"Bruine",sv:"Duggregn",en:"Drizzle"},
+  61:{fr:"Pluie légère",sv:"Lätt regn",en:"Light rain"},
+  63:{fr:"Pluie",sv:"Regn",en:"Rain"},
+  65:{fr:"Forte pluie",sv:"Kraftigt regn",en:"Heavy rain"},
+  71:{fr:"Neige légère",sv:"Lätt snö",en:"Light snow"},
+  80:{fr:"Averses",sv:"Regnskurar",en:"Showers"},
+  95:{fr:"Orage",sv:"Åska",en:"Thunderstorm"}
+};
+function detectWeather(n,lang){
+  var m;
+  if(lang==="fr"){
+    m=n.match(/(?:meteo|météo|quel temps|temps qu il fait|il fait quoi)\s+(?:a |à |au |en |sur )?(.+)/);
+    if(!m)m=n.match(/(?:meteo|météo)\s+(.+)/);
+    if(!m&&(n.indexOf("meteo")!==-1||n.indexOf("météo")!==-1))return"Paris";
+  }else if(lang==="sv"){
+    m=n.match(/(?:vader|väder)\s+(?:i |på )?(.+)/);
+    if(!m&&(n.indexOf("vader")!==-1||n.indexOf("väder")!==-1))return"Stockholm";
+  }else{
+    m=n.match(/(?:weather|forecast)\s+(?:in |at )?(.+)/);
+    if(!m&&n.indexOf("weather")!==-1)return"London";
+  }
+  if(m&&m[1])return m[1].replace(/[?!.]+$/,"").trim();
+  return null;
+}
+function fetchWeather(city,lang,cb){
+  fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(city)+"&count=1")
+    .then(function(r){return r.json();})
+    .then(function(geo){
+      if(!geo.results||!geo.results.length){cb(null);return;}
+      var loc=geo.results[0];
+      fetch("https://api.open-meteo.com/v1/forecast?latitude="+loc.latitude+"&longitude="+loc.longitude+"&current_weather=true")
+        .then(function(r){return r.json();})
+        .then(function(w){
+          var cw=w.current_weather;
+          var code=cw.weathercode;
+          var wd=wtDesc[code]||{fr:"?",sv:"?",en:"?"};var desc=wd[lang]||wd.en||"?";
+          var icon=wtCodes[code]||"🌡️ ";
+          cb({city:loc.name,country:loc.country,temp:Math.round(cw.temperature),desc:icon+desc,wind:Math.round(cw.windspeed)});
+        });
+    }).catch(function(){cb(null);});
+}
+function buildWeatherHtml(w,lang){
+  var tl=lang==="fr"?"Température":lang==="sv"?"Temperatur":"Temperature";
+  var wl=lang==="fr"?"Vent":lang==="sv"?"Vind":"Wind";
+  return "<div class='weather-card'><div class='wt-city'>"+w.city+", "+w.country+"</div><div class='wt-desc'>"+w.desc+"</div><div class='wt-stats'><span>🌡️ "+w.temp+"°C</span><span>💨 "+w.wind+" km/h</span></div></div>";
+}
+// ── PRONONCIATION ──
+var pronDB={
+  bonjour:{en:"bohn-ZHOOR",sv:"bon-SHUR",de:"bon-SCHUUR",es:"bon-HUR",ja:"ボンジュール (bon-jyu-ru)",zh:"蹦朱 (bèng-zhū)",ar:"بونجور (bun-jur)",ru:"бонжур (bon-zhur)",it:"bon-ZHUR"},
+  merci:{en:"mair-SEE",sv:"mer-SI",de:"mair-SI",es:"mer-SI",ja:"メルシー (me-ru-shi)",zh:"梅尔西 (méi-ěr-xī)",ar:"ميرسي (mir-si)",ru:"мерси (mer-si)"},
+  hello:{fr:"é-LO",sv:"HE-lo",de:"HE-lo",es:"é-LO",ja:"ハロー (ha-ro)",zh:"哈罗 (hā-luó)",ar:"هيلو (hay-lo)",ru:"ХЭЛОУ (khe-lo-u)",it:"HE-lo"},
+  oui:{en:"wee",sv:"wi",de:"wi",ja:"ウィ (u-i)",ar:"وي (wi)",es:"wi"},
+  hej:{fr:"héy",en:"hey",de:"hey",ja:"ヘイ (he-i)",ar:"هي (hey)"},
+  tack:{fr:"tak",en:"tak",de:"tak",ja:"タック (tak-ku)"},
+  pizza:{fr:"pid-ZA",sv:"PITS-a",de:"PIT-sa",en:"PEET-sa",ja:"ピッツァ (pit-tsu-a)",ar:"بيتزا (bit-za)"},
+  sushi:{fr:"SOU-chi",en:"SOO-shee",sv:"SU-shi",de:"ZU-schi",es:"SU-shi",ar:"سوشي (su-shi)"},
+  croissant:{en:"kwah-SAHN",sv:"kroa-SANG",de:"kroa-SONG",ja:"クロワッサン (ku-ro-wa-san)",zh:"可颂 (kě-sòng)"},
+  merci:{en:"mair-SEE",sv:"mer-SI",de:"mair-SI",es:"mer-SI"},
+  non:{en:"noh",sv:"nong",de:"NONG",ja:"ノン (non)"},
+  chat:{en:"sha (mot français)",de:"scha",es:"cha",ja:"シャ (sha)"},
+  maison:{en:"may-ZOHN",sv:"mé-ZON",de:"mä-SONG",ja:"メゾン (me-zon)"},
+  soleil:{en:"so-LAY",sv:"so-LÉYY",de:"so-LEI",ja:"ソレイユ (so-re-yu)"},
+  eau:{en:"oh",sv:"o",de:"O",ja:"オー (o)"},
+  xearnes:{fr:"ZI-ARN",en:"ZI-ARN",sv:"ZI-ARN",ja:"ジアーン (ji-an)",zh:"西恩 (xī-ēn)"}
+};
+var langFullName={
+  en:{fr:"anglais",sv:"engelska",en:"English"},
+  fr:{fr:"français",sv:"franska",en:"French"},
+  sv:{fr:"suédois",sv:"svenska",en:"Swedish"},
+  ja:{fr:"japonais",sv:"japanska",en:"Japanese"},
+  zh:{fr:"chinois (mandarin)",sv:"kinesiska",en:"Chinese (Mandarin)"},
+  es:{fr:"espagnol",sv:"spanska",en:"Spanish"},
+  de:{fr:"allemand",sv:"tyska",en:"German"},
+  ar:{fr:"arabe",sv:"arabiska",en:"Arabic"},
+  ru:{fr:"russe",sv:"ryska",en:"Russian"},
+  it:{fr:"italien",sv:"italienska",en:"Italian"},
+  pt:{fr:"portugais",sv:"portugisiska",en:"Portuguese"}
+};
+var pronTips={
+  ja:{fr:"En japonais, chaque syllabe est prononcée distinctement et doucement. Pas de sons R forts.",sv:"På japanska uttalas varje stavelse tydligt och mjukt.",en:"In Japanese, each syllable is pronounced clearly and softly. No hard R sounds."},
+  zh:{fr:"En mandarin chinois, chaque mot a un ton (1=haut, 2=montant, 3=creux, 4=descendant). Très important !",sv:"På kinesiska har varje ord en ton (1-4). Mycket viktigt!",en:"In Mandarin, each word has a tone (1=high, 2=rising, 3=dipping, 4=falling). Very important!"},
+  ar:{fr:"En arabe, on lit et écrit de droite à gauche. Le R est roulé, il y a des sons gutturaux.",sv:"På arabiska läser man från höger till vänster. Rullande R och gutturala ljud.",en:"In Arabic, text goes right to left. The R is rolled, and there are guttural sounds."},
+  ru:{fr:"En russe, l accent tonique est important. Les voyelles non-accentuées changent de son.",sv:"På ryska är betoningen viktig. Obetonade vokaler ändrar ljud.",en:"In Russian, stress is very important. Unstressed vowels change their sound."},
+  de:{fr:"En allemand : W se prononce V, Z se prononce TS, SCH se prononce CH français.",sv:"På tyska: W uttalas V, Z uttalas TS, SCH uttalas SH.",en:"In German: W sounds like V, Z sounds like TS, SCH sounds like SH."},
+  es:{fr:"En espagnol, toutes les lettres se prononcent. R est roulé, J est guttural (comme dans jota).",sv:"På spanska uttalas alla bokstäver. R rullas, J är gutturalt.",en:"In Spanish, all letters are pronounced. R is rolled, J is guttural."},
+  it:{fr:"En italien, toutes les voyelles se prononcent clairement. C devant E/I se prononce TCH.",sv:"På italienska uttalas alla vokaler tydligt.",en:"In Italian, all vowels are pronounced clearly. C before E/I sounds like TCH."}
+};
+function detectPronunciation(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:comment.*prononce|prononciation|prononcer|dit.on)\s+["']?([a-z\-\s]{1,30})["']?\s+en\s+(\w+)/);
+  else if(lang==="sv")m=n.match(/(?:hur.*uttalar|uttal|prononc)\s+["']?([a-z\-\s]{1,30})["']?\s+p[aå]\s+(\w+)/);
+  else m=n.match(/(?:how.*pronounce|pronounce|pronunciation)\s+["']?([a-z\-\s]{1,30})["']?\s+in\s+(\w+)/);
+  if(m&&m[1]&&m[2]){
+    var toLang=langNames[m[2].toLowerCase().trim()];
+    if(toLang)return{word:m[1].trim(),toLang:toLang};
+  }
+  return null;
+}
+function buildPronResponse(word,toLang,uiLang){
+  var w=word.toLowerCase().replace(/[^a-z]/g,"");
+  var ln=(langFullName[toLang]||{})[uiLang]||(langFullName[toLang]||{}).en||toLang;
+  var pron=pronDB[w]?pronDB[w][toLang]:null;
+  if(pron){
+    if(uiLang==="fr")return "En <strong>"+ln+"</strong>, \""+word+"\" se prononce : <strong>"+pron+"</strong>";
+    if(uiLang==="sv")return "På <strong>"+ln+"</strong> uttalas \""+word+"\" som: <strong>"+pron+"</strong>";
+    return "In <strong>"+ln+"</strong>, \""+word+"\" is pronounced: <strong>"+pron+"</strong>";
+  }
+  var tip=pronTips[toLang];
+  if(tip){
+    var t=tip[uiLang]||tip.en;
+    if(uiLang==="fr")return "Je ne connais pas encore \""+word+"\" en "+ln+", mais voici comment fonctionne cette langue : "+t;
+    if(uiLang==="sv")return "Jag kan inte \""+word+"\" på "+ln+" ännu, men här är hur språket fungerar: "+t;
+    return "I don't know \""+word+"\" in "+ln+" yet, but here is how the language works: "+t;
+  }
+  if(uiLang==="fr")return "Je ne connais pas encore la prononciation de \""+word+"\" en "+ln+". Essaie Google Translate pour écouter !";
+  if(uiLang==="sv")return "Jag känner inte till uttalet av \""+word+"\" på "+ln+" ännu.";
+  return "I don't know the pronunciation of \""+word+"\" in "+ln+" yet. Try Google Translate to listen!";
+}
+// ── MÉMOIRE DE CONVERSATION ──
+function addToConvHistory(role,text){
+  convHistory.push({role:role,text:text});
+  if(convHistory.length>10)convHistory=convHistory.slice(-10);
+}
+function getLastBotTopic(lang){
+  // Cherche un sujet dans les derniers messages du bot
+  for(var i=convHistory.length-1;i>=0;i--){
+    if(convHistory[i].role==="bot"){
+      var txt=normalize(convHistory[i].text.replace(/<[^>]+>/g,"").slice(0,150));
+      var s=extractSubject(txt,lang);
+      if(s&&s.length>2)return s;
+    }
+  }
+  return null;
+}
+function enrichWithContext(n,lang){
+  if(n.split(" ").length>6)return n;
+  var pronouns={
+    fr:[" il "," elle "," ca "," sa "," son "," ses "," leur "," ils "," elles "," y "," en "," ce "],
+    sv:[" han "," hon "," det "," den "," dess "," de "," sin "," sitt "," sina "],
+    en:[" he "," she "," it "," its "," they "," their "," this "," that "," these "]
+  };
+  var followUps={
+    fr:["pourquoi","comment","depuis","combien","quand","lequel","laquelle","et lui","et elle","et ca","encore","aussi","pareil","suite"],
+    sv:["varfor","hur","nar","vem","mer","ocksa","fortsatt"],
+    en:["why","how","when","who","which","and him","and her","more","also","still","tell me more","go on"]
+  };
+  var prons=pronouns[lang]||pronouns.en;
+  var follows=followUps[lang]||followUps.en;
+  var padded=" "+n+" ";
+  var hasPronoun=prons.some(function(p){return padded.indexOf(p)!==-1;});
+  var isFollowUp=follows.some(function(w){return n.indexOf(w)===0;});
+  var isVeryShort=n.split(" ").length<=2;
+  // Cherche le sujet : d'abord lastTopic, puis dernier message du bot
+  var topic=lastTopic[lang]||getLastBotTopic(lang);
+  if((hasPronoun||isFollowUp||isVeryShort)&&topic){
+    return n+" "+topic;
+  }
+  return n;
+}
+function updateLastTopic(subject,lang){
+  if(subject&&subject.length>2)lastTopic[lang]=subject;
+}
+// ── CORRECTION INTELLIGENTE ──
+function detectCorrection(n,lang){
+  var cw={
+    fr:["c est faux","tu as tort","c est pas ca","pas correct","mauvaise reponse","ce n est pas ca","non c est","tu te trompes","faux"],
+    sv:["det stammer inte","du har fel","felaktigt","inte ratt","fel svar","nej det ar"],
+    en:["that is wrong","you are wrong","incorrect","wrong answer","not right","no that is","you are mistaken","false"]
+  };
+  var words=cw[lang]||cw.en;
+  for(var i=0;i<words.length;i++){if(n.indexOf(words[i])!==-1)return true;}
+  return false;
+}
+function handleCorrection(n,lang){
+  awaitingCorrection=true;
+  correctionContext=lastTopic[lang];
+  if(lang==="fr")return "Oups ! Desole pour l erreur. Quelle est la bonne reponse ? Je vais apprendre !";
+  if(lang==="sv")return "Oj, forlat! Vad ar ratt svar? Jag vill lara mig!";
+  return "Oops, sorry! What is the correct answer? I want to learn!";
+}
+function handleCorrectionAnswer(n,lang){
+  awaitingCorrection=false;
+  if(correctionContext){
+    saveFact(correctionContext,n);
+    correctionContext=null;
+    if(lang==="fr")return "Merci ! J ai retenu que \""+n+"\" est la bonne reponse. Je m en souviendrai !";
+    if(lang==="sv")return "Tack! Jag har lart mig att \""+n+"\" ar ratt. Jag kommer ihag det!";
+    return "Thanks! I learned that \""+n+"\" is correct. I will remember that!";
+  }
+  awaitingCorrection=false;
+  if(lang==="fr")return "Merci pour la correction !";
+  if(lang==="sv")return "Tack for rattelsen!";
+  return "Thanks for the correction!";
+}
+// ── MÉMOIRE D'APPRENTISSAGE ──
+function detectLearning(n,lang){
+  var qw={sv:["vad ","hur ","vem ","var ","nar ","varfor "],fr:["c est quoi","qu est","comment","pourquoi","ou est","qui est","c est qui"],en:["what ","how ","who ","where ","when ","why "]};
+  var qwords=qw[lang]||qw.en;
+  for(var i=0;i<qwords.length;i++){if(n.indexOf(qwords[i])===0)return null;}
+  if(n.split(" ").length<3)return null;
+  var m;
+  if(lang==="fr")m=n.match(/^([a-z][a-z0-9\s]{1,35})\s+(?:est une |est un |est le |est la |est |c est )\s*(.{4,})/);
+  else if(lang==="sv")m=n.match(/^([a-z][a-z0-9\s]{1,35})\s+(?:ar en |ar ett |ar det |ar )\s*(.{4,})/);
+  else m=n.match(/^([a-z][a-z0-9\s]{1,35})\s+(?:is a |is an |is the |is |are )\s*(.{4,})/);
+  if(m&&m[1]&&m[2]&&m[1].trim().split(" ").length<=4){
+    return{subject:m[1].trim(),fact:n.trim()};
+  }
+  return null;
+}
+function saveFact(subject,fact){
+  learnedFacts[subject]=fact;
+  try{localStorage.setItem("xn_learn",JSON.stringify(learnedFacts));}catch(e){}
+}
+function lookupFact(n,lang){
+  var keys=Object.keys(learnedFacts);
+  for(var i=0;i<keys.length;i++){
+    if(n.indexOf(keys[i])!==-1){
+      var lf=learnedFacts[keys[i]];
+      if(lang==="fr")return "Tu m'as appris que : \""+lf+"\"";
+      if(lang==="sv")return "Du lärde mig att: \""+lf+"\"";
+      return "You taught me that: \""+lf+"\"";
+    }
+  }
+  return null;
+}
+// ── PLANIFICATEUR DE VOYAGE ──
+var travelDB={
+  paris:{fr:["Jour 1 : Tour Eiffel, Champs-Elysees, Arc de Triomphe","Jour 2 : Musee du Louvre, Notre-Dame, Montmartre","Jour 3 : Versailles ou Disneyland Paris"],sv:["Dag 1: Eiffeltornet, Champs-Elysees, Arc de Triomphe","Dag 2: Louvren, Notre-Dame, Montmartre","Dag 3: Versailles"],en:["Day 1: Eiffel Tower, Champs-Elysees, Arc de Triomphe","Day 2: Louvre Museum, Notre-Dame, Montmartre","Day 3: Versailles or Disneyland Paris"]},
+  london:{fr:["Jour 1 : Big Ben, Tower Bridge, Buckingham Palace","Jour 2 : British Museum, Hyde Park, Oxford Street","Jour 3 : Tower of London, Greenwich"],sv:["Dag 1: Big Ben, Tower Bridge, Buckingham Palace","Dag 2: British Museum, Hyde Park","Dag 3: Tower of London"],en:["Day 1: Big Ben, Tower Bridge, Buckingham Palace","Day 2: British Museum, Hyde Park, Oxford Street","Day 3: Tower of London, Greenwich"]},
+  stockholm:{fr:["Jour 1 : Gamla Stan, Palais Royal, Musee Vasa","Jour 2 : Skansen, Djurgarden, Musee ABBA","Jour 3 : Archipel ou Drottningholm"],sv:["Dag 1: Gamla Stan, Kungliga slottet, Vasamuseet","Dag 2: Skansen, Djurgarden, ABBA-museet","Dag 3: Skargarden"],en:["Day 1: Gamla Stan, Royal Palace, Vasa Museum","Day 2: Skansen, Djurgarden, ABBA Museum","Day 3: Stockholm Archipelago"]},
+  rome:{fr:["Jour 1 : Colisee, Forum Romain, Palatin","Jour 2 : Vatican, Chapelle Sixtine, Place Saint-Pierre","Jour 3 : Fontaine de Trevi, Pantheon, Piazza Navona"],sv:["Dag 1: Colosseum, Forum Romanum","Dag 2: Vatikanen, Sixtinska kapellet","Dag 3: Trevi-fontanen, Pantheon"],en:["Day 1: Colosseum, Roman Forum, Palatine Hill","Day 2: Vatican, Sistine Chapel, St. Peter Square","Day 3: Trevi Fountain, Pantheon, Piazza Navona"]},
+  tokyo:{fr:["Jour 1 : Shibuya, Akihabara, Tokyo Tower","Jour 2 : Temple Senso-ji, Parc Ueno, Harajuku","Jour 3 : Mont Fuji ou Disneyland Tokyo"],sv:["Dag 1: Shibuya, Akihabara, Tokyo Tower","Dag 2: Senso-ji templet, Harajuku","Dag 3: Fuji-berget"],en:["Day 1: Shibuya, Akihabara, Tokyo Tower","Day 2: Senso-ji Temple, Ueno Park, Harajuku","Day 3: Mount Fuji or Tokyo Disneyland"]},
+  new_york:{fr:["Jour 1 : Statue de la Liberte, Times Square, Central Park","Jour 2 : Museum d art moderne, Brooklyn Bridge","Jour 3 : Empire State Building, Coney Island"],sv:["Dag 1: Frihetsgudinnan, Times Square, Central Park","Dag 2: MoMA, Brooklyn Bridge","Dag 3: Empire State Building"],en:["Day 1: Statue of Liberty, Times Square, Central Park","Day 2: MoMA, Brooklyn Bridge, 5th Avenue","Day 3: Empire State Building, Coney Island"]}
+};
+function detectTravel(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:voyage|voyager|visiter|aller|partir|preparer)\s+(?:a |au |en |a |pour )\s*(.+)/);
+  else if(lang==="sv")m=n.match(/(?:resa|besoka|planera)\s+(?:till |i )\s*(.+)/);
+  else m=n.match(/(?:travel|trip|visit|go|plan)\s+(?:to |in )\s*(.+)/);
+  if(m&&m[1])return m[1].replace(/[?!.]+$/,"").trim();
+  return null;
+}
+function buildTravelHtml(city,lang){
+  var key=city.toLowerCase().replace(/\s+/g,"_").replace(/[^a-z_]/g,"");
+  var data=travelDB[key];
+  var days=data?(data[lang]||data.en):null;
+  var lbl=lang==="fr"?"Voyage a ":lang==="sv"?"Resa till ":"Trip to ";
+  var tip=lang==="fr"?"Reserve a l avance et profite bien !":lang==="sv"?"Boka i forvag och ha det kul!":"Book in advance and enjoy!";
+  var gn={fr:["Jour 1 : Arrivee, visite du centre-ville et monument principal","Jour 2 : Musees, parcs et gastronomie locale","Jour 3 : Excursion aux alentours et shopping"],sv:["Dag 1: Ankomst, besok centrum och viktigaste sevardheten","Dag 2: Museer, parker och lokal mat","Dag 3: Utflykt och shopping"],en:["Day 1: Arrival, city centre and main landmark","Day 2: Museums, parks and local food","Day 3: Day trip and shopping"]};
+  var d=days||(gn[lang]||gn.en);
+  var title=city.charAt(0).toUpperCase()+city.slice(1);
+  return "<div class='wiki-card'><div class='wc-title'>✈️ "+lbl+title+"</div><div class='wc-text'><strong>"+d[0]+"</strong><br><br><strong>"+d[1]+"</strong><br><br><strong>"+d[2]+"</strong><br><br><em>"+tip+"</em></div></div>";
+}
+// ── BLAGUES PERSONNALISÉES ──
+var jokeTpl={
+  fr:["Pourquoi {s} est si populaire ? Parce que tout le monde aime {s} ! 😄","Qu est-ce qu un petit {s} ? Un {s} miniature ! 😂","Que dit {s} le matin ? Bonjour le monde ! 😄","Pourquoi {s} est toujours de bonne humeur ? Mystere ! 😊","Qu est-ce qu un {s} rapide ? Un {s} presse ! 😂"],
+  sv:["Varfor ar {s} sa populart ? For att alla gillar {s} ! 😄","Vad heter ett litet {s} ? En mini-{s} ! 😂","Vad sager {s} pa morgonen ? God morgon varlden ! 😄","Varfor skrattar {s} alltid ? Det vet ingen ! 😊"],
+  en:["Why is {s} so popular? Because everyone loves {s}! 😄","What do you call a small {s}? A mini {s}! 😂","What does {s} say in the morning? Good morning world! 😄","Why is {s} always happy? Nobody knows! 😊","What is a fast {s}? A {s} in a hurry! 😂"]
+};
+function detectPersonalJoke(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:blague|joke)\s+(?:sur|avec|a propos de)\s+(.+)/);
+  else if(lang==="sv")m=n.match(/skamt\s+(?:om|med)\s+(.+)/);
+  else m=n.match(/joke\s+(?:about|on|with)\s+(.+)/);
+  if(m&&m[1])return m[1].trim();
+  return null;
+}
+function generatePersonalJoke(subject,lang){
+  var t=jokeTpl[lang]||jokeTpl.en;
+  var s=subject.charAt(0).toUpperCase()+subject.slice(1);
+  return pick(t).replace(/\{s\}/g,s);
+}
+// ── FILTRES DE SÉCURITÉ ──
+var harmfulWords={
+  fr:["tuer","assassiner","massacrer","torture","viol","bombe","explosif","fabriquer une arme","comment faire une bombe","attaque","terroriste","cocaine","heroine","drogue dure","dealer","pirater","hacker","voler","cambrioler","faire du mal","se suicider","suicide","automutilation","couper les veines","comment mourir","pornograph","contenu adulte"],
+  sv:["doda","morda","tortera","valdta","bomba","sprängämne","tillverka vapen","terrorist","kokain","heroin","harda droger","knark","hacka","stjala","skada sig","sjalvmord","pornografi"],
+  en:["kill","murder","massacre","torture","rape","bomb","explosive","make a weapon","how to make a bomb","attack","terrorist","cocaine","heroin","hard drug","dealer","hack","steal","burglary","harm","suicide","self harm","cut veins","how to die","pornograph","adult content","how to hurt"]
+};
+var harmfulReply={
+  fr:["Désolé, je ne peux pas aider avec ça. Xearnes est fait pour apprendre et s amuser, pas pour faire du mal ! 🛡️","Je ne répondrai pas à cette question. Si tu as besoin d aide, parle à un adulte de confiance. 💙","Cette demande dépasse ce que je peux faire. Je suis là pour t aider positivement ! 😊"],
+  sv:["Förlåt, det kan jag inte hjälpa med. Xearnes är till för att lära och ha kul, inte för att skada! 🛡️","Jag svarar inte på den frågan. Om du behöver hjälp, prata med en vuxen du litar på. 💙"],
+  en:["Sorry, I can not help with that. Xearnes is made for learning and fun, not for harm! 🛡️","I will not answer that. If you need help, please talk to a trusted adult. 💙","That request is beyond what I can do. I am here to help positively! 😊"]
+};
+function detectHarmful(n,lang){
+  var words=harmfulWords[lang]||[];
+  // Vérifier aussi en français et anglais quelle que soit la langue
+  var allWords=harmfulWords.fr.concat(harmfulWords.en);
+  var combined=words.concat(allWords.filter(function(w){return words.indexOf(w)===-1;}));
+  for(var i=0;i<combined.length;i++){
+    if(n.indexOf(combined[i])!==-1)return true;
+  }
+  return false;
+}
+// ── HOROSCOPE ──
+var horoscopes={
+  fr:[{s:"Belier",d:"L energie est de votre cote ! Foncez sur vos projets."},{s:"Taureau",d:"Une journee calme mais productive. Profitez des petits moments."},{s:"Gemeaux",d:"Votre curiosite vous menera loin aujourd hui !"},{s:"Cancer",d:"Journee ideale pour passer du temps avec vos proches."},{s:"Lion",d:"Vous brillez ! Montrez votre talent au monde."},{s:"Vierge",d:"L organisation est la cle. Faites une liste et suivez-la."},{s:"Balance",d:"Une surprise agreable vous attend. Restez ouvert."},{s:"Scorpion",d:"Votre intuition est puissante. Fiez-vous a elle."},{s:"Sagittaire",d:"L aventure vous appelle ! Explorez quelque chose de nouveau."},{s:"Capricorne",d:"Votre perseverance paiera. Continuez !"},{s:"Verseau",d:"Une idee brillante vous vient. Notez-la vite !"},{s:"Poissons",d:"Votre creativite est au max. Exprimez-vous !"}],
+  sv:[{s:"Vaduren",d:"Energin flodar! Satsa pa dina projekt idag."},{s:"Oxen",d:"En lugn och produktiv dag. Njut av de sma stunderna."},{s:"Tvillingarna",d:"Din nyfikenhet tar dig langt idag!"},{s:"Kraftan",d:"Perfekt dag att umgas med nara och kara."},{s:"Lejonet",d:"Du lyser! Visa varlden din talang."},{s:"Jungfrun",d:"Organisering ar nyckeln. Gor en lista och folj den."},{s:"Vagen",d:"En trevlig overraskning vantar. Var oppen!"},{s:"Skorpionen",d:"Din intuition ar stark. Lita pa den."},{s:"Skytten",d:"Aventyret ropar! Utforska nagot nytt."},{s:"Stenbocken",d:"Din uthallighet lonar sig. Fortsatt!"},{s:"Vattumannen",d:"En lysande ide dyker upp. Skriv ner den snabbt!"},{s:"Fiskarna",d:"Din kreativitet ar pa topp. Uttryck dig!"}],
+  en:[{s:"Aries",d:"Energy is on your side! Go for your goals today."},{s:"Taurus",d:"A calm but productive day. Enjoy the little moments."},{s:"Gemini",d:"Your curiosity will take you far today!"},{s:"Cancer",d:"Perfect day to spend time with loved ones."},{s:"Leo",d:"You shine! Show the world your talent."},{s:"Virgo",d:"Organisation is key. Make a list and follow it."},{s:"Libra",d:"A pleasant surprise awaits. Stay open!"},{s:"Scorpio",d:"Your intuition is strong. Trust it."},{s:"Sagittarius",d:"Adventure calls! Explore something new."},{s:"Capricorn",d:"Your perseverance will pay off. Keep going!"},{s:"Aquarius",d:"A brilliant idea is coming. Write it down fast!"},{s:"Pisces",d:"Your creativity is at its peak. Express yourself!"}]
+};
+function detectHoroscope(n,lang){
+  if(lang==="fr")return n.indexOf("horoscope")!==-1||n.indexOf("signe")!==-1||n.indexOf("zodiaque")!==-1;
+  if(lang==="sv")return n.indexOf("horoskop")!==-1||n.indexOf("stjarnstecken")!==-1||n.indexOf("zodiak")!==-1;
+  return n.indexOf("horoscope")!==-1||n.indexOf("zodiac")!==-1||n.indexOf("star sign")!==-1;
+}
+function buildHoroscopeHtml(lang){
+  var list=horoscopes[lang]||horoscopes.en;
+  var h=list[new Date().getDate()%list.length];
+  var lbl=lang==="fr"?"Horoscope du jour":lang==="sv"?"Dagens horoskop":"Horoscope of the day";
+  return "<div class='wod-card'><div class='wod-word'>"+h.s+"</div><div class='wod-def'><strong>"+lbl+" :</strong> "+h.d+"</div></div>";
+}
+// ── CALCUL D'ÂGE ──
+function detectAge(n,lang){
+  var m;
+  if(lang==="fr"){
+    m=n.match(/j ai\s+(\d+)\s+ans/);if(m)return{type:"age",val:parseInt(m[1])};
+    m=n.match(/(?:ne en|nee en|naissance en)\s+(\d{4})/);if(m)return{type:"year",val:parseInt(m[1])};
+  }else if(lang==="sv"){
+    m=n.match(/jag ar\s+(\d+)\s+ar/);if(m)return{type:"age",val:parseInt(m[1])};
+    m=n.match(/(?:fod|fodd)\s+(\d{4})/);if(m)return{type:"year",val:parseInt(m[1])};
+  }else{
+    m=n.match(/i(?:'m| am)\s+(\d+)\s+years? old/);if(m)return{type:"age",val:parseInt(m[1])};
+    m=n.match(/born in\s+(\d{4})/);if(m)return{type:"year",val:parseInt(m[1])};
+  }
+  return null;
+}
+function calcAge(det,lang){
+  var now=new Date().getFullYear();
+  if(det.type==="age"){
+    var yr=now-det.val;
+    if(lang==="fr")return "Si tu as <strong>"+det.val+" ans</strong>, tu es ne(e) en <strong>"+yr+"</strong> !";
+    if(lang==="sv")return "Om du ar <strong>"+det.val+" ar</strong> gammal ar du fodd <strong>"+yr+"</strong>!";
+    return "If you are <strong>"+det.val+" years old</strong>, you were born in <strong>"+yr+"</strong>!";
+  }
+  if(det.type==="year"){
+    var age=now-det.val;
+    if(lang==="fr")return "Si tu es ne(e) en <strong>"+det.val+"</strong>, tu as <strong>"+age+" ans</strong> !";
+    if(lang==="sv")return "Om du ar fodd <strong>"+det.val+"</strong> ar du <strong>"+age+" ar</strong> gammal!";
+    return "If you were born in <strong>"+det.val+"</strong>, you are <strong>"+age+" years old</strong>!";
+  }
+  return null;
+}
+function detectName(n){
+  var pats=[/(?:je m.appelle|mon nom est|i am|my name is|i.m|heter|jag heter)\s+([a-z][a-z\-]{1,20})/i];
+  for(var i=0;i<pats.length;i++){var m=n.match(pats[i]);if(m&&m[1]&&m[1].length>1)return m[1][0].toUpperCase()+m[1].slice(1);}
+  return null;
+}
+function getReply(input,lang,cb){
+  var cfg=langs[lang];
+  var n=normalize(input.trim().toLowerCase());
+  n=fixTypos(n,lang);
+  // ⛔ FILTRE DE SÉCURITÉ — vérifié en premier
+  if(detectHarmful(n,lang)){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
+  // ✏️ CORRECTION EN ATTENTE
+  if(awaitingCorrection)return cb(handleCorrectionAnswer(n,lang));
+  // 🔁 CORRECTION DÉTECTÉE
+  if(detectCorrection(n,lang))return cb(handleCorrection(n,lang));
+  // 🔍 ENRICHIR AVEC CONTEXTE DE CONVERSATION
+  n=enrichWithContext(n,lang);
+  // 0. Prononciation
+  var prd=detectPronunciation(n,lang);
+  if(prd)return cb(buildPronResponse(prd.word,prd.toLang,lang));
+  // 0a. Vérifier la mémoire d'apprentissage
+  var lf=lookupFact(n,lang);
+  if(lf)return cb(lf);
+  // 0b. Apprendre un nouveau fait
+  var nf=detectLearning(n,lang);
+  if(nf){saveFact(nf.subject,nf.fact);var ok=lang==="fr"?"J ai appris : \""+nf.fact+"\" ! Je m en souviendrai !":lang==="sv"?"Jag larde mig: \""+nf.fact+"\"! Jag kommer ihag det!":"Learned: \""+nf.fact+"\"! I will remember that!";return cb(ok);}
+  // 1. Detect name introduction
+  var nd=detectName(n);
+  if(nd){
+    userName=nd;localStorage.setItem("xn_name",nd);
+    var nr=lang==="sv"?"Trevligt att träffas, "+nd+"! Vad kan jag hjälpa dig med?":
+      lang==="fr"?"Ravi de te connaitre, "+nd+" ! Que puis-je faire pour toi ?":
+      "Nice to meet you, "+nd+"! How can I help?";
+    return cb(nr);
+  }
+  // 2. Devinette en cours ?
+  if(currentRiddle){var ra=checkRiddle(n,lang);if(ra)return cb(ra);}
+  // 3. Quiz en cours ?
+  if(currentQuiz){var qa=checkQuizAnswer(n,lang);if(qa)return cb(qa);}
+  // 4. Image IA
+  var imgP=detectImageRequest(n,lang);
+  if(imgP)return cb(buildImageHtml(imgP,lang));
+  // 5. Histoire
+  var stP=detectStory(n,lang);if(stP)return cb(generateStory(stP,lang));
+  // 6. Poème
+  var pmP=detectPoem(n,lang);if(pmP)return cb(generatePoem(pmP,lang));
+  // 6b. Blague personnalisée
+  var jpS=detectPersonalJoke(n,lang);if(jpS)return cb(generatePersonalJoke(jpS,lang));
+  // 6c. Voyage
+  var tv=detectTravel(n,lang);if(tv)return cb(buildTravelHtml(tv,lang));
+  // 6d. Horoscope
+  if(detectHoroscope(n,lang))return cb(buildHoroscopeHtml(lang));
+  // 6e. Calcul d'âge
+  var ag=detectAge(n,lang);if(ag){var ar=calcAge(ag,lang);if(ar)return cb(ar);}
+  // 7. Convertisseur
+  var cv=detectConversion(n);if(cv)return cb(cv.val+" "+cv.from+" = <strong>"+cv.result+" "+cv.to+"</strong>");
+  // 8. Heure mondiale
+  var wt=detectWorldTime(n,lang);if(wt){var t=getWorldTime(wt.tz,lang);if(t)return cb(lang==="fr"?"Il est <strong>"+t+"</strong> à "+wt.city+" 🕐":lang==="sv"?"Klockan är <strong>"+t+"</strong> i "+wt.city+" 🕐":"It is <strong>"+t+"</strong> in "+wt.city+" 🕐");}
+  // 9. Minuteur
+  var tm=detectTimer(n,lang);if(tm)return cb(startTimer(tm.sec,tm.label,lang));
+  // 10. Mot du jour
+  if(detectWod(n,lang))return cb(buildWodHtml(getWod(lang)));
+  // 11. Devinette nouvelle
+  if(detectRiddle(n,lang))return cb(startRiddle(lang));
+  // 12. Quiz nouvelle question
+  if(detectQuiz(n,lang)){fetchQuiz(lang,function(q){if(q)cb(buildQuizHtml(q,lang));else cb(pick(cfg.defaults));});return;}
+  // 3. Traduction
+  var tr=detectTranslation(n,lang);
+  if(tr){fetchTranslation(tr.text,lang,tr.to,function(res){if(res)cb(buildTranslationHtml(tr.text,res,tr.to));else cb(pick(cfg.defaults));});return;}
+  // 4. Météo
+  var wc=detectWeather(n,lang);
+  if(wc){fetchWeather(wc,lang,function(w){if(w)cb(buildWeatherHtml(w,lang));else cb(lang==="fr"?"Impossible de trouver la météo de "+wc+" !":lang==="sv"?"Kan inte hitta väder för "+wc:("Could not find weather for "+wc));});return;}
+  // 5. Math calculation
+  var mr=tryMath(input.trim());
+  if(mr!==null)return cb(String(mr));
+  // 6. "Are you X?" personality questions
+  var ad=detectArDu(n,lang);
+  if(ad)return cb(ad);
+  // Ouvrir un site web
+  var owq=detectOpenWeb(n,lang);
+  if(owq){var owl=findWebLink(owq);if(owl)return cb(doOpenWeb(owl,lang));}
+  // ── NOUVELLES FONCTIONNALITES ──
+  // Pendu en cours ?
+  if(penduState)return cb(buildPenduHtml());
+  // 20 questions en cours ?
+  if(vingtQState){var vqa=checkVingtQ(n,lang);if(vqa)return cb(vqa);}
+  // Défi en cours (réponse via boutons, pas texte) — si defi actif, ignorer les autres routes
+  // Pendu commande
+  if(detectPendu(n,lang))return cb(startPendu(lang));
+  // 20 questions commande
+  if(detectVingtQ(n,lang))return cb(startVingtQ(lang));
+  // Mode défi
+  if(detectDefi(n,lang)){startDefi(lang,function(msg){cb(msg);});return;}
+  // Recette
+  if(detectRecette(n,lang))return cb(buildRecetteHtml(lang));
+  // Définition
+  var dw=detectDef(n,lang);
+  if(dw){var dl=lookupDef(dw,lang);if(dl)return cb(buildDefHtml(dl.w,dl.def,lang));}
+  // Histoire interactive
+  if(detectInteractiveStory(n,lang))return cb(startInteractiveStory(lang));
+  // Humeur
+  var mood=detectMood(n,lang);
+  if(mood){var mr2=moodReplies[mood][lang]||moodReplies[mood].en;return cb(pick(mr2));}
+  // 4. Small talk (greetings, thanks, etc.) — only for short messages
+  var st=detectSmallTalk(n,lang);
+  if(st)return cb(st);
+  // 5. Knowledge base — high confidence match (score >= 4)
+  var km=bestMatch(n,lang);
+  if(km&&km.score>=4){
+    var ans=pick(km.entry.r);
+    // Utiliser le prénom de temps en temps
+    if(userName&&Math.random()<0.25){
+      var prefix=lang==="fr"?"Bonne question "+userName+" ! ":lang==="sv"?"Bra fraga "+userName+"! ":"Good question "+userName+"! ";
+      ans=prefix+ans;
+    }
+    return cb(ans);
+  }
+  // 5b. Reddit TIL — fait du jour
+  if(detectTIL(n,lang)){
+    fetchRedditTIL(function(post){
+      if(post)cb(buildRedditHtml(post,"til",lang));
+      else cb(lang==="fr"?"Impossible de charger Reddit pour l instant !":"Could not load Reddit right now!");
+    });return;
+  }
+  // 6. Extract subject from question pattern ("what is X", "c est quoi X", etc.)
+  var subject=extractSubject(n,lang);
+  // 6b. Reddit ELI5 — explication simple
+  var eli5m=detectELI5(n,lang);
+  if(eli5m){
+    var eli5q=eli5m[1]||subject||getWikiQuery(n,lang);
+    if(eli5q){
+      fetchRedditELI5(eli5q,function(post){
+        if(post)cb(buildRedditHtml(post,"eli5",lang));
+        else{
+          // Fallback Wikipedia si Reddit echoue
+          fetchWikiChain([eli5q],lang,function(res){
+            if(res)cb(buildWikiHtml(res));
+            else cb(pick(cfg.defaults));
+          });
+        }
+      });return;
+    }
+  }
+  // 5c. Actualités (Sydsvenskan, Le Figaro, CNN + Reddit fallback)
+  var newsSource=detectRealNews(n,lang);
+  if(newsSource){
+    fetchRSS(newsSource,function(items,src){
+      if(items&&items.length)cb(buildRSSHtml(items,src,lang));
+      else fetchNews(lang,function(posts){
+        if(posts&&posts.length)cb(buildNewsHtml(posts,lang));
+        else cb(lang==="fr"?"Impossible de charger les actualites !":"Could not load news!");
+      });
+    });return;
+  }
+  // 7. Build Wikipedia query list
+  var queries=[];
+  if(subject&&subject.length>1)queries.push(subject);
+  var wq=getWikiQuery(n,lang);
+  if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
+  // 8. Wikipedia + Reddit ELI5 en parallèle — le premier qui répond gagne !
+  if(queries.length>0){
+    // Vérifier le cache d'abord (apprentissage automatique)
+    var cached=lookupWikiCache(queries[0]);
+    if(cached)return cb(buildWikiHtml(cached));
+    var done=false;
+    var wikiResult=null,redditResult=null,ddgResult=null,pending=3;
+    function tryFinish(){
+      if(done)return;
+      pending--;
+      if(wikiResult){done=true;saveWikiCache(queries[0],wikiResult);return cb(buildWikiHtml(wikiResult));}
+      if(pending<=0){
+        done=true;
+        if(ddgResult){saveWikiCache(queries[0],ddgResult);return cb(buildDDGHtml(ddgResult,lang));}
+        if(redditResult)return cb(buildRedditHtml(redditResult,"eli5",lang));
+        if(km)return cb(pick(km.entry.r));
+        return cb(pick(cfg.defaults));
+      }
+    }
+    fetchWikiChain(queries,lang,function(res){wikiResult=res;tryFinish();});
+    fetchRedditELI5(queries[0],function(post){redditResult=post;tryFinish();});
+    fetchDDG(queries[0],function(d){ddgResult=d;tryFinish();});
+  }else{
+    if(km)return cb(pick(km.entry.r));
+    cb(pick(cfg.defaults));
+  }
+}
+function addMsg(text,role){
+  var w=document.getElementById("welcome");
+  if(w)w.style.display="none";
+  var chat=document.getElementById("chat");
+  var div=document.createElement("div");
+  div.className="msg "+role;
+  if(role==="bot"){
+    div.innerHTML=text;
+    playBeep();
+    addShareBtn(div,text);
+  }else{div.textContent=text;}
+  chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
+  return div;
+}
+function addTyping(){
+  var chat=document.getElementById("chat");
+  var div=document.createElement("div");
+  div.className="msg bot typing";
+  div.innerHTML="<span></span><span></span><span></span>";
+  chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
+  return div;
+}
+function buildWikiHtml(w){
+  var readMore=currentLang==="fr"?"Lire sur Wikipedia":currentLang==="sv"?"Las pa Wikipedia":
+               currentLang==="es"?"Leer en Wikipedia":currentLang==="de"?"Auf Wikipedia lesen":"Read on Wikipedia";
+  var intro=currentLang==="fr"?"Voila ce que j ai trouve sur <strong>"+w.title+"</strong> :":
+            currentLang==="sv"?"Har ar vad jag hittade om <strong>"+w.title+"</strong>:":
+            currentLang==="es"?"Esto es lo que encontre sobre <strong>"+w.title+"</strong>:":
+            currentLang==="de"?"Das habe ich uber <strong>"+w.title+"</strong> gefunden:":
+            "Here is what I found about <strong>"+w.title+"</strong>:";
+  // Résumé court : max 2 phrases
+  var text=w.extract||"";
+  var sentences=text.match(/[^.!?]+[.!?]+/g)||[text];
+  var short=sentences.slice(0,2).join(" ").trim();
+  if(!short)short=text.slice(0,300);
+  return intro+"<div class='wiki-card'><div class='wc-text'>"+short+"</div><a class='wc-link' href='"+w.url+"' target='_blank'>"+readMore+" ↗</a></div>";
+}
+// ── CACHE WIKIPEDIA (apprentissage automatique) ──
+var wikiCache={};
+try{wikiCache=JSON.parse(localStorage.getItem("xn_wiki")||"{}");}catch(e){}
+function saveWikiCache(q,w){
+  wikiCache[q]={title:w.title,extract:w.extract,url:w.url,ts:Date.now()};
+  try{localStorage.setItem("xn_wiki",JSON.stringify(wikiCache));}catch(e){}
+}
+function lookupWikiCache(q){
+  var e=wikiCache[q];
+  if(e&&Date.now()-e.ts<7*24*3600*1000)return e; // valide 7 jours
+  return null;
+}
+// ── DUCKDUCKGO INSTANT ANSWERS ──
+function fetchDDG(query,cb){
+  var url="https://api.duckduckgo.com/?q="+encodeURIComponent(query)+"&format=json&no_html=1&skip_disambig=1";
+  var proxy="https://corsproxy.io/?url="+encodeURIComponent(url);
+  fetch(proxy)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.AbstractText&&d.AbstractText.length>30){
+        cb({title:d.Heading,extract:d.AbstractText,url:d.AbstractURL||""});
+      }else if(d.Answer&&d.Answer.length>5){
+        cb({title:query,extract:d.Answer,url:""});
+      }else if(d.Definition&&d.Definition.length>10){
+        cb({title:query,extract:d.Definition,url:d.DefinitionURL||""});
+      }else{cb(null);}
+    }).catch(function(){cb(null);});
+}
+function buildDDGHtml(d,lang){
+  var intro=lang==="fr"?"Voici ce que j ai trouve sur <strong>"+d.title+"</strong> :":
+            lang==="sv"?"Har ar vad jag hittade om <strong>"+d.title+"</strong>:":
+            "Here is what I found about <strong>"+d.title+"</strong>:";
+  var text=d.extract.length>300?d.extract.slice(0,300)+"...":d.extract;
+  var link=d.url?"<a class='wc-link' href='"+d.url+"' target='_blank'>En savoir plus ↗</a>":"";
+  return intro+"<div class='wiki-card'><div class='wc-text'>"+text+"</div>"+link+"</div>";
+}
+// ── REDDIT (ELI5 + TIL) ──
+// ── ACTUALITÉS RÉELLES (Sydsvenskan, Le Figaro, CNN) ──
+var newsSources={
+  sydsvenskan:{rss:"https://www.sydsvenskan.se/rss.xml",name:"Sydsvenskan",icon:"&#127480;&#127466;",lang:"sv"},
+  figaro:{rss:"https://www.lefigaro.fr/rss/figaro_flash-actu.xml",name:"Le Figaro",icon:"&#127467;&#127479;",lang:"fr"},
+  cnn:{rss:"https://rss.cnn.com/rss/edition.rss",name:"CNN",icon:"&#127760;",lang:"en"}
+};
+function fetchRSS(sourceKey,cb){
+  var src=newsSources[sourceKey];
+  if(!src){cb(null);return;}
+  var api="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(src.rss)+"&count=6";
+  fetch(api)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.status==="ok"&&d.items&&d.items.length){cb(d.items.slice(0,5),src);}
+      else{cb(null);}
+    }).catch(function(){cb(null);});
+}
+function buildRSSHtml(items,src,lang){
+  var lbl=lang==="fr"?"Dernieres nouvelles":lang==="sv"?"Senaste nyheterna":"Latest headlines";
+  var html="<div class='wiki-card'><div class='wc-title'>"+src.icon+" "+src.name+" — "+lbl+"</div><div class='wc-text'>";
+  items.forEach(function(item,i){
+    var d=item.pubDate?new Date(item.pubDate).toLocaleDateString():"";
+    html+="<strong>"+(i+1)+".</strong> <a href='"+item.link+"' target='_blank' style='color:var(--accent)'>"+item.title+"</a>";
+    if(d)html+=" <em style='font-size:.72rem;opacity:.6'>("+d+")</em>";
+    html+="<br><br>";
+  });
+  html+="</div></div>";
+  return html;
+}
+function detectRealNews(n,lang){
+  if(n.indexOf("sydsvenskan")!==-1)return "sydsvenskan";
+  if(n.indexOf("figaro")!==-1||n.indexOf("le figaro")!==-1)return "figaro";
+  if(n.indexOf("cnn")!==-1)return "cnn";
+  if(detectNewsKeyword(n,lang)){
+    if(lang==="sv")return "sydsvenskan";
+    if(lang==="fr")return "figaro";
+    return "cnn";
+  }
+  return null;
+}
+function detectNewsKeyword(n,lang){
+  if(lang==="fr")return n.indexOf("actualite")!==-1||n.indexOf("news")!==-1||n.indexOf("nouvelles")!==-1||n.indexOf("info du jour")!==-1||n.indexOf("quoi de neuf")!==-1;
+  if(lang==="sv")return n.indexOf("nyheter")!==-1||n.indexOf("news")!==-1||n.indexOf("vad hander")!==-1;
+  return n.indexOf("news")!==-1||n.indexOf("headlines")!==-1||n.indexOf("latest news")!==-1;
+}
+function detectNews(n,lang){return detectNewsKeyword(n,lang);}
+function fetchNews(lang,cb){
+  // Fallback Reddit si RSS échoue
+  var sub=lang==="fr"?"france":lang==="sv"?"sweden":"worldnews";
+  var url="https://www.reddit.com/r/"+sub+"/top.json?limit=8&t=day";
+  redditFetch(url,function(d){
+    if(!d||!d.data||!d.data.children||!d.data.children.length){cb(null);return;}
+    var posts=d.data.children.slice(0,5).map(function(c){return c.data.title;});
+    cb(posts);
+  });
+}
+function buildNewsHtml(posts,lang){
+  var lbl=lang==="fr"?"Actualites du jour":lang==="sv"?"Dagens nyheter":"Today's headlines";
+  var html="<div class='wiki-card'><div class='wc-title'>&#128240; "+lbl+"</div><div class='wc-text'>";
+  posts.forEach(function(t,i){html+="<strong>"+(i+1)+".</strong> "+t+"<br><br>";});
+  html+="</div></div>";
+  return html;
+}
+function detectELI5(n,lang){
+  if(lang==="fr")return n.match(/(?:explique|explication)\s+(?:simplement|clairement|facilement)\s*(.+)/)||n.match(/eli5\s+(.+)/)||n.match(/c est quoi exactement\s+(.+)/);
+  if(lang==="sv")return n.match(/(?:forklara|vad ar)\s+enkelt\s+(.+)/)||n.match(/eli5\s+(.+)/);
+  return n.match(/eli5\s+(.+)/)||n.match(/explain simply\s+(.+)/)||n.match(/explain like\s+(.+)/)||n.match(/simple explanation of\s+(.+)/);
+}
+function detectTIL(n,lang){
+  if(lang==="fr")return n.indexOf("fait du jour")!==-1||n.indexOf("fait insolite")!==-1||n.indexOf("truc insolite")!==-1||n.indexOf("chose insolite")!==-1||n.indexOf("til ")!==-1;
+  if(lang==="sv")return n.indexOf("visste du")!==-1||n.indexOf("kul fakta")!==-1||n.indexOf("til ")!==-1;
+  return n.indexOf("fun fact")!==-1||n.indexOf("today i learned")!==-1||n.indexOf("til ")!==-1||n.indexOf("random fact")!==-1||n.indexOf("interesting fact")!==-1;
+}
+function redditFetch(redditUrl,cb){
+  // Essai direct d'abord, puis proxy CORS si bloqué
+  fetch(redditUrl,{headers:{"Accept":"application/json"}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.data)cb(d);
+      else throw new Error("no data");
+    })
+    .catch(function(){
+      // Fallback : proxy CORS
+      var proxy="https://corsproxy.io/?url="+encodeURIComponent(redditUrl);
+      fetch(proxy)
+        .then(function(r){return r.json();})
+        .then(function(d){cb(d);})
+        .catch(function(){cb(null);});
+    });
+}
+function fetchRedditELI5(query,cb){
+  var url="https://www.reddit.com/r/explainlikeimfive/search.json?q="+encodeURIComponent(query)+"&sort=top&limit=5&restrict_sr=1";
+  redditFetch(url,function(d){
+    if(!d||!d.data||!d.data.children||!d.data.children.length){cb(null);return;}
+    var post=null;
+    for(var i=0;i<d.data.children.length;i++){
+      var p=d.data.children[i].data;
+      if(p.selftext&&p.selftext.length>30&&p.selftext!=="[deleted]"&&p.selftext!=="[removed]"){post=p;break;}
+    }
+    if(!post)post=d.data.children[0].data;
+    cb(post);
+  });
+}
+function fetchRedditTIL(cb){
+  var url="https://www.reddit.com/r/todayilearned/top.json?limit=10&t=day";
+  redditFetch(url,function(d){
+    if(!d||!d.data||!d.data.children||!d.data.children.length){cb(null);return;}
+    var posts=d.data.children;
+    var post=posts[Math.floor(Math.random()*Math.min(5,posts.length))].data;
+    cb(post);
+  });
+}
+function buildRedditHtml(post,type,lang){
+  var title=(post.title||"").replace(/^ELI5:\s*/i,"").replace(/^TIL\s+/i,"").replace(/^TIL:\s*/i,"");
+  if(title.length>200)title=title.slice(0,200)+"...";
+  var text=post.selftext||"";
+  if(text==="[deleted]"||text==="[removed]")text="";
+  if(text.length>350)text=text.slice(0,350)+"...";
+  var url="https://reddit.com"+(post.permalink||"");
+  var lbl=type==="eli5"?
+    (lang==="fr"?"Explication simple — Reddit ELI5":lang==="sv"?"Enkel forklaring":"Simple explanation — Reddit ELI5"):
+    (lang==="fr"?"Fait du jour — Reddit":lang==="sv"?"Dagens fakta":"Today I Learned — Reddit");
+  var more=lang==="fr"?"Voir sur Reddit":lang==="sv"?"Las pa Reddit":"Read on Reddit";
+  return "<div class='wiki-card'><div class='wc-title'>🔴 "+lbl+"</div><div class='wc-text'><strong>"+title+"</strong>"+(text?"<br><br>"+text:"")+"</div><a class='wc-link' href='"+url+"' target='_blank'>"+more+" ↗</a></div>";
+}
+function sendMsg(){
+  var inp=document.getElementById("userInput");
+  var txt=inp.value.trim();if(!txt)return;
+  inp.value="";inp.style.height="auto";
+  // Détection automatique de la langue (si texte assez long)
+  if(txt.split(" ").length>=2){
+    var detLang=detectInputLang(txt);
+    if(detLang&&detLang!==currentLang)setLang(detLang);
+  }
+  addToConvHistory("user",txt);
+  addMsg(txt,"user");saveMsg("user",txt);
+  var td=addTyping();var lang=currentLang;
+  var delay=600+Math.floor(Math.random()*400);
+  setTimeout(function(){
+    getReply(txt,lang,function(reply){
+      td.remove();addMsg(reply,"bot");saveMsg("bot",reply);
+      addToConvHistory("bot",reply);
+      var sub=extractSubject(normalize(txt.toLowerCase()),lang);
+      updateLastTopic(sub,lang);
+      if(document.getElementById("autoVoice").checked){speakText(reply);}
+      sendXeNotif(reply);
+      // Feature 15 : Xearnes pose une question de temps en temps
+      var xeQ=maybeXeQuestion(lang);
+      if(xeQ){
+        setTimeout(function(){
+          addMsg(xeQ,"bot");
+          addToConvHistory("bot",xeQ);
+          if(document.getElementById("autoVoice").checked)speakText(xeQ);
+        },1200);
+      }
+    });
+  },delay);
+}
+function saveMsg(role,text){
+  fullHist.push({role:role,text:text,ts:Date.now(),lang:currentLang});
+  if(fullHist.length>500)fullHist=fullHist.slice(-500);
+  try{localStorage.setItem("xn_hist",JSON.stringify(fullHist));}catch(e){}
+  renderHistory();
+}
+function renderHistory(){
+  var list=document.getElementById("histList");
+  if(!list)return;
+  var html="";
+  var start=Math.max(0,fullHist.length-50);
+  for(var i=start;i<fullHist.length;i++){
+    var msg=fullHist[i];
+    var cls=msg.role==="user"?"user":"bot";
+    var lbl=msg.role==="user"?"Vous":"Xearnes";
+    var txt=msg.text.replace(/</g,"&lt;").replace(/>/g,"&gt;").slice(0,120);
+    html+="<div class='hist-item "+cls+"'><div class='hi-role'>"+lbl+"</div><div class='hi-text'>"+txt+"</div><div class='hi-time'>"+fmt(msg.ts)+"</div></div>";
+  }
+  list.innerHTML=html;list.scrollTop=list.scrollHeight;
+}
+function clearHistory(){
+  if(confirm("Effacer l\u0027historique ?")){
+    fullHist=[];localStorage.removeItem("xn_hist");renderHistory();
+  }}
+function getVoicesForLang(lang){
+  var code={sv:"sv",fr:"fr",en:"en",es:"es",de:"de",it:"it",pt:"pt",ja:"ja",zh:"zh",ar:"ar",ru:"ru"}[lang]||"en";
+  return allVoices.filter(function(v){return v.lang.toLowerCase().indexOf(code)===0;});
+}
+function populateVoiceSelect(){
+  var sel=document.getElementById("voiceSelect");
+  var inf=document.getElementById("voiceInfo");
+  var voices=getVoicesForLang(currentLang);
+  if(!voices.length){
+    sel.innerHTML="<option>--</option>";
+    if(inf)inf.textContent="Aucune voix disponible";return;
+  }
+  voices.sort(function(a,b){
+    var qa=a.name.indexOf("Neural")!==-1?2:a.name.indexOf("Google")!==-1?1:0;
+    var qb=b.name.indexOf("Neural")!==-1?2:b.name.indexOf("Google")!==-1?1:0;
+    return qb-qa;
+  });
+  sel.innerHTML="";
+  voices.forEach(function(v,i){
+    var quality=v.name.indexOf("Neural")!==-1?"⭐ ":(v.name.indexOf("Google")!==-1?"🌟 ":"");
+    var opt=document.createElement("option");
+    opt.value=i;
+    opt.textContent=quality+v.name+" ("+v.lang+")";
+    sel.appendChild(opt);
+  });
+  var saved=parseInt(localStorage.getItem("xn_voice_idx")||"0");
+  if(saved<voices.length)sel.value=saved;
+  selectedVoiceIndex=parseInt(sel.value)||0;
+  if(inf)inf.textContent=voices[selectedVoiceIndex]?voices[selectedVoiceIndex].name:"";
+}
+function onVoiceChange(){
+  var sel=document.getElementById("voiceSelect");
+  selectedVoiceIndex=parseInt(sel.value)||0;
+  localStorage.setItem("xn_voice_idx",selectedVoiceIndex);
+  var voices=getVoicesForLang(currentLang);
+  var inf=document.getElementById("voiceInfo");
+  if(inf)inf.textContent=voices[selectedVoiceIndex]?voices[selectedVoiceIndex].name:"";
+}
+function testVoice(){speakText(langs[currentLang].testPhrase);}
+function speakText(text){
+  if(!window.speechSynthesis)return;
+  var voices=getVoicesForLang(currentLang);
+  // Si pas de voix pour cette langue → ne pas forcer une mauvaise voix
+  // Laisser le navigateur choisir avec juste utter.lang
+  var voice=voices.length>0?voices[Math.min(selectedVoiceIndex,voices.length-1)]:null;
+  var rateEl=document.getElementById("voiceRate");
+  var pitchEl=document.getElementById("voicePitch");
+  var rate=rateEl?parseFloat(rateEl.value)||0.90:0.90;
+  var pitch=pitchEl?parseFloat(pitchEl.value)||1.05:1.05;
+  doSpeak(text,voice,rate,pitch);
+}
+function cleanForSpeech(text,lang){
+  // 1. Supprimer les balises HTML
+  text=text.replace(/<[^>]+>/g,"");
+  // 2. Supprimer entités HTML (&amp; &lt; etc.)
+  text=text.replace(/&[a-z]+;/g," ");
+  // 3. Corrections de prononciation
+  if(lang==="sv"){
+    text=text.replace(/chatbot/gi,"chatt bott");
+    text=text.replace(/\bAI\b/g,"A I");
+    text=text.replace(/Wikipedia/gi,"Vikipedia");
+    text=text.replace(/\bDNA\b/g,"De En A");
+    text=text.replace(/NASA/gi,"Nasa");
+    text=text.replace(/IKEA/g,"I Kea");
+  }else if(lang==="fr"){
+    text=text.replace(/chatbot/gi,"chabot");
+    text=text.replace(/\bAI\b/g,"A I");
+    text=text.replace(/Wikipedia/gi,"Wikipeedia");
+    text=text.replace(/\bDNA\b/g,"De En A");
+    text=text.replace(/NASA/gi,"Naza");
+  }else if(lang==="ja"||lang==="zh"||lang==="ar"||lang==="ru"){
+    // Scripts non-latins : garder les caractères natifs, supprimer seulement emojis/contrôle
+    text=text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g," ");
+    text=text.replace(/[\x00-\x1F\x7F]/g," ");
+  }else{
+    // Autres langues latines (es, de, it, pt, en)
+    text=text.replace(/chatbot/gi,"chat bot");
+    text=text.replace(/\bDNA\b/g,"D N A");
+    text=text.replace(/NASA/gi,"Nassa");
+    text=text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g," ");
+    text=text.replace(/[^\x20-\x7E\xC0-ɏ]/g," ");
+  }
+  // Nettoyer les espaces en trop
+  text=text.replace(/\s+/g," ").trim();
+  return text;
+}
+var _chromeFix=null;
+function doSpeak(text,voice,rate,pitch){
+  // Arrêter proprement la voix précédente
+  if(_chromeFix){clearInterval(_chromeFix);_chromeFix=null;}
+  window.speechSynthesis.cancel();
+  setTimeout(function(){
+    var cleaned=cleanForSpeech(text,currentLang);
+    if(!cleaned||!cleaned.trim())return;
+    var utter=new SpeechSynthesisUtterance(cleaned);
+    if(voice)utter.voice=voice; // seulement si voix de la bonne langue
+    utter.rate=rate;utter.pitch=pitch;
+    utter.lang=langs[currentLang].code;
+    var dot=document.getElementById("speakDot");
+    if(dot)dot.classList.add("active");
+    utter.onend=function(){
+      if(dot)dot.classList.remove("active");
+      if(_chromeFix){clearInterval(_chromeFix);_chromeFix=null;}
+    };
+    utter.onerror=function(){
+      if(dot)dot.classList.remove("active");
+      if(_chromeFix){clearInterval(_chromeFix);_chromeFix=null;}
+    };
+    window.speechSynthesis.speak(utter);
+    // Fix bug Chrome : la voix peut se bloquer après ~15 sec
+    _chromeFix=setInterval(function(){
+      if(!window.speechSynthesis.speaking){clearInterval(_chromeFix);_chromeFix=null;return;}
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    },10000);
+  },150);
+}
+function setLang(l){
+  currentLang=l;
+  localStorage.setItem("xn_lang",l);
+  var cfg=langs[l];
+  var sel=document.getElementById("langSelect");
+  if(sel)sel.value=l;
+  document.getElementById("sendBtn").textContent=cfg.send;
+  document.getElementById("userInput").placeholder=cfg.placeholder;
+  document.getElementById("welcomeTitle").textContent=cfg.welcomeTitle;
+  document.getElementById("welcomeDesc").textContent=cfg.welcomeDesc;
+  document.getElementById("histTitle").textContent=cfg.histTitle;
+  buildChips();
+  populateVoiceSelect();
+  if(recognition)recognition.lang=cfg.code;
+}
+function buildChips(){
+  var chips=document.getElementById("chips");
+  if(!chips)return;
+  chips.innerHTML="";
+  var cfg=langs[currentLang];
+  (cfg.chips||[]).forEach(function(c){
+    var btn=document.createElement("button");
+    btn.className="chip";
+    btn.textContent=c;
+    btn.onclick=function(){
+      var inp=document.getElementById("userInput");
+      inp.value=c;
+      sendMsg();
+    };
+    chips.appendChild(btn);
+  });
+}
+function toggleVoicePanel(){
+  var vp=document.getElementById("voicePanel");
+  if(!vp)return;
+  var open=vp.classList.toggle("open");
+  if(open){var hp=document.getElementById("histPanel");if(hp)hp.classList.remove("open");}
+}
+function toggleHistPanel(){
+  var hp=document.getElementById("histPanel");
+  if(!hp)return;
+  var open=hp.classList.toggle("open");
+  if(open){var vp=document.getElementById("voicePanel");if(vp)vp.classList.remove("open");}
+}
+function autoResize(el){
+  el.style.height="auto";
+  el.style.height=Math.min(el.scrollHeight,140)+"px";
+}
+var recognition=null;
+var isRecording=false;
+var _finalSent=false;
+var _micAttempts=0;
+function toggleVoiceInput(){
+  if(isRecording){stopVoiceInput();}else{startVoiceInput();}
+}
+function startVoiceInput(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    var nosr=currentLang==="fr"?"Le micro fonctionne seulement dans Chrome ou Edge ! 🎙️":
+             currentLang==="sv"?"Mikrofonen fungerar bara i Chrome eller Edge! 🎙️":
+             "Microphone only works in Chrome or Edge! 🎙️";
+    addMsg(nosr,"bot");return;
+  }
+  // Détection file:// dans Chrome → bloqué. Edge OK.
+  if(location.protocol==="file:"&&navigator.userAgent.indexOf("Edg/")===-1&&navigator.userAgent.indexOf("Edge/")===-1){
+    var filemsg=currentLang==="fr"?
+      "&#9888;&#65039; Dans Chrome, le micro est bloque sur les fichiers locaux.<br>Ouvre <strong>xearnes.html dans Microsoft Edge</strong> a la place !":
+      currentLang==="sv"?
+      "&#9888;&#65039; I Chrome ar mikrofonen blockerad. Oppna filen i Microsoft Edge istallet!":
+      "&#9888;&#65039; In Chrome, mic is blocked on local files. Open <strong>xearnes.html in Microsoft Edge</strong> instead!";
+    addMsg(filemsg,"bot");return;
+  }
+  // Créer un NOUVEL objet à chaque fois — évite les blocages
+  if(recognition){try{recognition.abort();}catch(e){} recognition=null;}
+  _finalSent=false;
+  _micAttempts=0;
+  recognition=new SR();
+  recognition.continuous=false;
+  recognition.interimResults=true;
+  recognition.lang=langs[currentLang].code;
+  // Timeout 7s — si rien n arrive, message clair
+  var _micTimer=setTimeout(function(){
+    if(isRecording&&!_finalSent){
+      stopVoiceInput();
+      var tmsg=currentLang==="fr"?"&#127760; Le micro ne repond pas. Utilise <strong>LANCER_XEARNES.bat</strong> et parle en <strong>francais</strong> (drapeau &#127467;&#127479; en haut) !":
+              currentLang==="sv"?"&#127760; Mikrofonen svarar inte. Anvand <strong>LANCER_XEARNES.bat</strong> i Edge!":
+              "&#127760; Mic not responding. Use <strong>LANCER_XEARNES.bat</strong> and make sure language matches what you speak!";
+      addMsg(tmsg,"bot");
+    }
+  },7000);
+  recognition.onstart=function(){
+    _micAttempts++;
+    isRecording=true;
+    var btn=document.getElementById("micBtn");
+    if(btn)btn.classList.add("recording");
+    var inp=document.getElementById("userInput");
+    var ph=currentLang==="fr"?"Je t ecoute...":currentLang==="sv"?"Jag lyssnar...":
+           currentLang==="es"?"Te escucho...":currentLang==="de"?"Ich hore zu...":
+           currentLang==="it"?"Ti ascolto...":currentLang==="pt"?"Estou a ouvir...":"Listening...";
+    if(inp){inp.value="";inp.placeholder=ph;}
+  };
+  recognition.onresult=function(e){
+    clearTimeout(_micTimer);
+    _micAttempts=0;
+    var transcript="";
+    for(var i=0;i<e.results.length;i++){transcript+=e.results[i][0].transcript;}
+    var inp=document.getElementById("userInput");
+    if(inp){inp.value=transcript;autoResize(inp);}
+    _finalSent=true;
+    stopVoiceInput();
+    setTimeout(function(){sendMsg();},200);
+  };
+  recognition.onerror=function(e){
+    clearTimeout(_micTimer);
+    stopVoiceInput();
+    var errCode=e.error||"";
+    if((errCode==="network"||errCode==="no-speech"||errCode==="")&&_micAttempts<3){
+      // Retry silencieux
+      setTimeout(function(){startVoiceInput();},600);
+    }else{
+      _micAttempts=0;
+      var msg=errCode==="not-allowed"?"&#127908; Autorise le micro dans le navigateur !":
+              errCode==="audio-capture"?"&#127908; Aucun micro detecte !":
+              errCode==="service-not-allowed"?"&#127908; Utilise LANCER_XEARNES.bat dans Edge !":
+              errCode==="network"?"&#127908; Les serveurs vocaux sont injoignables.<br>&#128161; <strong>Astuce :</strong> Clique dans la boite de texte puis appuie sur <strong>Windows + H</strong> pour dicter avec Windows ! Ca marche sans internet &#128640;":
+              "&#127908; Micro : "+errCode+". Reclique sur &#127908; pour reessayer !";
+      addMsg(msg,"bot");
+    }
+  };
+  recognition.onend=function(){
+    clearTimeout(_micTimer);
+    if(isRecording)stopVoiceInput();
+    // Si un texte est dans l'input mais pas encore envoyé → envoyer quand même
+    if(!_finalSent){
+      var inp=document.getElementById("userInput");
+      if(inp&&inp.value.trim().length>0){
+        _finalSent=true;
+        setTimeout(function(){sendMsg();},200);
+      }
+    }
+  };
+  try{recognition.start();}
+  catch(e){
+    stopVoiceInput();
+    addMsg(currentLang==="fr"?"Impossible de demarrer le micro. Recharge la page !":
+           "Could not start microphone. Try reloading the page!","bot");
+  }
+}
+function stopVoiceInput(){
+  isRecording=false;
+  var btn=document.getElementById("micBtn");
+  if(btn)btn.classList.remove("recording");
+  var inp=document.getElementById("userInput");
+  if(inp)inp.placeholder=langs[currentLang].placeholder;
+  if(recognition){try{recognition.stop();}catch(e){}}
+}
+function init(){
+  if(window.speechSynthesis){
+    allVoices=window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged=function(){
+      allVoices=window.speechSynthesis.getVoices();
+      populateVoiceSelect();
+    };
+  }
+  var savedRate=parseFloat(localStorage.getItem("xn_voice_rate")||"0.90");
+  var savedPitch=parseFloat(localStorage.getItem("xn_voice_pitch")||"1.05");
+  var rateEl=document.getElementById("voiceRate");
+  var pitchEl=document.getElementById("voicePitch");
+  rateEl.value=savedRate;
+  document.getElementById("rateVal").textContent=savedRate.toFixed(2);
+  pitchEl.value=savedPitch;
+  document.getElementById("pitchVal").textContent=savedPitch.toFixed(2);
+  rateEl.addEventListener("change",function(){
+    localStorage.setItem("xn_voice_rate",this.value);
+  });
+  pitchEl.addEventListener("change",function(){
+    localStorage.setItem("xn_voice_pitch",this.value);
+  });
+  // ── Mode nuit auto (Feature 1) ──
+  var savedTheme=localStorage.getItem("xn_theme");
+  if(!savedTheme){var h=new Date().getHours();savedTheme=(h>=20||h<7)?"dark":"light";}
+  document.documentElement.setAttribute("data-theme",savedTheme);
+  document.getElementById("themeBtn").textContent=savedTheme==="light"?"☽":"☀";
+  // ── Couleur sauvegardee (Feature 7) ──
+  var savedColor=localStorage.getItem("xn_color")||"";
+  if(savedColor)document.documentElement.setAttribute("data-color",savedColor);
+  var cs=document.getElementById("colorSelect");if(cs)cs.value=savedColor;
+  // ── Avatar sauvegarde (Feature 6) ──
+  var savedAvatar=localStorage.getItem("xn_avatar")||"&#129302;";
+  currentAvatar=savedAvatar;
+  var av=document.getElementById("xAvatar");if(av)av.innerHTML=savedAvatar;
+  var pb=document.getElementById("popupBtn");
+  if(pb)pb.innerHTML=savedAvatar+'<span class="pb-badge" id="popupBadge"></span>';
+  // ── Score (Feature 9) ──
+  var sb=document.getElementById("scoreBadge");if(sb)sb.textContent="⭐ "+score;
+  // ── Notifications ──
+  initNotifications();
+  setLang(currentLang);
+  renderHistory();
+  if(allVoices.length>0)populateVoiceSelect();
+  // Raccourci clavier Ctrl+Shift+X → ouvre/ferme le mini popup
+  document.addEventListener("keydown",function(e){
+    if(e.ctrlKey&&e.shiftKey&&(e.key==="x"||e.key==="X")){
+      e.preventDefault();
+      togglePopup();
+    }
+  });
+}
+// ── MINI POPUP ──
+var popupOpen=false;
+function togglePopup(){
+  popupOpen=!popupOpen;
+  var mp=document.getElementById("miniPopup");
+  if(mp)mp.classList.toggle("open",popupOpen);
+  var badge=document.getElementById("popupBadge");
+  if(badge)badge.classList.remove("show");
+  if(popupOpen){
+    // Message de bienvenue si vide
+    var chat=document.getElementById("mpChat");
+    if(chat&&chat.children.length===0){
+      var greet=currentLang==="fr"?"Bonjour ! Comment puis-je t aider ?":currentLang==="sv"?"Hej! Hur kan jag hjälpa?":"Hello! How can I help?";
+      addMiniMsg(greet,"bot");
+    }
+    setTimeout(function(){var inp=document.getElementById("mpInput");if(inp)inp.focus();},200);
+  }
+}
+function addMiniMsg(text,role){
+  var chat=document.getElementById("mpChat");
+  if(!chat)return;
+  var div=document.createElement("div");
+  div.className="mp-msg "+role;
+  if(role==="bot"){div.innerHTML=text;}else{div.textContent=text;}
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
+}
+function sendMiniMsg(){
+  var inp=document.getElementById("mpInput");
+  if(!inp)return;
+  var txt=inp.value.trim();
+  if(!txt)return;
+  inp.value="";
+  addMiniMsg(txt,"user");
+  // Indicateur de frappe
+  var chat=document.getElementById("mpChat");
+  var td=document.createElement("div");
+  td.className="mp-msg bot";
+  td.innerHTML="<span style='opacity:.5'>...</span>";
+  chat.appendChild(td);
+  chat.scrollTop=chat.scrollHeight;
+  var lang=currentLang;
+  setTimeout(function(){
+    getReply(txt,lang,function(reply){
+      td.remove();
+      addMiniMsg(reply,"bot");
+      if(!popupOpen){
+        var badge=document.getElementById("popupBadge");
+        if(badge)badge.classList.add("show");
+      }
+      if(document.getElementById("autoVoice")&&document.getElementById("autoVoice").checked){
+        speakText(reply);
+      }
+    });
+  },600+Math.floor(Math.random()*300));
+}
+// ══════════════════════════════════════════════════════
+// ── OUVRE DES SITES WEB ─────────────────────────────
+var webLinks={
+  youtube:{u:"https://www.youtube.com",n:"YouTube",i:"&#9654;&#65039;"},
+  google:{u:"https://www.google.com",n:"Google",i:"&#128269;"},
+  gmail:{u:"https://mail.google.com",n:"Gmail",i:"&#128140;"},
+  maps:{u:"https://maps.google.com",n:"Google Maps",i:"&#128506;"},
+  translate:{u:"https://translate.google.com",n:"Google Traduction",i:"&#127758;"},
+  wikipedia:{u:"https://fr.wikipedia.org",n:"Wikipedia",i:"&#128218;"},
+  netflix:{u:"https://www.netflix.com",n:"Netflix",i:"&#127909;"},
+  spotify:{u:"https://open.spotify.com",n:"Spotify",i:"&#127925;"},
+  instagram:{u:"https://www.instagram.com",n:"Instagram",i:"&#128247;"},
+  tiktok:{u:"https://www.tiktok.com",n:"TikTok",i:"&#127926;"},
+  twitter:{u:"https://www.x.com",n:"X (Twitter)",i:"&#128038;"},
+  discord:{u:"https://discord.com",n:"Discord",i:"&#128172;"},
+  minecraft:{u:"https://www.minecraft.net",n:"Minecraft",i:"&#9935;&#65039;"},
+  roblox:{u:"https://www.roblox.com",n:"Roblox",i:"&#127918;"},
+  reddit:{u:"https://www.reddit.com",n:"Reddit",i:"&#128308;"},
+  github:{u:"https://www.github.com",n:"GitHub",i:"&#128187;"},
+  figaro:{u:"https://www.lefigaro.fr",n:"Le Figaro",i:"&#127467;&#127479;"},
+  cnn:{u:"https://www.cnn.com",n:"CNN",i:"&#127760;"},
+  sydsvenskan:{u:"https://www.sydsvenskan.se",n:"Sydsvenskan",i:"&#127480;&#127466;"},
+  khan:{u:"https://fr.khanacademy.org",n:"Khan Academy",i:"&#127979;"},
+  duolingo:{u:"https://www.duolingo.com",n:"Duolingo",i:"&#129417;"},
+  claude:{u:"https://claude.ai",n:"Claude AI",i:"&#129302;"},
+  chatgpt:{u:"https://chat.openai.com",n:"ChatGPT",i:"&#129302;"}
+};
+function detectOpenWeb(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:ouvre|ouvrir|va sur|aller sur|lance|affiche|montre)\s+(.+)/);
+  else if(lang==="sv")m=n.match(/(?:oppna|ga till|starta|visa)\s+(.+)/);
+  else m=n.match(/(?:open|go to|launch|visit|show me)\s+(.+)/);
+  if(m&&m[1])return m[1].replace(/[?!.,]+$/,"").trim().toLowerCase();
+  return null;
+}
+function findWebLink(q){
+  if(webLinks[q])return webLinks[q];
+  var keys=Object.keys(webLinks);
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    if(q.indexOf(k)!==-1||k.indexOf(q)!==-1)return webLinks[k];
+    if(webLinks[k].n.toLowerCase().indexOf(q)!==-1)return webLinks[k];
+  }
+  // URL directe si contient un point
+  if(q.indexOf(".")!==-1){
+    var url=q.startsWith("http")?"https://"+q.replace(/^https?:\/\//,""):
+            q.startsWith("www")?"https://"+q:"https://"+q;
+    return{u:url,n:q,i:"&#127760;"};
+  }
+  return null;
+}
+function doOpenWeb(link,lang){
+  window.open(link.u,"_blank");
+  return lang==="fr"?"J ouvre "+link.i+" <strong>"+link.n+"</strong> dans un nouvel onglet ! &#128640;":
+         lang==="sv"?"Oppnar "+link.i+" <strong>"+link.n+"</strong> i en ny flik! &#128640;":
+         "Opening "+link.i+" <strong>"+link.n+"</strong> in a new tab! &#128640;";
+}
+// ── NOTIFICATIONS NAVIGATEUR ────────────────────────
+function initNotifications(){
+  if(!("Notification" in window))return;
+  if(Notification.permission==="default"){
+    Notification.requestPermission();
+  }
+}
+function sendXeNotif(text){
+  if(!("Notification" in window))return;
+  if(Notification.permission!=="granted")return;
+  // Seulement si l'utilisateur est sur un autre onglet
+  if(!document.hidden&&document.hasFocus())return;
+  var plain=text.replace(/<[^>]+>/g," ").replace(/&[a-z]+;/g," ").replace(/\s+/g," ").trim().slice(0,120);
+  if(!plain)return;
+  var notif=new Notification("Xearnes 🤖",{
+    body:plain,
+    tag:"xearnes",
+    icon:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>"
+  });
+  notif.onclick=function(){window.focus();notif.close();};
+  setTimeout(function(){notif.close();},6000);
+}
+// ── FEATURE 1 : MODE NUIT AUTO ──────────────────────
+// (déclenché dans init())
+// ── FEATURE 3 : SONS ────────────────────────────────
+function playBeep(){
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    var o=ctx.createOscillator();var g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type="sine";o.frequency.value=660;
+    g.gain.setValueAtTime(0.08,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
+    o.start(ctx.currentTime);o.stop(ctx.currentTime+0.25);
+    ctx.close();
+  }catch(e){}
+}
+// ── FEATURE 4 : PLEIN ECRAN ─────────────────────────
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(function(){});
+    var btn=document.getElementById("fullBtn");
+    if(btn)btn.textContent="&#9974;";
+  }else{
+    document.exitFullscreen();
+  }
+}
+document.addEventListener("fullscreenchange",function(){
+  var btn=document.getElementById("fullBtn");
+  if(btn)btn.textContent=document.fullscreenElement?"&#9139;":"&#9974;";
+});
+// ── FEATURE 5 : BOUTON PARTAGER ─────────────────────
+function addShareBtn(div,rawText){
+  var btn=document.createElement("button");
+  btn.className="share-btn";
+  btn.textContent="📋 Copier";
+  btn.onclick=function(){
+    var plain=rawText.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(plain).then(function(){
+        btn.textContent="✅ Copie!";
+        setTimeout(function(){btn.textContent="📋 Copier";},1500);
+      }).catch(function(){});
+    }
+  };
+  div.appendChild(btn);
+}
+// ── FEATURE 6 : AVATAR ──────────────────────────────
+var avatarList=["&#129302;","&#128126;","&#128049;","&#128009;","&#129430;","&#129418;","&#128056;","&#128123;","&#129412;","&#11088;","&#127919;","&#128293;"];
+var currentAvatar=localStorage.getItem("xn_avatar")||"&#129302;";
+function cycleAvatar(){
+  var idx=avatarList.indexOf(currentAvatar);
+  idx=(idx+1)%avatarList.length;
+  currentAvatar=avatarList[idx];
+  localStorage.setItem("xn_avatar",currentAvatar);
+  var el=document.getElementById("xAvatar");
+  if(el)el.innerHTML=currentAvatar;
+  var pb=document.getElementById("popupBtn");
+  if(pb)pb.innerHTML=currentAvatar+'<span class="pb-badge" id="popupBadge"></span>';
+}
+// ── FEATURE 7 : THEMES COULEUR ──────────────────────
+function setColorTheme(c){
+  if(c)document.documentElement.setAttribute("data-color",c);
+  else document.documentElement.removeAttribute("data-color");
+  localStorage.setItem("xn_color",c||"");
+  var sel=document.getElementById("colorSelect");
+  if(sel)sel.value=c||"";
+}
+// ── FEATURE 8 : PENDU ───────────────────────────────
+var penduWordBank={
+  fr:["maison","jardin","soleil","riviere","musique","planete","elephant","volcan","chocolat","pyramide","requin","galaxie","chateau","fontaine","hibou"],
+  en:["house","garden","planet","elephant","volcano","music","rainbow","guitar","library","penguin","dolphin","castle","mountain","dragon","wizard"],
+  sv:["huset","solen","musiken","planeten","elefanten","havet","draken","slottet","fjaril","stjarna"]
+};
+var penduState=null;
+function detectPendu(n,lang){
+  if(lang==="fr")return n.indexOf("pendu")!==-1||n.indexOf("devine le mot")!==-1;
+  if(lang==="sv")return n.indexOf("hangman")!==-1||n.indexOf("gissa ordet")!==-1;
+  return n.indexOf("hangman")!==-1||n.indexOf("guess the word")!==-1||n.indexOf("pendu")!==-1;
+}
+function startPendu(lang){
+  var words=penduWordBank[lang]||penduWordBank.en;
+  var word=pick(words);
+  penduState={word:word,guessed:[],wrong:0,maxWrong:6,lang:lang};
+  addScore(0);
+  return buildPenduHtml();
+}
+function buildPenduHtml(){
+  if(!penduState)return "";
+  var figs=["&#128522;","&#128528;","&#128543;","&#128552;","&#128560;","&#128561;","&#128128;"];
+  var display=penduState.word.split("").map(function(c){
+    return penduState.guessed.indexOf(c)!==-1?c:"_";
+  }).join(" ");
+  var won=display.indexOf("_")===-1;
+  var lost=penduState.wrong>=penduState.maxWrong;
+  var lang=penduState.lang;
+  var status=won?(lang==="fr"?"&#127881; Bravo ! Tu as trouve !":lang==="sv"?"&#127881; Bra jobbat!":"&#127881; You found it!"):
+             lost?(lang==="fr"?"&#128128; Perdu ! Le mot etait : <strong>"+penduState.word+"</strong>":lang==="sv"?"&#128128; Forloral! Ordet var: <strong>"+penduState.word+"</strong>":"&#128128; Lost! Word was: <strong>"+penduState.word+"</strong>"):
+             (lang==="fr"?"Erreurs : "+penduState.wrong+"/"+penduState.maxWrong:lang==="sv"?"Fel: "+penduState.wrong+"/"+penduState.maxWrong:"Wrong: "+penduState.wrong+"/"+penduState.maxWrong);
+  var keys="";
+  if(!won&&!lost){
+    "abcdefghijklmnopqrstuvwxyz".split("").forEach(function(l){
+      var used=penduState.guessed.indexOf(l)!==-1;
+      keys+="<button class='pendu-key"+(used?" used":"")+"' onclick='guessPendu(\""+l+"\")'>"+l.toUpperCase()+"</button>";
+    });
+  }
+  return "<div class='pendu-card'><div class='pendu-fig'>"+figs[penduState.wrong]+"</div><div class='pendu-word'>"+display+"</div><div style='margin:6px 0;font-size:.82rem'>"+status+"</div><div class='pendu-letters'>"+keys+"</div></div>";
+}
+function guessPendu(letter){
+  if(!penduState)return;
+  if(penduState.guessed.indexOf(letter)!==-1)return;
+  penduState.guessed.push(letter);
+  if(penduState.word.indexOf(letter)===-1)penduState.wrong++;
+  var won=penduState.word.split("").every(function(c){return penduState.guessed.indexOf(c)!==-1;});
+  var lost=penduState.wrong>=penduState.maxWrong;
+  var html=buildPenduHtml();
+  if(won){addScore(20);penduState=null;}
+  if(lost){penduState=null;}
+  var msgs=document.querySelectorAll(".msg.bot");
+  if(msgs.length)msgs[msgs.length-1].innerHTML=html;
+}
+// ── FEATURE 9 : SCORE ───────────────────────────────
+var score=parseInt(localStorage.getItem("xn_score")||"0");
+function addScore(pts){
+  score+=pts;
+  localStorage.setItem("xn_score",score);
+  var sb=document.getElementById("scoreBadge");
+  if(sb)sb.textContent="⭐ "+score;
+}
+function showScoreInfo(){
+  var lang=currentLang;
+  var msg=lang==="fr"?"&#11088; Ton score total : <strong>"+score+" points</strong> ! Fais des quiz, trouve des mots au pendu, gagne au 20 questions pour marquer des points !":
+          lang==="sv"?"&#11088; Din totala pong: <strong>"+score+" poang</strong>!":
+          "&#11088; Your total score: <strong>"+score+" points</strong>! Do quizzes, hangman and 20 questions to earn points!";
+  addMsg(msg,"bot");
+  playBeep();
+}
+// ── FEATURE 10 : RECETTES ───────────────────────────
+var recettesDB={
+  fr:[
+    {name:"Crepes",i:["2 oeufs","200g farine","300ml lait","beurre"],s:["Melange farine + oeufs","Ajoute le lait progressivement","Chauffe la poele avec un peu de beurre","Verse une louche de pate, laisse dorer 1 min, retourne !"]},
+    {name:"Gateau au chocolat",i:["200g chocolat","3 oeufs","150g sucre","100g farine","125g beurre"],s:["Fais fondre chocolat + beurre","Bats oeufs + sucre jusqu a ce que ca blanchisse","Melange tout ensemble","Cuits 25 min a 180 degres"]},
+    {name:"Salade de fruits",i:["Pomme, banane, orange","Sucre en poudre","Jus de citron"],s:["Coupe les fruits en petits morceaux","Presse le citron par-dessus","Ajoute une cuillere de sucre","Melange et mets au frigo 30 min"]},
+    {name:"Sandwich jambon-fromage",i:["2 tranches de pain","Jambon","Fromage","Beurre","Moutarde (optionnel)"],s:["Beurre le pain","Ajoute le jambon et le fromage","Referme le sandwich","Tu peux le toaster pour le rendre croustillant !"]}
+  ],
+  en:[
+    {name:"Pancakes",i:["2 eggs","200g flour","300ml milk","butter"],s:["Mix flour and eggs","Add milk gradually","Heat pan with a little butter","Pour batter, wait 1 min, flip!"]},
+    {name:"Chocolate cake",i:["200g chocolate","3 eggs","150g sugar","100g flour","125g butter"],s:["Melt chocolate + butter","Beat eggs + sugar until pale","Mix everything together","Bake 25 min at 180 degrees"]},
+    {name:"Fruit salad",i:["Apple, banana, orange","Sugar","Lemon juice"],s:["Cut fruits into small pieces","Squeeze lemon over them","Add a spoon of sugar","Mix and chill 30 min in fridge"]}
+  ],
+  sv:[
+    {name:"Pannkakor",i:["2 agg","200g mjol","300ml mjolk","smor"],s:["Bland mjol och agg","Tillsatt mjolk gradvis","Varma stekpannan med lite smor","Hall i smet, vantas 1 min, vand!"]},
+    {name:"Chokladkaka",i:["200g choklad","3 agg","150g socker","100g mjol","125g smor"],s:["Smalt choklad + smor","Vispa agg + socker","Bland allt","Grädda 25 min i 180 grader"]},
+    {name:"Fruktsallad",i:["Apple, banan, apelsin","Socker","Citronjuice"],s:["Skär frukterna i bitar","Pressa citron over","Tillsatt lite socker","Bland och svalna 30 min"]}
+  ]
+};
+function detectRecette(n,lang){
+  if(lang==="fr")return n.indexOf("recette")!==-1||n.indexOf("cuisinier")!==-1||n.indexOf("cuisiner")!==-1||n.indexOf("preparer")!==-1||n.indexOf("faire a manger")!==-1||n.indexOf("faire des crepes")!==-1||n.indexOf("faire un gateau")!==-1;
+  if(lang==="sv")return n.indexOf("recept")!==-1||n.indexOf("laga mat")!==-1||n.indexOf("pannkakor")!==-1;
+  return n.indexOf("recipe")!==-1||n.indexOf("how to cook")!==-1||n.indexOf("how to make")!==-1||n.indexOf("cook something")!==-1;
+}
+function buildRecetteHtml(lang){
+  var list=recettesDB[lang]||recettesDB.en;
+  var r=list[Math.floor(Math.random()*list.length)];
+  var ingLbl=lang==="fr"?"Ingredients":lang==="sv"?"Ingredienser":"Ingredients";
+  var stLbl=lang==="fr"?"Etapes":lang==="sv"?"Steg":"Steps";
+  var html="<div class='recipe-card'><div class='recipe-title'>&#127859; "+r.name+"</div>";
+  html+="<strong>"+ingLbl+" :</strong><div class='recipe-step'>"+r.i.map(function(x){return "• "+x;}).join("<br>")+"</div>";
+  html+="<strong style='display:block;margin-top:8px'>"+stLbl+" :</strong>";
+  r.s.forEach(function(s,i){html+="<div class='recipe-step'><strong>"+(i+1)+".</strong> "+s+"</div>";});
+  html+="</div>";
+  return html;
+}
+// ── FEATURE 11 : DEFINITIONS ────────────────────────
+var dicoData={
+  fr:{
+    "algorithme":"Suite d instructions pour resoudre un probleme, comme une recette de cuisine pour un ordinateur.",
+    "photosynthese":"Processus par lequel les plantes fabriquent leur nourriture grace a la lumiere du soleil.",
+    "gravitation":"Force invisible qui attire tous les corps les uns vers les autres. C est elle qui nous maintient sur Terre !",
+    "atome":"La plus petite brique de la matiere. Invisible a l oeil nu. Tout est fait d atomes !",
+    "galaxie":"Immense assemblage de milliards d etoiles, de gaz et de poussieres maintenu par la gravite.",
+    "democratie":"Systeme politique ou les citoyens choisissent leurs dirigeants par le vote.",
+    "chromosome":"Structure presente dans les cellules qui porte notre ADN, notre code genetique.",
+    "ecosysteme":"Ensemble des etres vivants d un milieu et leurs interactions avec l environnement.",
+    "evaporation":"Transformation d un liquide en vapeur par la chaleur. C est comme ca que l eau disparait des flaques !",
+    "meteorite":"Roche venue de l espace qui traverse l atmosphere et atteint la surface de la Terre.",
+    "intelligence":"Capacite a apprendre, comprendre, resoudre des problemes et s adapter a de nouvelles situations.",
+    "energie":"Capacite d un corps ou d un systeme a produire du travail ou de la chaleur."
+  },
+  en:{
+    "algorithm":"A set of step-by-step instructions to solve a problem, like a recipe for a computer.",
+    "photosynthesis":"The process by which plants make food from sunlight, water and carbon dioxide.",
+    "gravity":"An invisible force that pulls all objects toward each other. It keeps us on the ground!",
+    "atom":"The smallest building block of matter. Everything is made of atoms!",
+    "galaxy":"A massive collection of billions of stars, gas and dust held together by gravity.",
+    "democracy":"A political system where citizens choose their leaders by voting.",
+    "chromosome":"A structure inside cells that carries our DNA, our genetic code.",
+    "ecosystem":"All the living things in an area and how they interact with each other and the environment.",
+    "evaporation":"The process of a liquid turning into vapor due to heat. That is why puddles disappear!",
+    "meteorite":"A rock from space that passes through the atmosphere and hits the surface of Earth.",
+    "intelligence":"The ability to learn, understand, solve problems and adapt to new situations.",
+    "energy":"The ability to do work or produce heat. Everything in the universe uses energy."
+  },
+  sv:{
+    "algoritm":"En sekvens av steg-for-steg instruktioner for att losa ett problem, som ett recept for en dator.",
+    "fotosyntes":"Processen dar vaxter tillverkar sin mat med hjalp av solljus, vatten och koldioxid.",
+    "gravitation":"En osynlig kraft som drar alla foremal mot varandra. Den halls oss pa marken!",
+    "atom":"Det minsta byggblocket av materia. Allt ar gjort av atomer!",
+    "galax":"En massiv samling av miljarder stjarnor, gas och damm som halls ihop av gravitation.",
+    "demokrati":"Ett politiskt system dar medborgarna valjer sina ledare genom rosning.",
+    "ekosystem":"Alla levande ting i ett omrade och hur de samspelar med varandra och miljon.",
+    "energi":"Formagan att utfora arbete eller producera varme. Allt i universum anvander energi."
+  }
+};
+function detectDef(n,lang){
+  var m;
+  if(lang==="fr")m=n.match(/(?:definition de|qu est ce que|c est quoi|definir|signifie|veut dire)\s+(.+)/);
+  else if(lang==="sv")m=n.match(/(?:definition av|vad ar|vad betyder|vad innebar)\s+(.+)/);
+  else m=n.match(/(?:definition of|what is a|what is an|define|meaning of|what does)\s+(.+)/);
+  if(m&&m[1]){var w=m[1].replace(/[?!.]+$/,"").trim().toLowerCase();return w.length>1?w:null;}
+  return null;
+}
+function lookupDef(word,lang){
+  var d=dicoData[lang]||dicoData.en;
+  if(d[word])return{w:word,def:d[word]};
+  var keys=Object.keys(d);
+  for(var i=0;i<keys.length;i++){
+    if(keys[i].indexOf(word)!==-1||word.indexOf(keys[i])!==-1)return{w:keys[i],def:d[keys[i]]};
+  }
+  return null;
+}
+function buildDefHtml(wd,def,lang){
+  var lbl=lang==="fr"?"Definition":lang==="sv"?"Definition":"Definition";
+  var cap=wd.charAt(0).toUpperCase()+wd.slice(1);
+  return "<div class='wod-card'><div class='wod-word'>&#128218; "+cap+"</div><div class='wod-def'><strong>"+lbl+" :</strong> "+def+"</div></div>";
+}
+// ── FEATURE 12 : MODE DEFI ──────────────────────────
+var defiState=null;
+function detectDefi(n,lang){
+  if(lang==="fr")return n.indexOf("mode defi")!==-1||(n.indexOf("defi")!==-1&&n.indexOf("quiz")!==-1)||n.indexOf("5 questions")!==-1||n.indexOf("chrono")!==-1&&n.indexOf("quiz")!==-1;
+  if(lang==="sv")return n.indexOf("utmaning")!==-1&&n.indexOf("quiz")!==-1||n.indexOf("5 fragor")!==-1;
+  return (n.indexOf("challenge")!==-1&&n.indexOf("quiz")!==-1)||n.indexOf("5 question quiz")!==-1||n.indexOf("speed quiz")!==-1;
+}
+function startDefi(lang,cb){
+  if(defiState){cb(lang==="fr"?"Un defi est deja en cours !":"Challenge already running!");return;}
+  defiState={q:[],cur:0,score:0,lang:lang,timeLeft:60,interval:null};
+  fetch("https://opentdb.com/api.php?amount=5&type=multiple&difficulty=easy")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.results||!d.results.length){defiState=null;cb(lang==="fr"?"Impossible de charger le defi !":"Could not load challenge!");return;}
+      defiState.q=d.results;
+      var lbl=lang==="fr"?"&#127942; Mode Defi lance ! 5 questions en 60 secondes. C est parti !":lang==="sv"?"&#127942; Utmaningslage! 5 fragor pa 60 sekunder. Gar!":"&#127942; Challenge Mode! 5 questions in 60 seconds. Go!";
+      cb(lbl);
+      setTimeout(function(){askDefiQ();},900);
+      defiState.interval=setInterval(function(){
+        if(!defiState)return;
+        defiState.timeLeft--;
+        var te=document.getElementById("defiTimer");
+        if(te)te.textContent="&#9203; "+defiState.timeLeft+"s";
+        if(defiState.timeLeft<=0){clearInterval(defiState.interval);finishDefi(lang);}
+      },1000);
+    }).catch(function(){defiState=null;cb(lang==="fr"?"Mode defi indisponible !":"Challenge mode unavailable!");});
+}
+function askDefiQ(){
+  if(!defiState||defiState.cur>=defiState.q.length){finishDefi(defiState?defiState.lang:currentLang);return;}
+  var qd=defiState.q[defiState.cur];
+  var tmp=document.createElement("div");
+  tmp.innerHTML=qd.question;var q=tmp.textContent;
+  var opts=qd.incorrect_answers.slice();opts.push(qd.correct_answer);
+  opts.sort(function(){return Math.random()-.5;});
+  tmp.innerHTML=qd.correct_answer;
+  defiState.currentOpts=opts;
+  defiState.currentCorrect=tmp.textContent.toLowerCase();
+  var lang=defiState.lang;
+  var html="<div class='defi-card'><div class='defi-timer' id='defiTimer'>&#9203; "+defiState.timeLeft+"s</div><div class='qz-q'>&#10067; Q"+(defiState.cur+1)+"/5 : "+q+"</div>";
+  ["A","B","C","D"].forEach(function(l,i){
+    var od=document.createElement("div");od.innerHTML=opts[i]||"";
+    html+="<div class='qz-opt' onclick='answerDefi(\""+l+"\")'>"+l+". "+od.textContent+"</div>";
+  });
+  html+="</div>";
+  addMsg(html,"bot");playBeep();
+}
+function answerDefi(letter){
+  if(!defiState)return;
+  var idx=["a","b","c","d"].indexOf(letter.toLowerCase());
+  if(idx===-1)return;
+  var od=document.createElement("div");od.innerHTML=defiState.currentOpts[idx]||"";
+  var correct=od.textContent.toLowerCase()===defiState.currentCorrect;
+  if(correct)defiState.score++;
+  defiState.cur++;
+  var lang=defiState.lang;
+  var fb=correct?(lang==="fr"?"&#10003; Correct !":"&#10003; Correct!"):(lang==="fr"?"&#10007; Rate ! C etait : "+defiState.currentCorrect:"&#10007; Wrong! It was: "+defiState.currentCorrect);
+  addMsg(fb,"bot");
+  if(defiState.cur>=5||defiState.timeLeft<=0){setTimeout(function(){finishDefi(lang);},600);}
+  else{setTimeout(function(){askDefiQ();},800);}
+}
+function finishDefi(lang){
+  if(!defiState)return;
+  clearInterval(defiState.interval);
+  var sc=defiState.score;defiState=null;
+  addScore(sc*10);
+  var msg=lang==="fr"?"&#127942; Defi termine ! Score : "+sc+"/5. Tu gagnes +"+(sc*10)+" points ! Total : &#11088; "+score:
+          lang==="sv"?"&#127942; Utmaning klar! Poang: "+sc+"/5. +"+sc*10+" poang!":
+          "&#127942; Challenge done! Score: "+sc+"/5. +"+(sc*10)+" points! Total: &#11088; "+score;
+  addMsg(msg,"bot");
+  if(document.getElementById("autoVoice")&&document.getElementById("autoVoice").checked)speakText(msg);
+}
+// ── FEATURE 13 : 20 QUESTIONS ───────────────────────
+var vingtQItems=[
+  {fr:"elephant",en:"elephant",sv:"elefant",h:{fr:["Je suis un animal","Je suis tres grand et gris","J ai une longue trompe","Je vis en Afrique ou en Asie"],en:["I am an animal","I am very large and grey","I have a long trunk","I live in Africa or Asia"],sv:["Jag ar ett djur","Jag ar mycket stor och gra","Jag har en lang snabel","Jag lever i Afrika"]}},
+  {fr:"soleil",en:"sun",sv:"solen",h:{fr:["Je brille dans le ciel","Je suis une etoile","Je rechauff la Terre","Je ne suis pas vivant"],en:["I shine in the sky","I am a star","I warm the Earth","I am not alive"],sv:["Jag lyser pa himlen","Jag ar en stjarna","Jag varmer Jorden","Jag ar inte levande"]}},
+  {fr:"pizza",en:"pizza",sv:"pizza",h:{fr:["Je suis de la nourriture","Je suis ronde","Je viens d Italie","On me mange avec les mains"],en:["I am food","I am usually round","I come from Italy","You eat me with your hands"],sv:["Jag ar mat","Jag ar rund","Jag kommer fran Italien","Man ater mig med handerna"]}},
+  {fr:"avion",en:"airplane",sv:"flygplan",h:{fr:["Je peux voler","Je transporte des passagers","J ai des ailes","On me trouve dans les aeroports"],en:["I can fly","I carry passengers","I have wings","You find me at airports"],sv:["Jag kan flyga","Jag transporterar passagerare","Jag har vingar","Du hittar mig pa flygplatser"]}},
+  {fr:"guitare",en:"guitar",sv:"gitarr",h:{fr:["Je suis un instrument de musique","J ai des cordes","On me gratte avec les doigts","Je suis populaire dans le rock"],en:["I am a musical instrument","I have strings","You strum me with fingers","I am popular in rock music"],sv:["Jag ar ett musikinstrument","Jag har strangar","Man spelar mig med fingrarna","Jag ar populare i rock"]}},
+  {fr:"livre",en:"book",sv:"bok",h:{fr:["Je ne suis pas vivant","J ai des pages","On me lit","Je contiens des histoires"],en:["I am not alive","I have pages","You read me","I contain stories"],sv:["Jag ar inte levande","Jag har sidor","Man laser mig","Jag innehaller berattelser"]}},
+  {fr:"requin",en:"shark",sv:"haj",h:{fr:["Je suis un animal","Je vis dans l eau","J ai beaucoup de dents","Je suis dans les films d horreur"],en:["I am an animal","I live in water","I have many teeth","I appear in horror movies"],sv:["Jag ar ett djur","Jag lever i vatten","Jag har manga tander","Jag ar med i skrackfilmer"]}},
+  {fr:"lune",en:"moon",sv:"manen",h:{fr:["Je brille la nuit","Je tourne autour de la Terre","J ai ete visitee en 1969","Je n ai pas d atmosphere"],en:["I shine at night","I orbit around Earth","I was visited in 1969","I have no atmosphere"],sv:["Jag lyser pa natten","Jag kretsar kring Jorden","Jag besoktes 1969","Jag har ingen atmosfar"]}}
+];
+var vingtQState=null;
+function detectVingtQ(n,lang){
+  if(lang==="fr")return n.indexOf("20 questions")!==-1||n.indexOf("vingt questions")!==-1||n.indexOf("pense a quelque chose")!==-1||n.indexOf("devine a quoi")!==-1;
+  if(lang==="sv")return n.indexOf("20 fragor")!==-1||n.indexOf("gissa vad jag")!==-1;
+  return n.indexOf("20 questions")!==-1||n.indexOf("twenty questions")!==-1||n.indexOf("think of something")!==-1;
+}
+function startVingtQ(lang){
+  var item=vingtQItems[Math.floor(Math.random()*vingtQItems.length)];
+  vingtQState={item:item,lang:lang,hintIdx:0,asked:0};
+  var hints=item.h[lang]||item.h.en;
+  return lang==="fr"?"&#129300; Je pense a quelque chose... Tu as 20 questions pour deviner en posant des questions Oui/Non. <strong>Indice 1 :</strong> "+hints[0]:
+         lang==="sv"?"&#129300; Jag tanker pa nagot... Du har 20 fragor pa dig. <strong>Ledtrad 1:</strong> "+hints[0]:
+         "&#129300; I am thinking of something... You have 20 questions (yes/no). <strong>Hint 1:</strong> "+hints[0];
+}
+function checkVingtQ(n,lang){
+  if(!vingtQState)return null;
+  var item=vingtQState.item;
+  var ans=item[lang]||item.en;
+  // Check guess
+  if(n.indexOf(ans.toLowerCase())!==-1||n.indexOf((item.fr||"").toLowerCase())!==-1||n.indexOf((item.en||"").toLowerCase())!==-1||n.indexOf((item.sv||"").toLowerCase())!==-1){
+    addScore(15);
+    var win=lang==="fr"?"&#127881; Bravo ! C etait <strong>"+ans+"</strong> ! +15 points !":lang==="sv"?"&#127881; Bra jobbat! Det var <strong>"+ans+"</strong>! +15 poang!":"&#127881; Well done! It was <strong>"+ans+"</strong>! +15 points!";
+    vingtQState=null;return win;
+  }
+  vingtQState.asked++;
+  if(vingtQState.asked>=20){
+    var lose=lang==="fr"?"Dommage ! La reponse etait : <strong>"+ans+"</strong>":lang==="sv"?"Trakigt! Svaret var: <strong>"+ans+"</strong>":"Too bad! The answer was: <strong>"+ans+"</strong>";
+    vingtQState=null;return lose;
+  }
+  // Give next hint every 4 questions
+  var hints=item.h[lang]||item.h.en;
+  var hintMsg="";
+  if(vingtQState.asked%4===0&&vingtQState.hintIdx<hints.length-1){
+    vingtQState.hintIdx++;
+    var hl=lang==="fr"?"Indice "+(vingtQState.hintIdx+1)+" : ":lang==="sv"?"Ledtrad "+(vingtQState.hintIdx+1)+": ":"Hint "+(vingtQState.hintIdx+1)+": ";
+    hintMsg="<br><em>"+hl+hints[vingtQState.hintIdx]+"</em>";
+  }
+  // Figure out yes/no from hints
+  var allHints="";
+  for(var i=0;i<=vingtQState.hintIdx;i++)allHints+=normalize(hints[i]||"")+" ";
+  var qwords=n.split(" ").filter(function(w){return w.length>3;});
+  var isYes=qwords.some(function(w){return allHints.indexOf(w)!==-1;});
+  var remaining=20-vingtQState.asked;
+  var qa=(isYes?(lang==="fr"?"Oui !":lang==="sv"?"Ja!":"Yes!"):(lang==="fr"?"Non !":lang==="sv"?"Nej!":"No!"))+hintMsg+" <em style='font-size:.75rem;opacity:.6'>("+remaining+" "+(lang==="fr"?"restantes":lang==="sv"?"kvar":"left")+")</em>";
+  return qa;
+}
+// ── FEATURE 14 : HISTOIRE INTERACTIVE ──────────────
+var iStoryData={
+  fr:{
+    s1:{t:"Tu es dans une foret magique. Deux chemins s offrent a toi...",c:[{l:"&#127794; Chemin de gauche",n:"s2a"},{l:"&#127795; Chemin de droite",n:"s2b"}]},
+    s2a:{t:"Une grotte ! A l interieur, un dragon endormi avec un tas d or.",c:[{l:"&#128564; Reveiller le dragon",n:"s3a"},{l:"&#128176; Prendre l or discreetement",n:"s3b"}]},
+    s2b:{t:"Un vieux sorcier t arrete et propose de t apprendre la magie !",c:[{l:"&#10024; Accepter son enseignement",n:"s3c"},{l:"&#127939; Continuer ta route",n:"s3d"}]},
+    s3a:{t:"Le dragon se reveille... et te sourit ! Il etait seul. Il t offre de l or et devient ton ami. &#127942; FIN HEUREUSE !",c:null},
+    s3b:{t:"Tu prends l or mais tu trebuches ! Le dragon rit et te dit de garder l or. &#127942; FIN HEUREUSE !",c:null},
+    s3c:{t:"Tu apprends la magie en 3 jours et deviens le sorcier le plus puissant du royaume ! &#127942; FIN LEGENDAIRE !",c:null},
+    s3d:{t:"Tu trouves un village enchante dont les habitants t accueillent en heros ! &#127942; FIN HEUREUSE !",c:null}
+  },
+  en:{
+    s1:{t:"You are in a magical forest. Two paths lie before you...",c:[{l:"&#127794; Left path",n:"s2a"},{l:"&#127795; Right path",n:"s2b"}]},
+    s2a:{t:"A cave! Inside, a sleeping dragon with a pile of gold.",c:[{l:"&#128564; Wake the dragon",n:"s3a"},{l:"&#128176; Steal the gold quietly",n:"s3b"}]},
+    s2b:{t:"An old wizard stops you and offers to teach you magic!",c:[{l:"&#10024; Accept his teaching",n:"s3c"},{l:"&#127939; Continue on your way",n:"s3d"}]},
+    s3a:{t:"The dragon wakes up... and smiles! He was lonely. He gives you gold and becomes your friend. &#127942; HAPPY ENDING!",c:null},
+    s3b:{t:"You grab the gold but slip! The dragon laughs and tells you to keep it. &#127942; HAPPY ENDING!",c:null},
+    s3c:{t:"You learn magic in 3 days and become the most powerful wizard in the kingdom! &#127942; LEGENDARY ENDING!",c:null},
+    s3d:{t:"You find an enchanted village where the people welcome you as a hero! &#127942; HAPPY ENDING!",c:null}
+  },
+  sv:{
+    s1:{t:"Du ar i en magisk skog. Tva vagar ligger framfor dig...",c:[{l:"&#127794; Vanster vag",n:"s2a"},{l:"&#127795; Hoger vag",n:"s2b"}]},
+    s2a:{t:"En grotta! Inne finns en sovande drake med en hog guld.",c:[{l:"&#128564; Vack draken",n:"s3a"},{l:"&#128176; Stjal guldet tyst",n:"s3b"}]},
+    s2b:{t:"En gammal trollkarl stoppar dig och erbjuder att lara dig magi!",c:[{l:"&#10024; Acceptera hans lardom",n:"s3c"},{l:"&#127939; Fortsatt din resa",n:"s3d"}]},
+    s3a:{t:"Draken vaknar... och ler mot dig! Han var ensam. Han ger dig guld och blir din van. &#127942; LYCKLIGT SLUT!",c:null},
+    s3b:{t:"Du tar guldet men halkar! Draken skrattar och sager att du far behalla det. &#127942; LYCKLIGT SLUT!",c:null},
+    s3c:{t:"Du lar dig magi pa 3 dagar och blir det maktigaste trollkarl i kungariket! &#127942; LEGENDARISKT SLUT!",c:null},
+    s3d:{t:"Du hittar en fortrollad by dar invanarana valkomnar dig som hjalte! &#127942; LYCKLIGT SLUT!",c:null}
+  }
+};
+var iStoryState=null;
+function detectInteractiveStory(n,lang){
+  if(lang==="fr")return n.indexOf("histoire interactive")!==-1||n.indexOf("aventure interactive")!==-1||n.indexOf("jeu d aventure")!==-1;
+  if(lang==="sv")return n.indexOf("interaktiv historia")!==-1||n.indexOf("avenyr")!==-1&&n.indexOf("interaktiv")!==-1;
+  return n.indexOf("interactive story")!==-1||n.indexOf("adventure game")!==-1||n.indexOf("choose your story")!==-1;
+}
+function buildINodeHtml(node){
+  var html="<div class='wiki-card'>"+node.t+"</div>";
+  if(node.c){
+    html+="<div class='story-choices'>";
+    node.c.forEach(function(ch){html+="<button class='story-btn' onclick='advanceIStory(\""+ch.n+"\")'>"+ch.l+"</button>";});
+    html+="</div>";
+  }else{
+    iStoryState=null;
+    addScore(10);
+  }
+  return html;
+}
+function startInteractiveStory(lang){
+  var d=iStoryData[lang]||iStoryData.en;
+  iStoryState={data:d,lang:lang};
+  return buildINodeHtml(d.s1);
+}
+function advanceIStory(nodeKey){
+  if(!iStoryState)return;
+  var node=iStoryState.data[nodeKey];
+  if(!node)return;
+  var html=buildINodeHtml(node);
+  addMsg(html,"bot");
+  addToConvHistory("bot",node.t);
+  playBeep();
+  var chat=document.getElementById("chat");
+  if(chat)chat.scrollTop=chat.scrollHeight;
+}
+// ── FEATURE 15 : XEARNES POSE DES QUESTIONS ─────────
+var xeQuestions={
+  fr:["Et toi, tu as une matiere preferee a l ecole ?","Si tu pouvais avoir un super-pouvoir, ce serait lequel ?","Tu preferes l ete ou l hiver ?","Quel animal tu voudrais avoir comme animal de compagnie ?","C est quoi ton jeu video prefere en ce moment ?","Si tu pouvais voyager n importe ou, tu irais ou ?","Tu as une chanson preferee en ce moment ?"],
+  sv:["Vad ar ditt amnesfavorit i skolan?","Om du kunde ha en superkraft, vilken skulle det vara?","Foredrar du sommar eller vinter?","Vilket djur vill du ha som husdjur?","Vilket ar ditt favoritspel just nu?","Om du kunde resa vart som helst, vart aker du?"],
+  en:["What is your favourite subject at school?","If you could have a superpower, what would it be?","Do you prefer summer or winter?","What animal would you love as a pet?","What is your favourite video game right now?","If you could travel anywhere, where would you go?","Do you have a favourite song right now?"]
+};
+var xeMsgCount=0;
+function maybeXeQuestion(lang){
+  xeMsgCount++;
+  if(xeMsgCount>=4&&xeMsgCount%5===0&&Math.random()<0.65){
+    var qs=xeQuestions[lang]||xeQuestions.en;
+    return "&#128161; "+pick(qs);
+  }
+  return null;
+}
+// ── FEATURE 2 : DETECTION D HUMEUR ──────────────────
+var moodWords={
+  sad:{fr:["triste","pleure","malheureux","mal","deprime","seul","ennui","peur","anxieux","mauvaise journee","ca va pas","nul"],en:["sad","crying","unhappy","bad","depressed","alone","bored","scared","anxious","bad day","terrible","awful"],sv:["ledsen","grater","olycklig","daligt","ensam","trakig","radd","orolig"]},
+  happy:{fr:["super","genial","content","heureux","fantastique","parfait","trop bien","cool","excellent","joie"],en:["great","awesome","happy","joyful","fantastic","perfect","excellent","amazing","wonderful","excited"],sv:["bra","fantastisk","glad","lycklig","perfekt","kul","excellent","underbar","jattebra"]}
+};
+var moodReplies={
+  sad:{fr:["Oh, je suis vraiment desole de l entendre ! &#128153; Tu n es pas seul, je suis la ! Veux-tu parler de ce qui ne va pas ?","Ca me touche de savoir que tu n es pas bien. &#128153; Parfois une bonne blague aide ! Veux-tu en entendre une ?","Eh, les moments difficiles, ca passe ! &#128153; Tu es courageux de l exprimer. Dis-moi tout !"],en:["Oh, I am so sorry to hear that! &#128153; You are not alone, I am here! Want to talk about it?","That makes me sad too. &#128153; Sometimes a good joke helps! Want to hear one?","Hey, tough moments pass! &#128153; You are brave for sharing. Tell me everything!"],sv:["Och, det beklagar jag verkligen! &#128153; Du ar inte ensam, jag ar har! Vill du prata om det?","Det gor mig ledsen att hora. &#128153; Ibland hjalper ett gott skratt! Vill du hora ett skamt?","Hej, svara stunder gar over! &#128153; Det ar modigt att dela. Beratta allt!"]},
+  happy:{fr:["C est super d entendre ca ! &#127881; Ton energie positive me booste !","Wow, j adore ton enthousiasme ! &#127881; Garde cette belle humeur !","Genial ! La bonne humeur, ca se partage ! &#127881;"],en:["That is great to hear! &#127881; Your positive energy is contagious!","Wow, I love your enthusiasm! &#127881; Keep that good mood!","Awesome! Good vibes spread! &#127881;"],sv:["Det ar fantastiskt att hora! &#127881; Din positiva energi smittar!","Wow, jag alskar din entusiasm! &#127881; Hall den bra stamnin!","Kanon! Bra vibbar sprider sig! &#127881;"]}
+};
+function detectMood(n,lang){
+  if(n.split(" ").length>8)return null;
+  var sad=moodWords.sad[lang]||moodWords.sad.en;
+  var happy=moodWords.happy[lang]||moodWords.happy.en;
+  for(var i=0;i<sad.length;i++){if(n.indexOf(sad[i])!==-1)return "sad";}
+  for(var i=0;i<happy.length;i++){if(n.indexOf(happy[i])!==-1)return "happy";}
+  return null;
+}
+window.addEventListener("load",init);
+</script>
+</body>
+</html>
