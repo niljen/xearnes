@@ -229,9 +229,9 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <div class="vp-title">&#127925; Tonalite</div>
       <div class="vp-row">
         <span class="vp-label">Grave</span>
-        <input type="range" id="voicePitch" min="0.5" max="2.0" step="0.05" value="1.05"
+        <input type="range" id="voicePitch" min="0.5" max="2.0" step="0.05" value="1.0"
           oninput="document.getElementById(&quot;pitchVal&quot;).textContent=parseFloat(this.value).toFixed(2)">
-        <span class="vp-val" id="pitchVal">1.05</span>
+        <span class="vp-val" id="pitchVal">1.00</span>
       </div>
     </div>
     <button class="vp-test" onclick="testVoice()">&#127897; Tester</button>
@@ -374,6 +374,7 @@ var langs={
 };
 var currentLang=localStorage.getItem("xn_lang")||"sv";
 var allVoices=[],selectedVoiceIndex=0,fullHist=[],userName=localStorage.getItem("xn_name")||"";
+var _selectedVoiceName=localStorage.getItem("xn_voice_name")||"";
 try{fullHist=JSON.parse(localStorage.getItem("xn_hist")||"[]");}catch(e){fullHist=[];}
 var learnedFacts={};
 try{learnedFacts=JSON.parse(localStorage.getItem("xn_learn")||"{}");}catch(e){learnedFacts={};}
@@ -1856,6 +1857,35 @@ function getVoicesForLang(lang){
   var code={sv:"sv",fr:"fr",en:"en",es:"es",de:"de",it:"it",pt:"pt",ja:"ja",zh:"zh",ar:"ar",ru:"ru"}[lang]||"en";
   return allVoices.filter(function(v){return v.lang.toLowerCase().indexOf(code)===0;});
 }
+// Score de qualité de voix (plus élevé = meilleure qualité)
+function scoreVoice(v){
+  var n=(v.name||"").toLowerCase();
+  // Voix robots à éviter absolument
+  if(n.indexOf("espeak")!==-1||n.indexOf("pico")!==-1||n.indexOf("mbrola")!==-1)return -99;
+  var s=0;
+  // Google = meilleure qualité sur Chromebook (voix en ligne)
+  if(n.indexOf("google")!==-1)s+=30;
+  else if(n.indexOf("wavenet")!==-1||n.indexOf("neural")!==-1||n.indexOf("premium")!==-1||n.indexOf("enhanced")!==-1)s+=22;
+  else if(n.indexOf("natural")!==-1||n.indexOf("studio")!==-1)s+=18;
+  else if(n.indexOf("microsoft")!==-1&&(n.indexOf("online")!==-1||n.indexOf("neural")!==-1))s+=15;
+  else if(n.indexOf("microsoft")!==-1)s+=8;
+  else if(n.indexOf("apple")!==-1||n.indexOf("samantha")!==-1||n.indexOf("karen")!==-1||n.indexOf("daniel")!==-1||n.indexOf("siri")!==-1)s+=12;
+  if(v.localService)s+=2;
+  return s;
+}
+// Choisir la meilleure voix pour une langue
+function getBestVoice(lang){
+  var voices=getVoicesForLang(lang);
+  if(!voices.length)return null;
+  // Respecter le choix manuel de l'utilisateur
+  if(_selectedVoiceName){
+    var found=null;
+    for(var i=0;i<voices.length;i++){if(voices[i].name===_selectedVoiceName){found=voices[i];break;}}
+    if(found)return found;
+  }
+  // Sinon : trier par score et prendre la meilleure
+  return voices.slice().sort(function(a,b){return scoreVoice(b)-scoreVoice(a);})[0];
+}
 function populateVoiceSelect(){
   var sel=document.getElementById("voiceSelect");
   var inf=document.getElementById("voiceInfo");
@@ -1864,51 +1894,51 @@ function populateVoiceSelect(){
     sel.innerHTML="<option>--</option>";
     if(inf)inf.textContent="Aucune voix disponible";return;
   }
-  voices.sort(function(a,b){
-    var qa=a.name.indexOf("Neural")!==-1?2:a.name.indexOf("Google")!==-1?1:0;
-    var qb=b.name.indexOf("Neural")!==-1?2:b.name.indexOf("Google")!==-1?1:0;
-    return qb-qa;
-  });
+  // Trier par qualité (meilleure en premier)
+  var sorted=voices.slice().sort(function(a,b){return scoreVoice(b)-scoreVoice(a);});
   sel.innerHTML="";
-  voices.forEach(function(v,i){
-    var quality=v.name.indexOf("Neural")!==-1?"⭐ ":(v.name.indexOf("Google")!==-1?"🌟 ":"");
+  sorted.forEach(function(v){
     var opt=document.createElement("option");
-    opt.value=i;
-    opt.textContent=quality+v.name+" ("+v.lang+")";
+    opt.value=v.name;
+    var sc=scoreVoice(v);
+    var stars=sc>=20?"⭐⭐⭐ ":sc>=8?"⭐⭐ ":sc>0?"⭐ ":"🔇 ";
+    opt.textContent=stars+v.name;
+    if(v.name===_selectedVoiceName)opt.selected=true;
     sel.appendChild(opt);
   });
-  var saved=parseInt(localStorage.getItem("xn_voice_idx")||"0");
-  if(saved<voices.length)sel.value=saved;
-  selectedVoiceIndex=parseInt(sel.value)||0;
-  if(inf)inf.textContent=voices[selectedVoiceIndex]?voices[selectedVoiceIndex].name:"";
+  if(!_selectedVoiceName||!sel.value){sel.selectedIndex=0;}
+  var best=getBestVoice(currentLang);
+  if(inf)inf.textContent=best?(best.name+" ✅"):"";
 }
 function onVoiceChange(){
   var sel=document.getElementById("voiceSelect");
-  selectedVoiceIndex=parseInt(sel.value)||0;
-  localStorage.setItem("xn_voice_idx",selectedVoiceIndex);
-  var voices=getVoicesForLang(currentLang);
+  _selectedVoiceName=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].value:"";
+  localStorage.setItem("xn_voice_name",_selectedVoiceName);
   var inf=document.getElementById("voiceInfo");
-  if(inf)inf.textContent=voices[selectedVoiceIndex]?voices[selectedVoiceIndex].name:"";
+  if(inf)inf.textContent=_selectedVoiceName+" ✅";
 }
 function testVoice(){speakText(langs[currentLang].testPhrase);}
 function speakText(text){
   if(!window.speechSynthesis)return;
-  var voices=getVoicesForLang(currentLang);
-  // Si pas de voix pour cette langue → ne pas forcer une mauvaise voix
-  // Laisser le navigateur choisir avec juste utter.lang
-  var voice=voices.length>0?voices[Math.min(selectedVoiceIndex,voices.length-1)]:null;
+  var voice=getBestVoice(currentLang);
   var rateEl=document.getElementById("voiceRate");
   var pitchEl=document.getElementById("voicePitch");
   var rate=rateEl?parseFloat(rateEl.value)||0.90:0.90;
-  var pitch=pitchEl?parseFloat(pitchEl.value)||1.05:1.05;
+  var pitch=pitchEl?parseFloat(pitchEl.value)||1.0:1.0;
   doSpeak(text,voice,rate,pitch);
 }
 function cleanForSpeech(text,lang){
   // 1. Supprimer les balises HTML
   text=text.replace(/<[^>]+>/g,"");
-  // 2. Supprimer entités HTML (&amp; &lt; etc.)
-  text=text.replace(/&[a-z]+;/g," ");
-  // 3. Corrections de prononciation
+  // 2. Supprimer entités HTML (&amp; &lt; &#128; etc.)
+  text=text.replace(/&#\d+;/g," ");
+  text=text.replace(/&[a-zA-Z]+;/g," ");
+  // 3. Supprimer TOUS les emojis (pour éviter que la voix bégaie)
+  try{text=text.replace(/[\u{1F000}-\u{1FFFF}]/gu," ");}catch(e){}
+  text=text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g," "); // fallback surrogates
+  text=text.replace(/[☀-➿]/g," "); // symboles divers ☀️⚡✅
+  text=text.replace(/[⬀-⯿]/g," "); // autres symboles
+  // 4. Corrections de prononciation selon la langue
   if(lang==="sv"){
     text=text.replace(/chatbot/gi,"chatt bott");
     text=text.replace(/\bAI\b/g,"A I");
@@ -1916,24 +1946,27 @@ function cleanForSpeech(text,lang){
     text=text.replace(/\bDNA\b/g,"De En A");
     text=text.replace(/NASA/gi,"Nasa");
     text=text.replace(/IKEA/g,"I Kea");
+    text=text.replace(/Xearnes/gi,"Shearnes");
   }else if(lang==="fr"){
     text=text.replace(/chatbot/gi,"chabot");
     text=text.replace(/\bAI\b/g,"A I");
     text=text.replace(/Wikipedia/gi,"Wikipeedia");
     text=text.replace(/\bDNA\b/g,"De En A");
     text=text.replace(/NASA/gi,"Naza");
+    text=text.replace(/Xearnes/gi,"Ziarnes");
   }else if(lang==="ja"||lang==="zh"||lang==="ar"||lang==="ru"){
-    // Scripts non-latins : garder les caractères natifs, supprimer seulement emojis/contrôle
-    text=text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g," ");
+    // Scripts non-latins : garder les caractères natifs
     text=text.replace(/[\x00-\x1F\x7F]/g," ");
   }else{
-    // Autres langues latines (es, de, it, pt, en)
+    // Langues latines (es, de, it, pt, en)
     text=text.replace(/chatbot/gi,"chat bot");
     text=text.replace(/\bDNA\b/g,"D N A");
     text=text.replace(/NASA/gi,"Nassa");
-    text=text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g," ");
+    text=text.replace(/Xearnes/gi,"Zearnes");
     text=text.replace(/[^\x20-\x7E\xC0-ɏ]/g," ");
   }
+  // 5. Limiter la longueur (éviter les lectures trop longues)
+  if(text.length>400)text=text.substring(0,400)+"...";
   // Nettoyer les espaces en trop
   text=text.replace(/\s+/g," ").trim();
   return text;
@@ -2134,7 +2167,7 @@ function init(){
     };
   }
   var savedRate=parseFloat(localStorage.getItem("xn_voice_rate")||"0.90");
-  var savedPitch=parseFloat(localStorage.getItem("xn_voice_pitch")||"1.05");
+  var savedPitch=parseFloat(localStorage.getItem("xn_voice_pitch")||"1.0");
   var rateEl=document.getElementById("voiceRate");
   var pitchEl=document.getElementById("voicePitch");
   rateEl.value=savedRate;
