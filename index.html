@@ -1056,7 +1056,20 @@ function detectTranslation(n,lang){
 function fetchTranslation(text,from,to,cb){
   fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair="+from+"|"+to)
     .then(function(r){return r.json();})
-    .then(function(d){cb(d.responseStatus===200?d.responseData.translatedText:null);})
+    .then(function(d){
+      if(d.responseStatus!==200){cb(null);return;}
+      var res=d.responseData.translatedText||"";
+      // Vérifications anti-spam / anti-template :
+      // 1. Contient des placeholders %s %d = email système → ignorer
+      if(/%[sd]/.test(res)){cb(null);return;}
+      // 2. Résultat beaucoup trop long par rapport à l'original → mauvaise traduction
+      if(res.length>text.length*6+80){cb(null);return;}
+      // 3. Identique à l'original = pas traduit
+      if(res.toLowerCase().trim()===text.toLowerCase().trim()){cb(null);return;}
+      // 4. Contient des mots suspects (template d'email)
+      if(/sincerely|dear sir|click here|unsubscribe/i.test(res)){cb(null);return;}
+      cb(res);
+    })
     .catch(function(){cb(null);});
 }
 function buildTranslationHtml(original,result,toLang){
