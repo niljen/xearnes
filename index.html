@@ -11,7 +11,7 @@ body{background:var(--bg);color:var(--text);font-family:Segoe UI,system-ui,sans-
 header{background:var(--card);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
 .logo{font-size:1.5rem;font-weight:800;letter-spacing:3px;color:#ffd700;text-shadow:0 0 12px rgba(255,215,0,.6)}
 .badge{font-size:.65rem;background:var(--accent);color:#000;padding:2px 7px;border-radius:20px;font-weight:700;margin-left:4px}
-.header-btns{margin-left:auto;display:flex;gap:8px;align-items:center}
+.header-btns{margin-left:auto;display:flex;gap:5px;align-items:center;overflow-x:auto;flex-shrink:1;min-width:0}
 .lang-btn{background:var(--border);color:var(--text);border:none;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:.8rem;transition:.2s}
 .lang-btn.active{background:var(--accent);color:#000;font-weight:700}
 .icon-btn{background:none;border:1px solid var(--border);color:var(--text2);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.2s}
@@ -171,6 +171,96 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 /* ── ANIMATION BOT ── */
 @keyframes botPop{0%{opacity:0;transform:translateY(8px) scale(.97)}60%{transform:translateY(-2px) scale(1.01)}100%{opacity:1;transform:none}}
 .msg.bot{animation:botPop .3s ease}
+/* ── MINI-JEUX ── */
+.game-card{background:var(--bg);border:2px solid var(--accent);border-radius:12px;padding:14px;margin-top:6px;display:inline-block}
+.game-title{font-size:.84rem;font-weight:800;color:var(--accent);margin-bottom:10px;text-align:center;letter-spacing:.5px}
+.game-score{font-size:.78rem;color:var(--accent2);text-align:center;margin-bottom:6px;font-weight:600}
+.game-restart{display:block;width:100%;margin-top:10px;padding:8px;background:rgba(255,215,0,.1);border:1.5px solid var(--accent);border-radius:8px;color:var(--accent);font-weight:700;font-size:.82rem;cursor:pointer;text-align:center;transition:.2s;box-sizing:border-box}
+.game-restart:hover{background:rgba(255,215,0,.28)}
+/* ── EN LIGNE ── */
+.online-badge{background:rgba(46,204,113,.1);border:1px solid #2ecc71;border-radius:20px;padding:4px 9px;font-size:.72rem;font-weight:700;color:#2ecc71;display:flex;align-items:center;gap:5px;flex-shrink:0;white-space:nowrap;cursor:default}
+.online-dot{width:7px;height:7px;border-radius:50%;background:#2ecc71;flex-shrink:0;animation:onlinePulse 2s infinite}
+@keyframes onlinePulse{0%,100%{opacity:1}50%{opacity:.35}}
+.morpion-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:180px}
+.mp-cell{width:56px;height:56px;font-size:1.6rem;font-weight:900;border:2px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);cursor:pointer;transition:.15s}
+.mp-cell:not([disabled]):hover{background:var(--accent);color:#000;border-color:var(--accent);transform:scale(1.05)}
+.mp-x{color:#f85149!important;border-color:#f85149!important}
+.mp-o{color:#ffd700!important;border-color:#ffd700!important}
+.memory-grid{display:grid;gap:7px;margin-top:4px}
+.mem-card{width:54px;height:54px;font-size:.2rem;border:2px solid var(--border);border-radius:10px;background:var(--card);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;user-select:none}
+.mem-card:not([disabled]):not(.flipped):not(.matched):hover{border-color:var(--accent);transform:scale(1.08)}
+.mem-card.flipped{font-size:1.5rem;background:#1a3060;border-color:var(--accent)}
+.mem-card.matched{font-size:1.5rem;opacity:.35;cursor:default;background:#1a3060;border-color:var(--accent2)}
+.snake-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.snake-canvas{border:2px solid var(--accent);border-radius:8px;display:block}
+.snake-dpad{display:grid;grid-template-columns:repeat(3,40px);gap:5px}
+.snake-btn{width:40px;height:40px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.snake-btn:active,.snake-btn:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+.games-menu{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.game-menu-btn{background:var(--card);border:1px solid var(--accent);color:var(--accent);padding:9px 14px;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:600;transition:.2s;text-align:left}
+.game-menu-btn:hover{background:var(--accent);color:#000}
+/* ── BADGES ── */
+.badge-panel{width:260px;background:var(--card);border-left:1px solid var(--border);display:none;flex-direction:column;flex-shrink:0;overflow:hidden}
+.badge-panel.open{display:flex}
+.badge-ph{padding:12px 14px;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.badge-grid{padding:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;flex:1}
+.badge-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;border:1px solid var(--border);transition:.2s;text-align:center;cursor:default}
+.badge-item.earned{background:rgba(255,215,0,.08);border-color:var(--accent)}
+.badge-item.locked{opacity:.3;filter:grayscale(1)}
+.badge-icon{font-size:1.8rem;line-height:1}
+.badge-name{font-size:.6rem;font-weight:700;color:var(--accent);line-height:1.2;margin-top:2px}
+.badge-prog{font-size:.55rem;color:var(--text2);margin-top:1px}
+/* ── DÉFI DU JOUR ── */
+.defi-jour-card{background:linear-gradient(135deg,#1a2060 0%,#0a0f2c 100%);border:2px solid var(--accent);border-radius:12px;padding:14px;margin-top:6px}
+.dj-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dj-icon{font-size:2rem;line-height:1}
+.dj-title{font-size:.95rem;font-weight:800;color:var(--accent);letter-spacing:.5px}
+.dj-sub{font-size:.7rem;color:var(--text2);margin-top:2px}
+.dj-question{font-size:1rem;font-weight:700;color:var(--text);margin:8px 0 10px;line-height:1.5}
+.dj-bonus{display:inline-block;background:rgba(255,215,0,.15);border:1px solid var(--accent);border-radius:20px;padding:3px 10px;font-size:.75rem;color:var(--accent2);font-weight:700}
+.dj-tip{font-size:.72rem;color:var(--text2);margin-top:8px}
+.dj-done{background:rgba(39,174,96,.15);border:2px solid #27ae60;border-radius:10px;padding:10px;text-align:center;margin-top:6px;font-size:.88rem;color:#2ecc71;font-weight:700;line-height:1.5}
+@keyframes badgePop{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.badge-earned-notif{animation:badgePop .4s ease}
+@media(max-width:640px){.badge-panel{position:fixed;top:0;right:0;bottom:0;z-index:100;width:240px}}
+/* ── LOGIN MODAL ── */
+.login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:none;align-items:center;justify-content:center}
+.login-overlay.open{display:flex}
+.login-box{background:var(--card);border:2px solid var(--accent);border-radius:16px;padding:26px 24px 20px;width:320px;max-width:92vw;position:relative}
+.login-title{font-size:1.25rem;font-weight:800;color:var(--accent);text-align:center;margin-bottom:16px}
+.login-tabs{display:flex;margin-bottom:16px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.login-tab{flex:1;padding:9px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:.85rem;font-weight:700;transition:.2s}
+.login-tab.active{background:var(--accent);color:#000}
+.login-field{margin-bottom:12px}
+.login-field label{display:block;font-size:.75rem;color:var(--text2);margin-bottom:5px;font-weight:600;letter-spacing:.3px}
+.login-field input{width:100%;box-sizing:border-box;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:.92rem;outline:none;transition:.2s}
+.login-field input:focus{border-color:var(--accent)}
+.login-submit{width:100%;padding:12px;background:var(--accent);color:#000;border:none;border-radius:8px;font-weight:800;font-size:.95rem;cursor:pointer;margin-top:6px;transition:.15s;letter-spacing:.3px}
+.login-submit:hover{filter:brightness(1.1)}
+.login-err{color:#e74c3c;font-size:.8rem;text-align:center;margin-top:10px;min-height:1.1em;font-weight:600}
+.login-xbtn{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:1.2rem;line-height:1;padding:4px}
+.login-footer{text-align:center;margin-top:10px;font-size:.72rem;color:var(--text2)}
+/* ── USER BUTTON ── */
+.user-btn{background:rgba(255,215,0,.1);border:1.5px solid var(--accent);border-radius:8px;padding:0 8px;height:34px;color:var(--accent);font-size:.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;transition:.2s;flex-shrink:0}
+.user-btn:hover{background:rgba(255,215,0,.22)}
+/* ── LEADERBOARD PANEL ── */
+.lb-panel{width:280px;background:var(--card);border-left:1px solid var(--border);display:none;flex-direction:column;flex-shrink:0;overflow:hidden}
+.lb-panel.open{display:flex}
+.lb-ph{padding:12px 14px;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.lb-body{flex:1;overflow-y:auto;padding:8px 8px 4px}
+.lb-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:5px;background:rgba(255,215,0,.04);border:1px solid var(--border);transition:.15s}
+.lb-row.me{background:rgba(255,215,0,.13);border-color:var(--accent)}
+.lb-rank{font-size:1.05rem;width:26px;text-align:center;flex-shrink:0;font-weight:800}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-weight:700;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.lb-date{font-size:.63rem;color:var(--text2);margin-top:1px}
+.lb-score{font-size:.88rem;font-weight:800;color:var(--accent);flex-shrink:0}
+.lb-empty{text-align:center;color:var(--text2);font-size:.85rem;padding:30px 10px;line-height:2}
+.lb-loading{text-align:center;color:var(--text2);font-size:.9rem;padding:30px 10px}
+.lb-myrank{border-top:1px solid var(--border);padding:9px 12px;text-align:center;font-size:.76rem;color:var(--accent);font-weight:700}
+.lb-login-hint{padding:10px;text-align:center;font-size:.8rem;color:var(--text2);border-top:1px solid var(--border)}
+.lb-login-hint button{background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 14px;font-weight:700;cursor:pointer;margin-top:6px;font-size:.8rem}
+@media(max-width:640px){.lb-panel{position:fixed;top:0;right:0;bottom:0;z-index:100;width:260px}}
 </style>
 </head>
 <body>
@@ -181,7 +271,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   </div>
   <div class="header-btns">
     <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#129302;</span>
-    <select id="colorSelect" class="lang-select" style="max-width:92px" onchange="setColorTheme(this.value)" title="Couleur">
+    <select id="colorSelect" class="lang-select" style="max-width:76px" onchange="setColorTheme(this.value)" title="Couleur">
       <option value="">&#11088; Defaut</option>
       <option value="blue">&#128309; Bleu</option>
       <option value="purple">&#128995; Violet</option>
@@ -203,10 +293,14 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <option value="ru">&#127479;&#127482; Russkiy</option>
     </select>
     <span class="score-badge" id="scoreBadge" onclick="showScoreInfo()" title="Ton score">&#11088; 0</span>
+    <span class="online-badge" id="onlineBadge" title="Joueurs en ligne"><span class="online-dot"></span><span id="onlineCount">...</span></span>
+    <button class="icon-btn" id="voiceBtn" onclick="toggleVoicePanel()" title="Voix &amp; accent">&#128266;</button>
     <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Mode jour/nuit">&#9728;</button>
+    <button class="icon-btn" id="lbBtn" onclick="toggleLeaderboardPanel()" title="Classement mondial">&#127758;</button>
+    <button class="icon-btn" id="badgeBtn" onclick="toggleBadgePanel()" title="Badges">&#127942;</button>
+    <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()" title="Historique">&#128214;</button>
     <button class="icon-btn" id="fullBtn" onclick="toggleFullscreen()" title="Plein ecran">&#9974;</button>
-    <button class="icon-btn" id="voiceBtn" onclick="toggleVoicePanel()">&#128266;</button>
-    <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()">&#128214;</button>
+    <button class="user-btn" id="userBtn" onclick="openLoginModal()">&#128100; Connexion</button>
   </div>
 </header>
 <div class="main">
@@ -263,6 +357,47 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <button class="hist-clear" onclick="clearHistory()">&#128465; Vider</button>
     </div>
     <div class="hist-list" id="histList"></div>
+  </div>
+  <div class="badge-panel" id="badgePanel">
+    <div class="badge-ph">
+      <span id="badgePanelTitle">&#127942; Badges (0/10)</span>
+      <button class="hist-clear" onclick="toggleBadgePanel()">&#10005;</button>
+    </div>
+    <div class="badge-grid" id="badgeGrid"></div>
+  </div>
+  <div class="lb-panel" id="lbPanel">
+    <div class="lb-ph">
+      <span id="lbTitle">&#127758; Classement mondial</span>
+      <button class="hist-clear" onclick="toggleLeaderboardPanel()">&#10005;</button>
+    </div>
+    <div class="lb-body" id="lbBody"><div class="lb-loading">&#9203; Chargement...</div></div>
+    <div class="lb-myrank" id="lbMyRank" style="display:none"></div>
+    <div class="lb-login-hint" id="lbLoginHint" style="display:none">
+      <span id="lbLoginHintTxt">Connecte-toi pour figurer dans le classement !</span><br>
+      <button onclick="openLoginModal()">&#128100; Se connecter</button>
+    </div>
+  </div>
+</div>
+<!-- LOGIN MODAL -->
+<div class="login-overlay" id="loginOverlay" onclick="if(event.target===this)closeLoginModal()">
+  <div class="login-box">
+    <button class="login-xbtn" onclick="closeLoginModal()">&#10005;</button>
+    <div class="login-title">&#127918; Xearnes</div>
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabLogin" onclick="switchLoginTab('login')">Connexion</button>
+      <button class="login-tab" id="tabRegister" onclick="switchLoginTab('register')">Inscription</button>
+    </div>
+    <div class="login-field">
+      <label>&#128100; Pseudo</label>
+      <input type="text" id="loginName" placeholder="ex: Youssef42" maxlength="20" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+    </div>
+    <div class="login-field">
+      <label>&#128274; Mot de passe</label>
+      <input type="password" id="loginPass" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" maxlength="50" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitLogin()">
+    </div>
+    <button class="login-submit" id="loginSubmitBtn" onclick="submitLogin()">Se connecter</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-footer">Pas de Gmail, pas d'email — juste ton pseudo &#127881;</div>
   </div>
 </div>
 <!-- MINI POPUP -->
@@ -1013,6 +1148,7 @@ function checkQuizAnswer(n,lang){
   if(idx===-1)return null;
   var div=document.createElement("div");div.innerHTML=quizOpts[idx];
   var correct=div.textContent.toLowerCase()===currentQuiz.a||quizOpts[idx]===currentQuiz.a;
+  if(correct){xnStats.quizCorrect=(xnStats.quizCorrect||0)+1;saveStats();addScore(10);}
   var res=correct?(lang==="fr"?"🎉 Bonne réponse ! C est : "+currentQuiz.a:lang==="sv"?"🎉 Rätt! Svaret är: "+currentQuiz.a:"🎉 Correct! The answer is: "+currentQuiz.a):(lang==="fr"?"❌ Mauvaise ! La bonne était : "+currentQuiz.a:lang==="sv"?"❌ Fel! Rätt svar: "+currentQuiz.a:"❌ Wrong! Correct answer: "+currentQuiz.a);
   currentQuiz=null;return res;
 }
@@ -1140,7 +1276,6 @@ var pronDB={
   pizza:{fr:"pid-ZA",sv:"PITS-a",de:"PIT-sa",en:"PEET-sa",ja:"ピッツァ (pit-tsu-a)",ar:"بيتزا (bit-za)"},
   sushi:{fr:"SOU-chi",en:"SOO-shee",sv:"SU-shi",de:"ZU-schi",es:"SU-shi",ar:"سوشي (su-shi)"},
   croissant:{en:"kwah-SAHN",sv:"kroa-SANG",de:"kroa-SONG",ja:"クロワッサン (ku-ro-wa-san)",zh:"可颂 (kě-sòng)"},
-  merci:{en:"mair-SEE",sv:"mer-SI",de:"mair-SI",es:"mer-SI"},
   non:{en:"noh",sv:"nong",de:"NONG",ja:"ノン (non)"},
   chat:{en:"sha (mot français)",de:"scha",es:"cha",ja:"シャ (sha)"},
   maison:{en:"may-ZOHN",sv:"mé-ZON",de:"mä-SONG",ja:"メゾン (me-zon)"},
@@ -1260,7 +1395,7 @@ function handleCorrection(n,lang){
   awaitingCorrection=true;
   correctionContext=lastTopic[lang];
   if(lang==="fr")return "Oups ! Desole pour l erreur. Quelle est la bonne reponse ? Je vais apprendre !";
-  if(lang==="sv")return "Oj, forlat! Vad ar ratt svar? Jag vill lara mig!";
+  if(lang==="sv")return "Oj, förlåt! Vad är rätt svar? Jag vill lära mig!";
   return "Oops, sorry! What is the correct answer? I want to learn!";
 }
 function handleCorrectionAnswer(n,lang){
@@ -1269,7 +1404,7 @@ function handleCorrectionAnswer(n,lang){
     saveFact(correctionContext,n);
     correctionContext=null;
     if(lang==="fr")return "Merci ! J ai retenu que \""+n+"\" est la bonne reponse. Je m en souviendrai !";
-    if(lang==="sv")return "Tack! Jag har lart mig att \""+n+"\" ar ratt. Jag kommer ihag det!";
+    if(lang==="sv")return "Tack! Jag har lärt mig att \""+n+"\" är rätt. Jag kommer ihåg det!";
     return "Thanks! I learned that \""+n+"\" is correct. I will remember that!";
   }
   awaitingCorrection=false;
@@ -1339,7 +1474,7 @@ function buildTravelHtml(city,lang){
 // ── BLAGUES PERSONNALISÉES ──
 var jokeTpl={
   fr:["Pourquoi {s} est si populaire ? Parce que tout le monde aime {s} ! 😄","Qu est-ce qu un petit {s} ? Un {s} miniature ! 😂","Que dit {s} le matin ? Bonjour le monde ! 😄","Pourquoi {s} est toujours de bonne humeur ? Mystere ! 😊","Qu est-ce qu un {s} rapide ? Un {s} presse ! 😂"],
-  sv:["Varfor ar {s} sa populart ? For att alla gillar {s} ! 😄","Vad heter ett litet {s} ? En mini-{s} ! 😂","Vad sager {s} pa morgonen ? God morgon varlden ! 😄","Varfor skrattar {s} alltid ? Det vet ingen ! 😊"],
+  sv:["Varför är {s} så populärt ? För att alla gillar {s} ! 😄","Vad heter ett litet {s} ? En mini-{s} ! 😂","Vad säger {s} på morgonen ? God morgon världen ! 😄","Varför skrattar {s} alltid ? Det vet ingen ! 😊"],
   en:["Why is {s} so popular? Because everyone loves {s}! 😄","What do you call a small {s}? A mini {s}! 😂","What does {s} say in the morning? Good morning world! 😄","Why is {s} always happy? Nobody knows! 😊","What is a fast {s}? A {s} in a hurry! 😂"]
 };
 function detectPersonalJoke(n,lang){
@@ -1379,7 +1514,7 @@ function detectHarmful(n,lang){
 // ── HOROSCOPE ──
 var horoscopes={
   fr:[{s:"Belier",d:"L energie est de votre cote ! Foncez sur vos projets."},{s:"Taureau",d:"Une journee calme mais productive. Profitez des petits moments."},{s:"Gemeaux",d:"Votre curiosite vous menera loin aujourd hui !"},{s:"Cancer",d:"Journee ideale pour passer du temps avec vos proches."},{s:"Lion",d:"Vous brillez ! Montrez votre talent au monde."},{s:"Vierge",d:"L organisation est la cle. Faites une liste et suivez-la."},{s:"Balance",d:"Une surprise agreable vous attend. Restez ouvert."},{s:"Scorpion",d:"Votre intuition est puissante. Fiez-vous a elle."},{s:"Sagittaire",d:"L aventure vous appelle ! Explorez quelque chose de nouveau."},{s:"Capricorne",d:"Votre perseverance paiera. Continuez !"},{s:"Verseau",d:"Une idee brillante vous vient. Notez-la vite !"},{s:"Poissons",d:"Votre creativite est au max. Exprimez-vous !"}],
-  sv:[{s:"Vaduren",d:"Energin flodar! Satsa pa dina projekt idag."},{s:"Oxen",d:"En lugn och produktiv dag. Njut av de sma stunderna."},{s:"Tvillingarna",d:"Din nyfikenhet tar dig langt idag!"},{s:"Kraftan",d:"Perfekt dag att umgas med nara och kara."},{s:"Lejonet",d:"Du lyser! Visa varlden din talang."},{s:"Jungfrun",d:"Organisering ar nyckeln. Gor en lista och folj den."},{s:"Vagen",d:"En trevlig overraskning vantar. Var oppen!"},{s:"Skorpionen",d:"Din intuition ar stark. Lita pa den."},{s:"Skytten",d:"Aventyret ropar! Utforska nagot nytt."},{s:"Stenbocken",d:"Din uthallighet lonar sig. Fortsatt!"},{s:"Vattumannen",d:"En lysande ide dyker upp. Skriv ner den snabbt!"},{s:"Fiskarna",d:"Din kreativitet ar pa topp. Uttryck dig!"}],
+  sv:[{s:"Väduren",d:"Energin flödar! Satsa på dina projekt idag."},{s:"Oxen",d:"En lugn och produktiv dag. Njut av de små stunderna."},{s:"Tvillingarna",d:"Din nyfikenhet tar dig långt idag!"},{s:"Kräftan",d:"Perfekt dag att umgås med nära och kära."},{s:"Lejonet",d:"Du lyser! Visa världen din talang."},{s:"Jungfrun",d:"Organisering är nyckeln. Gör en lista och följ den."},{s:"Vågen",d:"En trevlig överraskning väntar. Var öppen!"},{s:"Skorpionen",d:"Din intuition är stark. Lita på den."},{s:"Skytten",d:"Äventyret ropar! Utforska något nytt."},{s:"Stenbocken",d:"Din uthållighet lönar sig. Fortsätt!"},{s:"Vattumannen",d:"En lysande idé dyker upp. Skriv ner den snabbt!"},{s:"Fiskarna",d:"Din kreativitet är på topp. Uttryck dig!"}],
   en:[{s:"Aries",d:"Energy is on your side! Go for your goals today."},{s:"Taurus",d:"A calm but productive day. Enjoy the little moments."},{s:"Gemini",d:"Your curiosity will take you far today!"},{s:"Cancer",d:"Perfect day to spend time with loved ones."},{s:"Leo",d:"You shine! Show the world your talent."},{s:"Virgo",d:"Organisation is key. Make a list and follow it."},{s:"Libra",d:"A pleasant surprise awaits. Stay open!"},{s:"Scorpio",d:"Your intuition is strong. Trust it."},{s:"Sagittarius",d:"Adventure calls! Explore something new."},{s:"Capricorn",d:"Your perseverance will pay off. Keep going!"},{s:"Aquarius",d:"A brilliant idea is coming. Write it down fast!"},{s:"Pisces",d:"Your creativity is at its peak. Express yourself!"}]
 };
 function detectHoroscope(n,lang){
@@ -1437,6 +1572,8 @@ function getReply(input,lang,cb){
   if(detectHarmful(n,lang)){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
   // ✏️ CORRECTION EN ATTENTE
   if(awaitingCorrection)return cb(handleCorrectionAnswer(n,lang));
+  // 🏆 DÉFI DU JOUR EN COURS ?
+  if(defiJourState){var da=checkDefiJourAnswer(n,lang);if(da)return cb(da);}
   // 🔁 CORRECTION DÉTECTÉE
   if(detectCorrection(n,lang))return cb(handleCorrection(n,lang));
   // 🔍 ENRICHIR AVEC CONTEXTE DE CONVERSATION
@@ -1463,6 +1600,21 @@ function getReply(input,lang,cb){
   if(currentRiddle){var ra=checkRiddle(n,lang);if(ra)return cb(ra);}
   // 3. Quiz en cours ?
   if(currentQuiz){var qa=checkQuizAnswer(n,lang);if(qa)return cb(qa);}
+  // ── MINI-JEUX (priorité haute — avant Wikipedia/KB) ──
+  if(detectMorpion(n,lang))return cb(startMorpion(lang));
+  if(detectMemory(n,lang))return cb(startMemory(lang));
+  if(detectSnake(n,lang)){var _sh=startSnake(lang);setTimeout(snakeAfterRender,250);return cb(_sh);}
+  if(detectGamesMenu(n,lang))return cb(buildGamesMenu(lang));
+  // 🏆 DÉFI DU JOUR
+  if(detectDefiJour(n,lang))return cb(startDefiJour(lang));
+  // Recette — priorité haute (avant histoire/image/etc.)
+  if(detectRecette(n,lang)){
+    fetchLindaRecipe(lang,function(r){
+      if(r){xnStats.recipesViewed=(xnStats.recipesViewed||0)+1;saveStats();checkBadges();cb(buildLindaRecipeHtml(r,lang));}
+      else cb(buildRecetteHtml(lang));
+    });
+    return;
+  }
   // 4. Image IA
   var imgP=detectImageRequest(n,lang);
   if(imgP)return cb(buildImageHtml(imgP,lang));
@@ -1517,8 +1669,6 @@ function getReply(input,lang,cb){
   if(detectVingtQ(n,lang))return cb(startVingtQ(lang));
   // Mode défi
   if(detectDefi(n,lang)){startDefi(lang,function(msg){cb(msg);});return;}
-  // Recette
-  if(detectRecette(n,lang))return cb(buildRecetteHtml(lang));
   // Définition
   var dw=detectDef(n,lang);
   if(dw){var dl=lookupDef(dw,lang);if(dl)return cb(buildDefHtml(dl.w,dl.def,lang));}
@@ -1536,7 +1686,7 @@ function getReply(input,lang,cb){
     var ans=pick(km.entry.r);
     // Utiliser le prénom de temps en temps
     if(userName&&Math.random()<0.25){
-      var prefix=lang==="fr"?"Bonne question "+userName+" ! ":lang==="sv"?"Bra fraga "+userName+"! ":"Good question "+userName+"! ";
+      var prefix=lang==="fr"?"Bonne question "+userName+" ! ":lang==="sv"?"Bra fråga "+userName+"! ":"Good question "+userName+"! ";
       ans=prefix+ans;
     }
     return cb(ans);
@@ -1574,7 +1724,7 @@ function getReply(input,lang,cb){
       if(items&&items.length)cb(buildRSSHtml(items,src,lang));
       else fetchNews(lang,function(posts){
         if(posts&&posts.length)cb(buildNewsHtml(posts,lang));
-        else cb(lang==="fr"?"Impossible de charger les actualites !":"Could not load news!");
+        else cb(lang==="fr"?"&#127892; Impossible de charger les actualités pour l'instant. Réessaie dans quelques secondes !":lang==="sv"?"&#127892; Kunde inte ladda nyheter just nu. Försök igen om några sekunder!":"&#127892; Could not load news right now. Try again in a few seconds!");
       });
     });return;
   }
@@ -1585,7 +1735,7 @@ function getReply(input,lang,cb){
   if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
   // 8. Wikipedia + Reddit ELI5 en parallèle — le premier qui répond gagne !
   if(queries.length>0){
-    // Vérifier le cache d'abord (apprentissage automatique)
+    // Vérifier le cache d'abord
     var cached=lookupWikiCache(queries[0]);
     if(cached)return cb(buildWikiHtml(cached));
     var done=false;
@@ -1633,10 +1783,10 @@ function addTyping(){
   return div;
 }
 function buildWikiHtml(w){
-  var readMore=currentLang==="fr"?"Lire sur Wikipedia":currentLang==="sv"?"Las pa Wikipedia":
+  var readMore=currentLang==="fr"?"Lire sur Wikipedia":currentLang==="sv"?"Läs på Wikipedia":
                currentLang==="es"?"Leer en Wikipedia":currentLang==="de"?"Auf Wikipedia lesen":"Read on Wikipedia";
   var intro=currentLang==="fr"?"Voila ce que j ai trouve sur <strong>"+w.title+"</strong> :":
-            currentLang==="sv"?"Har ar vad jag hittade om <strong>"+w.title+"</strong>:":
+            currentLang==="sv"?"Här är vad jag hittade om <strong>"+w.title+"</strong>:":
             currentLang==="es"?"Esto es lo que encontre sobre <strong>"+w.title+"</strong>:":
             currentLang==="de"?"Das habe ich uber <strong>"+w.title+"</strong> gefunden:":
             "Here is what I found about <strong>"+w.title+"</strong>:";
@@ -1677,7 +1827,7 @@ function fetchDDG(query,cb){
 }
 function buildDDGHtml(d,lang){
   var intro=lang==="fr"?"Voici ce que j ai trouve sur <strong>"+d.title+"</strong> :":
-            lang==="sv"?"Har ar vad jag hittade om <strong>"+d.title+"</strong>:":
+            lang==="sv"?"Här är vad jag hittade om <strong>"+d.title+"</strong>:":
             "Here is what I found about <strong>"+d.title+"</strong>:";
   var text=d.extract.length>300?d.extract.slice(0,300)+"...":d.extract;
   var link=d.url?"<a class='wc-link' href='"+d.url+"' target='_blank'>En savoir plus ↗</a>":"";
@@ -1686,27 +1836,106 @@ function buildDDGHtml(d,lang){
 // ── REDDIT (ELI5 + TIL) ──
 // ── ACTUALITÉS RÉELLES (Sydsvenskan, Le Figaro, CNN) ──
 var newsSources={
-  sydsvenskan:{rss:"https://www.sydsvenskan.se/rss.xml",name:"Sydsvenskan",icon:"&#127480;&#127466;",lang:"sv"},
-  figaro:{rss:"https://www.lefigaro.fr/rss/figaro_flash-actu.xml",name:"Le Figaro",icon:"&#127467;&#127479;",lang:"fr"},
-  cnn:{rss:"https://rss.cnn.com/rss/edition.rss",name:"CNN",icon:"&#127760;",lang:"en"}
+  sydsvenskan:{
+    rss:["https://www.sydsvenskan.se/rss.xml",
+         "https://news.google.com/rss?hl=sv&gl=SE&ceid=SE:sv"],
+    name:"Sydsvenskan",icon:"&#127480;&#127466;",lang:"sv"},
+  figaro:{
+    rss:["https://www.lefigaro.fr/rss/figaro_flash-actu.xml",
+         "https://www.lefigaro.fr/rss/figaro_actualites.xml",
+         "https://news.google.com/rss?hl=fr&gl=FR&ceid=FR:fr"],
+    name:"Le Figaro",icon:"&#127467;&#127479;",lang:"fr"},
+  cnn:{
+    rss:["https://rss.cnn.com/rss/edition.rss",
+         "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"],
+    name:"CNN",icon:"&#127760;",lang:"en"}
 };
+// ── Fetch RSS via proxy (corsproxy.io ou allorigins.win)
+function _parseRSSText(text){
+  var items=[];
+  var re=/<item[^>]*>([\s\S]*?)<\/item>/gi,m;
+  while((m=re.exec(text))!==null&&items.length<5){
+    var b=m[1];
+    var title=((b.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)||[])[1]||"")
+      .replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&apos;/g,"'").replace(/&quot;/g,'"').trim();
+    var link=((b.match(/<link[^>]*>\s*([^<\s][^<]*?)\s*<\/link>/)||b.match(/<guid[^>]*>([^<]+)<\/guid>/)||[])[1]||"").trim();
+    var pubDate=((b.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/)||[])[1]||"").trim();
+    if(title)items.push({title:title,link:link||"",pubDate:pubDate});
+  }
+  return items;
+}
+function _fetchWithProxy(rssUrl,proxyFn,cb){
+  var done=false;
+  var timer=setTimeout(function(){if(!done){done=true;cb(null);}},4000);
+  fetch(proxyFn(rssUrl))
+    .then(function(r){return r.text();})
+    .then(function(txt){
+      if(done)return;
+      clearTimeout(timer);done=true;
+      // allorigins /get retourne du JSON
+      if(txt&&txt[0]==='{'){try{txt=JSON.parse(txt).contents||txt;}catch(e){}}
+      var items=_parseRSSText(txt);
+      cb(items.length?items:null);
+    })
+    .catch(function(){if(!done){clearTimeout(timer);done=true;cb(null);}});
+}
 function fetchRSS(sourceKey,cb){
   var src=newsSources[sourceKey];
   if(!src){cb(null);return;}
-  var api="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(src.rss)+"&count=6";
-  fetch(api)
+  var urls=src.rss instanceof Array?src.rss:[src.rss];
+  var proxies=[
+    function(u){return "https://corsproxy.io/?"+encodeURIComponent(u);},
+    function(u){return "https://api.allorigins.win/get?url="+encodeURIComponent(u);}
+  ];
+  var pairs=[];
+  urls.forEach(function(u){proxies.forEach(function(p){pairs.push({u:u,p:p});});});
+  function tryNext(idx){
+    if(idx>=pairs.length){
+      // Dernier recours : Wikinews sans proxy
+      fetchWikinews(src.lang||currentLang,function(items){
+        if(items&&items.length){cb(items,{name:"Wikinews",icon:"&#128240;",lang:src.lang});}
+        else{cb(null);}
+      });
+      return;
+    }
+    var pair=pairs[idx];
+    _fetchWithProxy(pair.u,pair.p,function(items){
+      if(items&&items.length){cb(items,src);}
+      else{tryNext(idx+1);}
+    });
+  }
+  tryNext(0);
+}
+// ── Wikinews API — fonctionne SANS proxy (CORS natif) ──
+function fetchWikinews(lang,cb){
+  var langCode=lang==="sv"?"sv":lang==="fr"?"fr":"en";
+  var url="https://"+langCode+".wikinews.org/w/api.php?action=query&list=recentchanges&rctype=new&rcnamespace=0&rclimit=8&rcprop=title|timestamp&format=json&origin=*";
+  var done=false;
+  var timer=setTimeout(function(){if(!done){done=true;cb(null);}},5000);
+  fetch(url)
     .then(function(r){return r.json();})
     .then(function(d){
-      if(d.status==="ok"&&d.items&&d.items.length){cb(d.items.slice(0,5),src);}
-      else{cb(null);}
-    }).catch(function(){cb(null);});
+      if(done)return;
+      clearTimeout(timer);done=true;
+      if(!d.query||!d.query.recentchanges||!d.query.recentchanges.length){cb(null);return;}
+      var items=d.query.recentchanges.slice(0,5).map(function(rc){
+        var wikiUrl="https://"+langCode+".wikinews.org/wiki/"+encodeURIComponent(rc.title.replace(/ /g,"_"));
+        return{title:rc.title,link:wikiUrl,pubDate:rc.timestamp||""};
+      });
+      cb(items);
+    })
+    .catch(function(){if(!done){clearTimeout(timer);done=true;cb(null);}});
 }
 function buildRSSHtml(items,src,lang){
-  var lbl=lang==="fr"?"Dernieres nouvelles":lang==="sv"?"Senaste nyheterna":"Latest headlines";
-  var html="<div class='wiki-card'><div class='wc-title'>"+src.icon+" "+src.name+" — "+lbl+"</div><div class='wc-text'>";
+  var lbl=lang==="fr"?"Dernières nouvelles":lang==="sv"?"Senaste nyheterna":"Latest headlines";
+  var html="<div class='wiki-card'><div class='wc-title'>"+(src.icon||"&#128240;")+" "+(src.name||"News")+" — "+lbl+"</div><div class='wc-text'>";
   items.forEach(function(item,i){
-    var d=item.pubDate?new Date(item.pubDate).toLocaleDateString():"";
-    html+="<strong>"+(i+1)+".</strong> <a href='"+item.link+"' target='_blank' style='color:var(--accent)'>"+item.title+"</a>";
+    var d="";try{d=item.pubDate?new Date(item.pubDate).toLocaleDateString():"";} catch(e){}
+    if(item.link){
+      html+="<strong>"+(i+1)+".</strong> <a href='"+item.link+"' target='_blank' style='color:var(--accent)'>"+item.title+"</a>";
+    }else{
+      html+="<strong>"+(i+1)+".</strong> "+item.title;
+    }
     if(d)html+=" <em style='font-size:.72rem;opacity:.6'>("+d+")</em>";
     html+="<br><br>";
   });
@@ -1731,13 +1960,17 @@ function detectNewsKeyword(n,lang){
 }
 function detectNews(n,lang){return detectNewsKeyword(n,lang);}
 function fetchNews(lang,cb){
-  // Fallback Reddit si RSS échoue
-  var sub=lang==="fr"?"france":lang==="sv"?"sweden":"worldnews";
-  var url="https://www.reddit.com/r/"+sub+"/top.json?limit=8&t=day";
-  redditFetch(url,function(d){
-    if(!d||!d.data||!d.data.children||!d.data.children.length){cb(null);return;}
-    var posts=d.data.children.slice(0,5).map(function(c){return c.data.title;});
-    cb(posts);
+  // 1. Wikinews (sans proxy, toujours accessible)
+  fetchWikinews(lang,function(items){
+    if(items&&items.length){cb(items.map(function(i){return i.title;}));return;}
+    // 2. Fallback Reddit
+    var sub=lang==="fr"?"france":lang==="sv"?"sweden":"worldnews";
+    var url="https://www.reddit.com/r/"+sub+"/top.json?limit=8&t=day";
+    redditFetch(url,function(d){
+      if(!d||!d.data||!d.data.children||!d.data.children.length){cb(null);return;}
+      var posts=d.data.children.slice(0,5).map(function(c){return c.data.title;});
+      cb(posts);
+    });
   });
 }
 function buildNewsHtml(posts,lang){
@@ -1804,9 +2037,9 @@ function buildRedditHtml(post,type,lang){
   if(text.length>350)text=text.slice(0,350)+"...";
   var url="https://reddit.com"+(post.permalink||"");
   var lbl=type==="eli5"?
-    (lang==="fr"?"Explication simple — Reddit ELI5":lang==="sv"?"Enkel forklaring":"Simple explanation — Reddit ELI5"):
+    (lang==="fr"?"Explication simple — Reddit ELI5":lang==="sv"?"Enkel förklaring":"Simple explanation — Reddit ELI5"):
     (lang==="fr"?"Fait du jour — Reddit":lang==="sv"?"Dagens fakta":"Today I Learned — Reddit");
-  var more=lang==="fr"?"Voir sur Reddit":lang==="sv"?"Las pa Reddit":"Read on Reddit";
+  var more=lang==="fr"?"Voir sur Reddit":lang==="sv"?"Läs på Reddit":"Read on Reddit";
   return "<div class='wiki-card'><div class='wc-title'>🔴 "+lbl+"</div><div class='wc-text'><strong>"+title+"</strong>"+(text?"<br><br>"+text:"")+"</div><a class='wc-link' href='"+url+"' target='_blank'>"+more+" ↗</a></div>";
 }
 function sendMsg(){
@@ -1870,11 +2103,16 @@ function getVoicesForLang(lang){
   var code={sv:"sv",fr:"fr",en:"en",es:"es",de:"de",it:"it",pt:"pt",ja:"ja",zh:"zh",ar:"ar",ru:"ru"}[lang]||"en";
   return allVoices.filter(function(v){return v.lang.toLowerCase().indexOf(code)===0;});
 }
+// Détection Chromebook (ChromeOS)
+var _isChromebook=/CrOS/.test(navigator.userAgent);
 // Score de qualité de voix (plus élevé = meilleure qualité)
 function scoreVoice(v){
   var n=(v.name||"").toLowerCase();
   // Voix robots à éviter absolument
   if(n.indexOf("espeak")!==-1||n.indexOf("pico")!==-1||n.indexOf("mbrola")!==-1)return -99;
+  // Sur Chromebook : voix sans marque connue = souvent robotique → score très bas
+  var hasKnownBrand=n.indexOf("google")!==-1||n.indexOf("microsoft")!==-1||n.indexOf("wavenet")!==-1||n.indexOf("neural")!==-1||n.indexOf("premium")!==-1||n.indexOf("enhanced")!==-1||n.indexOf("natural")!==-1||n.indexOf("studio")!==-1||n.indexOf("apple")!==-1;
+  if(_isChromebook&&!hasKnownBrand)return -50;
   var s=0;
   // Google = meilleure qualité sur Chromebook (voix en ligne)
   if(n.indexOf("google")!==-1)s+=30;
@@ -1883,7 +2121,8 @@ function scoreVoice(v){
   else if(n.indexOf("microsoft")!==-1&&(n.indexOf("online")!==-1||n.indexOf("neural")!==-1))s+=15;
   else if(n.indexOf("microsoft")!==-1)s+=8;
   else if(n.indexOf("apple")!==-1||n.indexOf("samantha")!==-1||n.indexOf("karen")!==-1||n.indexOf("daniel")!==-1||n.indexOf("siri")!==-1)s+=12;
-  if(v.localService)s+=2;
+  // Sur Chromebook : pas de bonus localService (les voix locales ChromeOS sont souvent mauvaises)
+  if(!_isChromebook&&v.localService)s+=2;
   return s;
 }
 // Choisir la meilleure voix pour une langue
@@ -1905,7 +2144,8 @@ function populateVoiceSelect(){
   var voices=getVoicesForLang(currentLang);
   if(!voices.length){
     sel.innerHTML="<option>--</option>";
-    if(inf)inf.textContent="Aucune voix disponible";return;
+    if(inf)inf.textContent=_isChromebook?"⏳ Voix Google en cours de chargement... Attends 5s":"Aucune voix disponible";
+    return;
   }
   // Trier par qualité (meilleure en premier)
   var sorted=voices.slice().sort(function(a,b){return scoreVoice(b)-scoreVoice(a);});
@@ -1921,7 +2161,16 @@ function populateVoiceSelect(){
   });
   if(!_selectedVoiceName||!sel.value){sel.selectedIndex=0;}
   var best=getBestVoice(currentLang);
-  if(inf)inf.textContent=best?(best.name+" ✅"):"";
+  var bestScore=best?scoreVoice(best):0;
+  if(inf){
+    if(best&&bestScore>=20){
+      inf.textContent="✅ "+best.name;
+    }else if(_isChromebook&&bestScore<5){
+      inf.innerHTML="⚠️ Voix Google pas encore chargée.<br>Attends quelques secondes et clique <strong>Tester</strong>.";
+    }else{
+      inf.textContent=best?(best.name+" ✅"):"";
+    }
+  }
 }
 function onVoiceChange(){
   var sel=document.getElementById("voiceSelect");
@@ -1931,9 +2180,18 @@ function onVoiceChange(){
   if(inf)inf.textContent=_selectedVoiceName+" ✅";
 }
 function testVoice(){speakText(langs[currentLang].testPhrase);}
-function speakText(text){
+function speakText(text,_attempt){
   if(!window.speechSynthesis)return;
+  // Toujours rafraîchir la liste des voix (importantes : Google charge en async)
+  var fresh=window.speechSynthesis.getVoices();
+  if(fresh&&fresh.length>0){allVoices=fresh;populateVoiceSelect();}
   var voice=getBestVoice(currentLang);
+  var score=voice?scoreVoice(voice):-99;
+  // Si pas de bonne voix (score < 5) et premier essai → attendre 1.5s que Google Voice charge
+  if(score<5&&!_attempt){
+    setTimeout(function(){speakText(text,1);},1500);
+    return;
+  }
   var rateEl=document.getElementById("voiceRate");
   var pitchEl=document.getElementById("voicePitch");
   var rate=rateEl?parseFloat(rateEl.value)||0.90:0.90;
@@ -2018,6 +2276,7 @@ function doSpeak(text,voice,rate,pitch){
 function setLang(l){
   currentLang=l;
   localStorage.setItem("xn_lang",l);
+  trackLangUsed(l);
   var cfg=langs[l];
   var sel=document.getElementById("langSelect");
   if(sel)sel.value=l;
@@ -2051,13 +2310,21 @@ function toggleVoicePanel(){
   var vp=document.getElementById("voicePanel");
   if(!vp)return;
   var open=vp.classList.toggle("open");
-  if(open){var hp=document.getElementById("histPanel");if(hp)hp.classList.remove("open");}
+  if(open){
+    var hp=document.getElementById("histPanel");if(hp)hp.classList.remove("open");
+    var lp=document.getElementById("lbPanel");if(lp){lp.classList.remove("open");_lbOpen=false;}
+    var bp=document.getElementById("badgePanel");if(bp)bp.classList.remove("open");
+  }
 }
 function toggleHistPanel(){
   var hp=document.getElementById("histPanel");
   if(!hp)return;
   var open=hp.classList.toggle("open");
-  if(open){var vp=document.getElementById("voicePanel");if(vp)vp.classList.remove("open");}
+  if(open){
+    var vp=document.getElementById("voicePanel");if(vp)vp.classList.remove("open");
+    var lp=document.getElementById("lbPanel");if(lp){lp.classList.remove("open");_lbOpen=false;}
+    var bp=document.getElementById("badgePanel");if(bp)bp.classList.remove("open");
+  }
 }
 function autoResize(el){
   el.style.height="auto";
@@ -2100,7 +2367,7 @@ function startVoiceInput(){
     if(isRecording&&!_finalSent){
       stopVoiceInput();
       var tmsg=currentLang==="fr"?"&#127760; Le micro ne repond pas. Utilise <strong>LANCER_XEARNES.bat</strong> et parle en <strong>francais</strong> (drapeau &#127467;&#127479; en haut) !":
-              currentLang==="sv"?"&#127760; Mikrofonen svarar inte. Anvand <strong>LANCER_XEARNES.bat</strong> i Edge!":
+              currentLang==="sv"?"&#127760; Mikrofonen svarar inte. Använd <strong>LANCER_XEARNES.bat</strong> i Edge!":
               "&#127760; Mic not responding. Use <strong>LANCER_XEARNES.bat</strong> and make sure language matches what you speak!";
       addMsg(tmsg,"bot");
     }
@@ -2178,6 +2445,16 @@ function init(){
       allVoices=window.speechSynthesis.getVoices();
       populateVoiceSelect();
     };
+    // Précharger les voix après 2s (les voix Google/réseau se chargent en asynchrone)
+    setTimeout(function(){
+      var fresh=window.speechSynthesis.getVoices();
+      if(fresh&&fresh.length>allVoices.length){allVoices=fresh;populateVoiceSelect();}
+    },2000);
+    // Deuxième tentative après 5s (connexion lente / Chromebook)
+    setTimeout(function(){
+      var fresh=window.speechSynthesis.getVoices();
+      if(fresh&&fresh.length>0){allVoices=fresh;populateVoiceSelect();}
+    },5000);
   }
   var savedRate=parseFloat(localStorage.getItem("xn_voice_rate")||"0.90");
   var savedPitch=parseFloat(localStorage.getItem("xn_voice_pitch")||"1.0");
@@ -2214,6 +2491,13 @@ function init(){
   initNotifications();
   setLang(currentLang);
   renderHistory();
+  renderBadgePanel();
+  renderUserBar();
+  // Présence en ligne — démarrer + rafraîchir toutes les 60s
+  updatePresence(false);
+  _presenceTimer=setInterval(function(){updatePresence(false);},60000);
+  // Quitter = on retire notre présence
+  window.addEventListener('beforeunload',function(){updatePresence(true);});
   if(allVoices.length>0)populateVoiceSelect();
   // Raccourci clavier Ctrl+Shift+X → ouvre/ferme le mini popup
   document.addEventListener("keydown",function(e){
@@ -2333,7 +2617,7 @@ function findWebLink(q){
 function doOpenWeb(link,lang){
   window.open(link.u,"_blank");
   return lang==="fr"?"J ouvre "+link.i+" <strong>"+link.n+"</strong> dans un nouvel onglet ! &#128640;":
-         lang==="sv"?"Oppnar "+link.i+" <strong>"+link.n+"</strong> i en ny flik! &#128640;":
+         lang==="sv"?"Öppnar "+link.i+" <strong>"+link.n+"</strong> i en ny flik! &#128640;":
          "Opening "+link.i+" <strong>"+link.n+"</strong> in a new tab! &#128640;";
 }
 // ── NOTIFICATIONS NAVIGATEUR ────────────────────────
@@ -2370,7 +2654,7 @@ function playBeep(){
     g.gain.setValueAtTime(0.08,ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
     o.start(ctx.currentTime);o.stop(ctx.currentTime+0.25);
-    ctx.close();
+    setTimeout(function(){try{ctx.close();}catch(e){}},350);
   }catch(e){}
 }
 // ── FEATURE 4 : PLEIN ECRAN ─────────────────────────
@@ -2453,7 +2737,7 @@ function buildPenduHtml(){
   var lost=penduState.wrong>=penduState.maxWrong;
   var lang=penduState.lang;
   var status=won?(lang==="fr"?"&#127881; Bravo ! Tu as trouve !":lang==="sv"?"&#127881; Bra jobbat!":"&#127881; You found it!"):
-             lost?(lang==="fr"?"&#128128; Perdu ! Le mot etait : <strong>"+penduState.word+"</strong>":lang==="sv"?"&#128128; Forloral! Ordet var: <strong>"+penduState.word+"</strong>":"&#128128; Lost! Word was: <strong>"+penduState.word+"</strong>"):
+             lost?(lang==="fr"?"&#128128; Perdu ! Le mot etait : <strong>"+penduState.word+"</strong>":lang==="sv"?"&#128128; Förlorade! Ordet var: <strong>"+penduState.word+"</strong>":"&#128128; Lost! Word was: <strong>"+penduState.word+"</strong>"):
              (lang==="fr"?"Erreurs : "+penduState.wrong+"/"+penduState.maxWrong:lang==="sv"?"Fel: "+penduState.wrong+"/"+penduState.maxWrong:"Wrong: "+penduState.wrong+"/"+penduState.maxWrong);
   var keys="";
   if(!won&&!lost){
@@ -2484,11 +2768,13 @@ function addScore(pts){
   localStorage.setItem("xn_score",score);
   var sb=document.getElementById("scoreBadge");
   if(sb)sb.textContent="⭐ "+score;
+  checkBadges();
+  if(xnUser)pushScore();
 }
 function showScoreInfo(){
   var lang=currentLang;
   var msg=lang==="fr"?"&#11088; Ton score total : <strong>"+score+" points</strong> ! Fais des quiz, trouve des mots au pendu, gagne au 20 questions pour marquer des points !":
-          lang==="sv"?"&#11088; Din totala pong: <strong>"+score+" poang</strong>!":
+          lang==="sv"?"&#11088; Din totala poäng: <strong>"+score+" poäng</strong>!":
           "&#11088; Your total score: <strong>"+score+" points</strong>! Do quizzes, hangman and 20 questions to earn points!";
   addMsg(msg,"bot");
   playBeep();
@@ -2513,19 +2799,68 @@ var recettesDB={
   ]
 };
 function detectRecette(n,lang){
-  if(lang==="fr")return n.indexOf("recette")!==-1||n.indexOf("cuisinier")!==-1||n.indexOf("cuisiner")!==-1||n.indexOf("preparer")!==-1||n.indexOf("faire a manger")!==-1||n.indexOf("faire des crepes")!==-1||n.indexOf("faire un gateau")!==-1;
-  if(lang==="sv")return n.indexOf("recept")!==-1||n.indexOf("laga mat")!==-1||n.indexOf("pannkakor")!==-1;
-  return n.indexOf("recipe")!==-1||n.indexOf("how to cook")!==-1||n.indexOf("how to make")!==-1||n.indexOf("cook something")!==-1;
+  if(lang==="fr")return n.indexOf("recette")!==-1||n.indexOf("cuisinier")!==-1||n.indexOf("cuisiner")!==-1||n.indexOf("preparer")!==-1||n.indexOf("faire a manger")!==-1||n.indexOf("faire des crepes")!==-1||n.indexOf("faire un gateau")!==-1||n.indexOf("bakskola")!==-1||n.indexOf("patisserie")!==-1||n.indexOf("ingredients")!==-1||n.indexOf("gateau")!==-1;
+  if(lang==="sv")return n.indexOf("recept")!==-1||n.indexOf("laga mat")!==-1||n.indexOf("laga")!==-1||n.indexOf("pannkakor")!==-1||n.indexOf("baka")!==-1||n.indexOf("bakskola")!==-1||n.indexOf("tarta")!==-1||n.indexOf("kaka")!==-1||n.indexOf("matlagning")!==-1||n.indexOf("bakning")!==-1||n.indexOf("koka")!==-1||n.indexOf("steka")!==-1||n.indexOf("gradda")!==-1||n.indexOf("matratt")!==-1||n.indexOf("linda")!==-1||n.indexOf("bullar")!==-1||n.indexOf("kanelbulle")!==-1||n.indexOf("muffins")!==-1||n.indexOf("pajdeg")!==-1;
+  return n.indexOf("recipe")!==-1||n.indexOf("how to cook")!==-1||n.indexOf("how to make")!==-1||n.indexOf("bake")!==-1||n.indexOf("bakskola")!==-1||n.indexOf("ingredient")!==-1||n.indexOf("cooking")!==-1;
+}
+function cleanRecipeTitle(title){
+  // Enlever "Linda", "Lindas", "Linda's", "Bakskola" du titre
+  return title
+    .replace(/linda[''s]*\s*/gi,"")
+    .replace(/bakskola[s]?\s*/gi,"")
+    .replace(/\s*[-–|]\s*.*/,"") // enlever tout après un tiret (ex: "Gateau - Site")
+    .replace(/^\s*|\s*$/g,"")
+    .replace(/\s+/g," ")
+    .trim();
+}
+function fetchLindaRecipe(lang,cb){
+  var rss="https://lindasbakskola.se/feed/";
+  var api="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(rss)+"&count=20";
+  var _done=false;
+  // Timeout 5 secondes — si l'API ne répond pas, on utilise le fallback local
+  var _timer=setTimeout(function(){if(!_done){_done=true;cb(null);}},5000);
+  fetch(api)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(_done)return;
+      clearTimeout(_timer);_done=true;
+      if(d.status==="ok"&&d.items&&d.items.length>0){
+        // Choisir une recette aléatoire
+        var item=d.items[Math.floor(Math.random()*Math.min(d.items.length,20))];
+        var title=cleanRecipeTitle(item.title||"Recette");
+        // Extraire la description (enlever HTML)
+        var desc=(item.description||item.content||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,200);
+        var img=item.thumbnail||item.enclosure&&item.enclosure.link||"";
+        cb({title:title,desc:desc,link:item.link,img:img});
+      }else{
+        cb(null);
+      }
+    })
+    .catch(function(){if(!_done){clearTimeout(_timer);_done=true;cb(null);}});
 }
 function buildRecetteHtml(lang){
+  xnStats.recipesViewed=(xnStats.recipesViewed||0)+1;saveStats();checkBadges();
+  // Fallback local si pas internet
   var list=recettesDB[lang]||recettesDB.en;
   var r=list[Math.floor(Math.random()*list.length)];
-  var ingLbl=lang==="fr"?"Ingredients":lang==="sv"?"Ingredienser":"Ingredients";
-  var stLbl=lang==="fr"?"Etapes":lang==="sv"?"Steg":"Steps";
+  var ingLbl=lang==="fr"?"Ingrédients":lang==="sv"?"Ingredienser":"Ingredients";
+  var stLbl=lang==="fr"?"Étapes":lang==="sv"?"Steg":"Steps";
   var html="<div class='recipe-card'><div class='recipe-title'>&#127859; "+r.name+"</div>";
   html+="<strong>"+ingLbl+" :</strong><div class='recipe-step'>"+r.i.map(function(x){return "• "+x;}).join("<br>")+"</div>";
   html+="<strong style='display:block;margin-top:8px'>"+stLbl+" :</strong>";
   r.s.forEach(function(s,i){html+="<div class='recipe-step'><strong>"+(i+1)+".</strong> "+s+"</div>";});
+  html+="</div>";
+  return html;
+}
+function buildLindaRecipeHtml(recipe,lang){
+  var src=lang==="fr"?"Source : Bakskola":lang==="sv"?"Källa: Bakskola":"Source: Bakskola";
+  var voir=lang==="fr"?"Voir la recette complète ↗":lang==="sv"?"Se hela receptet ↗":"See full recipe ↗";
+  var html="<div class='recipe-card'>";
+  if(recipe.img)html+="<img src='"+recipe.img+"' style='width:100%;border-radius:8px;margin-bottom:8px;max-height:160px;object-fit:cover' onerror='this.style.display=`none`'>";
+  html+="<div class='recipe-title'>&#127859; "+recipe.title+"</div>";
+  if(recipe.desc)html+="<div class='recipe-step' style='margin-top:6px;color:var(--text2)'>"+recipe.desc+"...</div>";
+  html+="<div style='margin-top:8px;font-size:.72rem;color:var(--text2)'>"+src+"</div>";
+  if(recipe.link)html+="<a href='"+recipe.link+"' target='_blank' style='display:inline-block;margin-top:8px;color:var(--accent);font-size:.78rem;text-decoration:none'>"+voir+"</a>";
   html+="</div>";
   return html;
 }
@@ -2560,14 +2895,14 @@ var dicoData={
     "energy":"The ability to do work or produce heat. Everything in the universe uses energy."
   },
   sv:{
-    "algoritm":"En sekvens av steg-for-steg instruktioner for att losa ett problem, som ett recept for en dator.",
-    "fotosyntes":"Processen dar vaxter tillverkar sin mat med hjalp av solljus, vatten och koldioxid.",
-    "gravitation":"En osynlig kraft som drar alla foremal mot varandra. Den halls oss pa marken!",
-    "atom":"Det minsta byggblocket av materia. Allt ar gjort av atomer!",
-    "galax":"En massiv samling av miljarder stjarnor, gas och damm som halls ihop av gravitation.",
-    "demokrati":"Ett politiskt system dar medborgarna valjer sina ledare genom rosning.",
-    "ekosystem":"Alla levande ting i ett omrade och hur de samspelar med varandra och miljon.",
-    "energi":"Formagan att utfora arbete eller producera varme. Allt i universum anvander energi."
+    "algoritm":"En sekvens av steg-för-steg instruktioner för att lösa ett problem, som ett recept för en dator.",
+    "fotosyntes":"Processen där växter tillverkar sin mat med hjälp av solljus, vatten och koldioxid.",
+    "gravitation":"En osynlig kraft som drar alla föremål mot varandra. Den håller oss på marken!",
+    "atom":"Det minsta byggblocket av materia. Allt är gjort av atomer!",
+    "galax":"En massiv samling av miljarder stjärnor, gas och damm som hålls ihop av gravitation.",
+    "demokrati":"Ett politiskt system där medborgarna väljer sina ledare genom röstning.",
+    "ekosystem":"Alla levande ting i ett område och hur de samspelar med varandra och miljön.",
+    "energi":"Förmågan att utföra arbete eller producera värme. Allt i universum använder energi."
   }
 };
 function detectDef(n,lang){
@@ -2607,7 +2942,7 @@ function startDefi(lang,cb){
     .then(function(d){
       if(!d.results||!d.results.length){defiState=null;cb(lang==="fr"?"Impossible de charger le defi !":"Could not load challenge!");return;}
       defiState.q=d.results;
-      var lbl=lang==="fr"?"&#127942; Mode Defi lance ! 5 questions en 60 secondes. C est parti !":lang==="sv"?"&#127942; Utmaningslage! 5 fragor pa 60 sekunder. Gar!":"&#127942; Challenge Mode! 5 questions in 60 seconds. Go!";
+      var lbl=lang==="fr"?"&#127942; Mode Défi lancé ! 5 questions en 60 secondes. C est parti !":lang==="sv"?"&#127942; Utmaningsläge! 5 frågor på 60 sekunder. Kör!":"&#127942; Challenge Mode! 5 questions in 60 seconds. Go!";
       cb(lbl);
       setTimeout(function(){askDefiQ();},900);
       defiState.interval=setInterval(function(){
@@ -2658,21 +2993,21 @@ function finishDefi(lang){
   var sc=defiState.score;defiState=null;
   addScore(sc*10);
   var msg=lang==="fr"?"&#127942; Defi termine ! Score : "+sc+"/5. Tu gagnes +"+(sc*10)+" points ! Total : &#11088; "+score:
-          lang==="sv"?"&#127942; Utmaning klar! Poang: "+sc+"/5. +"+sc*10+" poang!":
+          lang==="sv"?"&#127942; Utmaning klar! Poäng: "+sc+"/5. +"+sc*10+" poäng!":
           "&#127942; Challenge done! Score: "+sc+"/5. +"+(sc*10)+" points! Total: &#11088; "+score;
   addMsg(msg,"bot");
   if(document.getElementById("autoVoice")&&document.getElementById("autoVoice").checked)speakText(msg);
 }
 // ── FEATURE 13 : 20 QUESTIONS ───────────────────────
 var vingtQItems=[
-  {fr:"elephant",en:"elephant",sv:"elefant",h:{fr:["Je suis un animal","Je suis tres grand et gris","J ai une longue trompe","Je vis en Afrique ou en Asie"],en:["I am an animal","I am very large and grey","I have a long trunk","I live in Africa or Asia"],sv:["Jag ar ett djur","Jag ar mycket stor och gra","Jag har en lang snabel","Jag lever i Afrika"]}},
-  {fr:"soleil",en:"sun",sv:"solen",h:{fr:["Je brille dans le ciel","Je suis une etoile","Je rechauff la Terre","Je ne suis pas vivant"],en:["I shine in the sky","I am a star","I warm the Earth","I am not alive"],sv:["Jag lyser pa himlen","Jag ar en stjarna","Jag varmer Jorden","Jag ar inte levande"]}},
-  {fr:"pizza",en:"pizza",sv:"pizza",h:{fr:["Je suis de la nourriture","Je suis ronde","Je viens d Italie","On me mange avec les mains"],en:["I am food","I am usually round","I come from Italy","You eat me with your hands"],sv:["Jag ar mat","Jag ar rund","Jag kommer fran Italien","Man ater mig med handerna"]}},
-  {fr:"avion",en:"airplane",sv:"flygplan",h:{fr:["Je peux voler","Je transporte des passagers","J ai des ailes","On me trouve dans les aeroports"],en:["I can fly","I carry passengers","I have wings","You find me at airports"],sv:["Jag kan flyga","Jag transporterar passagerare","Jag har vingar","Du hittar mig pa flygplatser"]}},
-  {fr:"guitare",en:"guitar",sv:"gitarr",h:{fr:["Je suis un instrument de musique","J ai des cordes","On me gratte avec les doigts","Je suis populaire dans le rock"],en:["I am a musical instrument","I have strings","You strum me with fingers","I am popular in rock music"],sv:["Jag ar ett musikinstrument","Jag har strangar","Man spelar mig med fingrarna","Jag ar populare i rock"]}},
-  {fr:"livre",en:"book",sv:"bok",h:{fr:["Je ne suis pas vivant","J ai des pages","On me lit","Je contiens des histoires"],en:["I am not alive","I have pages","You read me","I contain stories"],sv:["Jag ar inte levande","Jag har sidor","Man laser mig","Jag innehaller berattelser"]}},
-  {fr:"requin",en:"shark",sv:"haj",h:{fr:["Je suis un animal","Je vis dans l eau","J ai beaucoup de dents","Je suis dans les films d horreur"],en:["I am an animal","I live in water","I have many teeth","I appear in horror movies"],sv:["Jag ar ett djur","Jag lever i vatten","Jag har manga tander","Jag ar med i skrackfilmer"]}},
-  {fr:"lune",en:"moon",sv:"manen",h:{fr:["Je brille la nuit","Je tourne autour de la Terre","J ai ete visitee en 1969","Je n ai pas d atmosphere"],en:["I shine at night","I orbit around Earth","I was visited in 1969","I have no atmosphere"],sv:["Jag lyser pa natten","Jag kretsar kring Jorden","Jag besoktes 1969","Jag har ingen atmosfar"]}}
+  {fr:"elephant",en:"elephant",sv:"elefant",h:{fr:["Je suis un animal","Je suis tres grand et gris","J ai une longue trompe","Je vis en Afrique ou en Asie"],en:["I am an animal","I am very large and grey","I have a long trunk","I live in Africa or Asia"],sv:["Jag är ett djur","Jag är mycket stor och grå","Jag har en lång snabel","Jag lever i Afrika"]}},
+  {fr:"soleil",en:"sun",sv:"solen",h:{fr:["Je brille dans le ciel","Je suis une etoile","Je rechauff la Terre","Je ne suis pas vivant"],en:["I shine in the sky","I am a star","I warm the Earth","I am not alive"],sv:["Jag lyser på himlen","Jag är en stjärna","Jag värmer Jorden","Jag är inte levande"]}},
+  {fr:"pizza",en:"pizza",sv:"pizza",h:{fr:["Je suis de la nourriture","Je suis ronde","Je viens d Italie","On me mange avec les mains"],en:["I am food","I am usually round","I come from Italy","You eat me with your hands"],sv:["Jag är mat","Jag är rund","Jag kommer från Italien","Man äter mig med händerna"]}},
+  {fr:"avion",en:"airplane",sv:"flygplan",h:{fr:["Je peux voler","Je transporte des passagers","J ai des ailes","On me trouve dans les aeroports"],en:["I can fly","I carry passengers","I have wings","You find me at airports"],sv:["Jag kan flyga","Jag transporterar passagerare","Jag har vingar","Du hittar mig på flygplatser"]}},
+  {fr:"guitare",en:"guitar",sv:"gitarr",h:{fr:["Je suis un instrument de musique","J ai des cordes","On me gratte avec les doigts","Je suis populaire dans le rock"],en:["I am a musical instrument","I have strings","You strum me with fingers","I am popular in rock music"],sv:["Jag är ett musikinstrument","Jag har strängar","Man spelar mig med fingrarna","Jag är populär i rock"]}},
+  {fr:"livre",en:"book",sv:"bok",h:{fr:["Je ne suis pas vivant","J ai des pages","On me lit","Je contiens des histoires"],en:["I am not alive","I have pages","You read me","I contain stories"],sv:["Jag är inte levande","Jag har sidor","Man läser mig","Jag innehåller berättelser"]}},
+  {fr:"requin",en:"shark",sv:"haj",h:{fr:["Je suis un animal","Je vis dans l eau","J ai beaucoup de dents","Je suis dans les films d horreur"],en:["I am an animal","I live in water","I have many teeth","I appear in horror movies"],sv:["Jag är ett djur","Jag lever i vatten","Jag har många tänder","Jag är med i skräckfilmer"]}},
+  {fr:"lune",en:"moon",sv:"manen",h:{fr:["Je brille la nuit","Je tourne autour de la Terre","J ai ete visitee en 1969","Je n ai pas d atmosphere"],en:["I shine at night","I orbit around Earth","I was visited in 1969","I have no atmosphere"],sv:["Jag lyser på natten","Jag kretsar kring Jorden","Jag besöktes 1969","Jag har ingen atmosfär"]}}
 ];
 var vingtQState=null;
 function detectVingtQ(n,lang){
@@ -2685,7 +3020,7 @@ function startVingtQ(lang){
   vingtQState={item:item,lang:lang,hintIdx:0,asked:0};
   var hints=item.h[lang]||item.h.en;
   return lang==="fr"?"&#129300; Je pense a quelque chose... Tu as 20 questions pour deviner en posant des questions Oui/Non. <strong>Indice 1 :</strong> "+hints[0]:
-         lang==="sv"?"&#129300; Jag tanker pa nagot... Du har 20 fragor pa dig. <strong>Ledtrad 1:</strong> "+hints[0]:
+         lang==="sv"?"&#129300; Jag tänker på något... Du har 20 frågor på dig. <strong>Ledtråd 1:</strong> "+hints[0]:
          "&#129300; I am thinking of something... You have 20 questions (yes/no). <strong>Hint 1:</strong> "+hints[0];
 }
 function checkVingtQ(n,lang){
@@ -2695,7 +3030,7 @@ function checkVingtQ(n,lang){
   // Check guess
   if(n.indexOf(ans.toLowerCase())!==-1||n.indexOf((item.fr||"").toLowerCase())!==-1||n.indexOf((item.en||"").toLowerCase())!==-1||n.indexOf((item.sv||"").toLowerCase())!==-1){
     addScore(15);
-    var win=lang==="fr"?"&#127881; Bravo ! C etait <strong>"+ans+"</strong> ! +15 points !":lang==="sv"?"&#127881; Bra jobbat! Det var <strong>"+ans+"</strong>! +15 poang!":"&#127881; Well done! It was <strong>"+ans+"</strong>! +15 points!";
+    var win=lang==="fr"?"&#127881; Bravo ! C etait <strong>"+ans+"</strong> ! +15 points !":lang==="sv"?"&#127881; Bra jobbat! Det var <strong>"+ans+"</strong>! +15 poäng!":"&#127881; Well done! It was <strong>"+ans+"</strong>! +15 points!";
     vingtQState=null;return win;
   }
   vingtQState.asked++;
@@ -2708,7 +3043,7 @@ function checkVingtQ(n,lang){
   var hintMsg="";
   if(vingtQState.asked%4===0&&vingtQState.hintIdx<hints.length-1){
     vingtQState.hintIdx++;
-    var hl=lang==="fr"?"Indice "+(vingtQState.hintIdx+1)+" : ":lang==="sv"?"Ledtrad "+(vingtQState.hintIdx+1)+": ":"Hint "+(vingtQState.hintIdx+1)+": ";
+    var hl=lang==="fr"?"Indice "+(vingtQState.hintIdx+1)+" : ":lang==="sv"?"Ledtråd "+(vingtQState.hintIdx+1)+": ":"Hint "+(vingtQState.hintIdx+1)+": ";
     hintMsg="<br><em>"+hl+hints[vingtQState.hintIdx]+"</em>";
   }
   // Figure out yes/no from hints
@@ -2805,8 +3140,8 @@ var moodWords={
   happy:{fr:["super","genial","content","heureux","fantastique","parfait","trop bien","cool","excellent","joie"],en:["great","awesome","happy","joyful","fantastic","perfect","excellent","amazing","wonderful","excited"],sv:["bra","fantastisk","glad","lycklig","perfekt","kul","excellent","underbar","jattebra"]}
 };
 var moodReplies={
-  sad:{fr:["Oh, je suis vraiment desole de l entendre ! &#128153; Tu n es pas seul, je suis la ! Veux-tu parler de ce qui ne va pas ?","Ca me touche de savoir que tu n es pas bien. &#128153; Parfois une bonne blague aide ! Veux-tu en entendre une ?","Eh, les moments difficiles, ca passe ! &#128153; Tu es courageux de l exprimer. Dis-moi tout !"],en:["Oh, I am so sorry to hear that! &#128153; You are not alone, I am here! Want to talk about it?","That makes me sad too. &#128153; Sometimes a good joke helps! Want to hear one?","Hey, tough moments pass! &#128153; You are brave for sharing. Tell me everything!"],sv:["Och, det beklagar jag verkligen! &#128153; Du ar inte ensam, jag ar har! Vill du prata om det?","Det gor mig ledsen att hora. &#128153; Ibland hjalper ett gott skratt! Vill du hora ett skamt?","Hej, svara stunder gar over! &#128153; Det ar modigt att dela. Beratta allt!"]},
-  happy:{fr:["C est super d entendre ca ! &#127881; Ton energie positive me booste !","Wow, j adore ton enthousiasme ! &#127881; Garde cette belle humeur !","Genial ! La bonne humeur, ca se partage ! &#127881;"],en:["That is great to hear! &#127881; Your positive energy is contagious!","Wow, I love your enthusiasm! &#127881; Keep that good mood!","Awesome! Good vibes spread! &#127881;"],sv:["Det ar fantastiskt att hora! &#127881; Din positiva energi smittar!","Wow, jag alskar din entusiasm! &#127881; Hall den bra stamnin!","Kanon! Bra vibbar sprider sig! &#127881;"]}
+  sad:{fr:["Oh, je suis vraiment desole de l entendre ! &#128153; Tu n es pas seul, je suis la ! Veux-tu parler de ce qui ne va pas ?","Ca me touche de savoir que tu n es pas bien. &#128153; Parfois une bonne blague aide ! Veux-tu en entendre une ?","Eh, les moments difficiles, ca passe ! &#128153; Tu es courageux de l exprimer. Dis-moi tout !"],en:["Oh, I am so sorry to hear that! &#128153; You are not alone, I am here! Want to talk about it?","That makes me sad too. &#128153; Sometimes a good joke helps! Want to hear one?","Hey, tough moments pass! &#128153; You are brave for sharing. Tell me everything!"],sv:["Å, det beklagar jag verkligen! &#128153; Du är inte ensam, jag är här! Vill du prata om det?","Det gör mig ledsen att höra. &#128153; Ibland hjälper ett gott skratt! Vill du höra ett skämt?","Hej, svåra stunder går över! &#128153; Det är modigt att dela. Berätta allt!"]},
+  happy:{fr:["C est super d entendre ca ! &#127881; Ton energie positive me booste !","Wow, j adore ton enthousiasme ! &#127881; Garde cette belle humeur !","Genial ! La bonne humeur, ca se partage ! &#127881;"],en:["That is great to hear! &#127881; Your positive energy is contagious!","Wow, I love your enthusiasm! &#127881; Keep that good mood!","Awesome! Good vibes spread! &#127881;"],sv:["Det är fantastiskt att höra! &#127881; Din positiva energi smittar!","Wow, jag älskar din entusiasm! &#127881; Håll den bra stämningen!","Kanon! Bra vibbar sprider sig! &#127881;"]}
 };
 function detectMood(n,lang){
   if(n.split(" ").length>8)return null;
@@ -2815,6 +3150,700 @@ function detectMood(n,lang){
   for(var i=0;i<sad.length;i++){if(n.indexOf(sad[i])!==-1)return "sad";}
   for(var i=0;i<happy.length;i++){if(n.indexOf(happy[i])!==-1)return "happy";}
   return null;
+}
+// ══════════════════════════════════════════════════════════════════
+// MINI-JEUX
+// ══════════════════════════════════════════════════════════════════
+
+// ─── MENU JEUX ───────────────────────────────────────────────────
+function detectGamesMenu(n,lang){
+  if(lang==='fr')return n==='jeux'||n.indexOf('mini jeu')!==-1||(n.indexOf('jeux')!==-1&&n.length<20)||n.indexOf('quels jeux')!==-1;
+  if(lang==='sv')return n==='spel'||n==='spela'||n.indexOf('mini spel')!==-1||(n.indexOf('spel')!==-1&&n.length<12);
+  return n==='games'||n.indexOf('mini game')!==-1||n.indexOf('play game')!==-1||(n==='game');
+}
+function buildGamesMenu(lang){
+  var t=lang==='fr'?'🎮 Mini-jeux disponibles :':lang==='sv'?'🎮 Tillgängliga spel:':'🎮 Available games:';
+  var h='<div class="game-card"><div class="game-title">'+t+'</div><div class="games-menu">';
+  var g=[
+    {icon:'❌',fr:'Morpion',sv:'Tre i rad',en:'Tic-Tac-Toe',cmd:lang==='fr'?'morpion':lang==='sv'?'tre i rad':'tic tac toe'},
+    {icon:'🃏',fr:'Memory',sv:'Memory',en:'Memory',cmd:'memory'},
+    {icon:'🐍',fr:'Snake',sv:'Snake',en:'Snake',cmd:'snake'},
+    {icon:'🕵️',fr:'20 Questions',sv:'20 frågor',en:'20 Questions',cmd:lang==='fr'?'20 questions':lang==='sv'?'20 fragor':'20 questions'},
+    {icon:'⭐',fr:'Mode Défi',sv:'Utmaning',en:'Challenge',cmd:lang==='fr'?'mode defi':lang==='sv'?'utmaning quiz':'quiz challenge'}
+  ];
+  g.forEach(function(gm){
+    var name=lang==='fr'?gm.fr:lang==='sv'?gm.sv:gm.en;
+    h+='<button class="game-menu-btn" onclick="document.getElementById(\'userInput\').value=\''+gm.cmd+'\';sendMsg()">'+gm.icon+' '+name+'</button>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+// ─── MORPION (TIC-TAC-TOE) ───────────────────────────────────────
+var morpionState=null;
+var MP_WIN=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function detectMorpion(n,lang){
+  if(lang==='fr')return n.indexOf('morpion')!==-1||n.indexOf('tic tac')!==-1;
+  if(lang==='sv')return n.indexOf('tre i rad')!==-1||n.indexOf('luffarschack')!==-1;
+  return n.indexOf('tic tac')!==-1||n.indexOf('tictac')!==-1||n.indexOf('morpion')!==-1;
+}
+function checkMpWin(b){
+  for(var i=0;i<MP_WIN.length;i++){var l=MP_WIN[i];if(b[l[0]]&&b[l[0]]===b[l[1]]&&b[l[0]]===b[l[2]])return b[l[0]];}
+  return null;
+}
+function getMpAI(b){
+  function mm(bd,mx){
+    var w=checkMpWin(bd);if(w==='O')return 10;if(w==='X')return -10;
+    if(bd.every(function(x){return x!=='';}))return 0;
+    var bst=mx?-99:99;
+    for(var i=0;i<9;i++){if(!bd[i]){var nb=bd.slice();nb[i]=mx?'O':'X';var s=mm(nb,!mx);bst=mx?Math.max(bst,s):Math.min(bst,s);}}
+    return bst;
+  }
+  var best=-99,mv=0;
+  for(var i=0;i<9;i++){if(!b[i]){var nb=b.slice();nb[i]='O';var s=mm(nb,false);if(s>best){best=s;mv=i;}}}
+  return mv;
+}
+function startMorpion(lang,noTrack){
+  if(!noTrack){xnStats.gamesPlayed=(xnStats.gamesPlayed||0)+1;saveStats();checkBadges();}
+  morpionState={b:['','','','','','','','',''],lang:lang,on:true};
+  var t=lang==='fr'?'Morpion — Tu es ❌, Xearnes est ⭕':lang==='sv'?'Tre i rad — Du är ❌, Xearnes är ⭕':'Tic-Tac-Toe — You are ❌, Xearnes is ⭕';
+  var rb=lang==='fr'?'🔄 Rejouer':lang==='sv'?'🔄 Spela igen':'🔄 Play again';
+  var h='<div class="game-card"><div class="game-title">'+t+'</div><div class="morpion-grid" id="morpion-board">';
+  for(var i=0;i<9;i++)h+='<button class="mp-cell" onclick="morpionClick('+i+')"></button>';
+  h+='</div><button class="game-restart" onclick="restartMorpion(this)">'+rb+'</button></div>';
+  return h;
+}
+function morpionClick(i){
+  var s=morpionState;if(!s||!s.on||s.b[i])return;
+  s.b[i]='X';
+  var w=checkMpWin(s.b),full=s.b.every(function(x){return x!=='';});
+  if(!w&&!full){var mv=getMpAI(s.b);s.b[mv]='O';w=checkMpWin(s.b);full=s.b.every(function(x){return x!=='';});}
+  if(w||full)s.on=false;
+  var grid=document.getElementById('morpion-board');
+  if(grid){
+    var cells=grid.querySelectorAll('.mp-cell');
+    for(var j=0;j<9;j++){
+      cells[j].textContent=s.b[j]||'';
+      cells[j].className='mp-cell'+(s.b[j]==='X'?' mp-x':s.b[j]==='O'?' mp-o':'');
+      cells[j].disabled=!!(s.b[j]||!s.on);
+    }
+  }
+  if(w==='X'){setTimeout(function(){addMsg(s.lang==='fr'?'🎉 Bravo, tu as battu Xearnes ! +20 ⭐':s.lang==='sv'?'🎉 Bra jobbat, du slog Xearnes! +20 ⭐':'🎉 You beat Xearnes! +20 ⭐','bot');addScore(20);playBeep();},200);}
+  else if(w==='O'){setTimeout(function(){addMsg(s.lang==='fr'?'😈 Xearnes gagne ! Écris "morpion" pour rejouer.':s.lang==='sv'?'😈 Xearnes vann! Skriv "tre i rad" igen för att spela.':'😈 Xearnes wins! Type "tic tac toe" to replay.','bot');},200);}
+  else if(full){setTimeout(function(){addMsg(s.lang==='fr'?'🤝 Match nul ! Bien joué !':s.lang==='sv'?'🤝 Oavgjort! Bra spelat!':'🤝 Draw! Good game!','bot');},200);}
+}
+
+// ─── MEMORY ──────────────────────────────────────────────────────
+var memoryState=null;
+var MEM_EMOJIS=['🐶','🐱','🐸','🦊','🐼','🦁','🐯','🦋'];
+function detectMemory(n,lang){
+  if(lang==='fr')return n.indexOf('memory')!==-1||n.indexOf('paires')!==-1||(n.indexOf('memo')!==-1&&n.indexOf('jeu')!==-1);
+  if(lang==='sv')return n.indexOf('memory')!==-1||(n.indexOf('par')!==-1&&n.indexOf('kort')!==-1);
+  return n.indexOf('memory')!==-1||n.indexOf('pairs')!==-1||n.indexOf('matching')!==-1;
+}
+function startMemory(lang,noTrack){
+  if(!noTrack){xnStats.gamesPlayed=(xnStats.gamesPlayed||0)+1;saveStats();checkBadges();}
+  var em=MEM_EMOJIS.slice();
+  var cards=em.concat(em).sort(function(){return Math.random()-.5;});
+  memoryState={cards:cards,flipped:[],matched:[],moves:0,lang:lang,lock:false};
+  var t=lang==='fr'?'🃏 Memory — Trouve les 8 paires !':lang==='sv'?'🃏 Memory — Hitta de 8 paren!':'🃏 Memory — Find the 8 pairs!';
+  var sc=lang==='fr'?'Coups: 0':lang==='sv'?'Drag: 0':'Moves: 0';
+  var rb=lang==='fr'?'🔄 Rejouer':lang==='sv'?'🔄 Spela igen':'🔄 Play again';
+  var h='<div class="game-card"><div class="game-title">'+t+'</div>';
+  h+='<div class="game-score" id="mem-score">'+sc+'</div>';
+  h+='<div class="memory-grid" id="memory-board" style="grid-template-columns:repeat(4,1fr)">';
+  for(var i=0;i<16;i++)h+='<button class="mem-card" onclick="memoryClick('+i+')">?</button>';
+  h+='</div><button class="game-restart" onclick="restartMemory(this)">'+rb+'</button></div>';
+  return h;
+}
+function memoryClick(i){
+  var s=memoryState;
+  if(!s||s.lock||s.flipped.indexOf(i)!==-1||s.matched.indexOf(i)!==-1)return;
+  s.flipped.push(i);
+  updateMemCard(i,'flipped');
+  if(s.flipped.length===2){
+    s.moves++;
+    var sc=document.getElementById('mem-score');
+    if(sc)sc.textContent=(s.lang==='fr'?'Coups: ':s.lang==='sv'?'Drag: ':'Moves: ')+s.moves;
+    s.lock=true;
+    var a=s.flipped[0],b=s.flipped[1];
+    if(s.cards[a]===s.cards[b]){
+      s.matched.push(a,b);s.flipped=[];s.lock=false;
+      updateMemCard(a,'matched');updateMemCard(b,'matched');
+      if(s.matched.length===16){
+        setTimeout(function(){
+          addMsg(s.lang==='fr'?'🎉 Bravo ! Toutes les paires en '+s.moves+' coups ! +30 ⭐':
+                 s.lang==='sv'?'🎉 Bra jobbat! Alla par på '+s.moves+' drag! +30 ⭐':
+                 '🎉 All pairs found in '+s.moves+' moves! +30 ⭐','bot');
+          addScore(30);playBeep();
+        },400);
+      }
+    }else{
+      setTimeout(function(){
+        updateMemCard(a,'hidden');updateMemCard(b,'hidden');
+        s.flipped=[];s.lock=false;
+      },950);
+    }
+  }
+}
+function updateMemCard(i,state){
+  var grid=document.getElementById('memory-board');
+  if(!grid)return;
+  var btn=grid.querySelectorAll('.mem-card')[i];
+  if(!btn)return;
+  var s=memoryState;
+  if(state==='flipped'){btn.className='mem-card flipped';btn.textContent=s.cards[i];}
+  else if(state==='matched'){btn.className='mem-card matched';btn.disabled=true;btn.textContent=s.cards[i];}
+  else{btn.className='mem-card';btn.textContent='?';}
+}
+
+// ─── SNAKE ───────────────────────────────────────────────────────
+var snakeState=null;
+function detectSnake(n,lang){
+  if(lang==='fr')return n.indexOf('snake')!==-1||n.indexOf('serpent')!==-1;
+  if(lang==='sv')return n.indexOf('snake')!==-1||n.indexOf('orm')!==-1;
+  return n.indexOf('snake')!==-1;
+}
+function startSnake(lang,noTrack){
+  if(!noTrack){xnStats.gamesPlayed=(xnStats.gamesPlayed||0)+1;saveStats();checkBadges();}
+  if(snakeState&&snakeState.loop){clearInterval(snakeState.loop);}
+  if(snakeState&&snakeState._kh){document.removeEventListener('keydown',snakeState._kh);}
+  var sz=16,cell=16;
+  snakeState={
+    lang:lang,sz:sz,cell:cell,
+    snake:[[8,8],[8,7],[8,6]],
+    dir:[0,1],nextDir:[0,1],
+    food:[Math.floor(Math.random()*sz),Math.floor(Math.random()*sz)],
+    score:0,on:true,loop:null,_kh:null
+  };
+  var px=sz*cell;
+  var t=lang==='fr'?'🐍 Snake — Mange les pommes !':lang==='sv'?'🐍 Snake — Ät äpplena!':'🐍 Snake — Eat the apples!';
+  var h='<div class="game-card"><div class="game-title">'+t+'</div><div class="snake-wrap">';
+  h+='<div class="game-score" id="snake-score">Score: 0</div>';
+  h+='<canvas id="snake-canvas" class="snake-canvas" width="'+px+'" height="'+px+'"></canvas>';
+  var rb=lang==='fr'?'🔄 Rejouer':lang==='sv'?'🔄 Spela igen':'🔄 Play again';
+  h+='<div class="snake-dpad">';
+  h+='<div></div><button class="snake-btn" ontouchstart="snakeDir(0,-1)" onclick="snakeDir(0,-1)">▲</button><div></div>';
+  h+='<button class="snake-btn" ontouchstart="snakeDir(-1,0)" onclick="snakeDir(-1,0)">◀</button>';
+  h+='<button class="snake-btn" ontouchstart="snakePause()" onclick="snakePause()" style="font-size:.7rem">⏸</button>';
+  h+='<button class="snake-btn" ontouchstart="snakeDir(1,0)" onclick="snakeDir(1,0)">▶</button>';
+  h+='<div></div><button class="snake-btn" ontouchstart="snakeDir(0,1)" onclick="snakeDir(0,1)">▼</button><div></div>';
+  h+='</div><button class="game-restart" onclick="restartSnake(this)">'+rb+'</button></div></div>';
+  return h;
+}
+function snakeAfterRender(){
+  if(!snakeState)return;
+  snakeDraw();
+  snakeState.loop=setInterval(snakeStep,150);
+  snakeState._kh=function(e){
+    var k={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
+    if(k[e.key]){e.preventDefault();var d=k[e.key];snakeDir(d[0],d[1]);}
+  };
+  document.addEventListener('keydown',snakeState._kh);
+}
+function snakePause(){
+  if(!snakeState)return;
+  if(snakeState.loop){clearInterval(snakeState.loop);snakeState.loop=null;}
+  else if(snakeState.on){snakeState.loop=setInterval(snakeStep,150);}
+}
+function snakeDir(dx,dy){
+  if(!snakeState||!snakeState.on)return;
+  var c=snakeState.dir;
+  if(dx===-c[0]&&dy===-c[1])return; // pas de demi-tour
+  snakeState.nextDir=[dx,dy];
+}
+function snakeStep(){
+  var s=snakeState;if(!s||!s.on)return;
+  s.dir=s.nextDir.slice();
+  var h=s.snake[0];
+  var nh=[h[0]+s.dir[0],h[1]+s.dir[1]];
+  if(nh[0]<0||nh[0]>=s.sz||nh[1]<0||nh[1]>=s.sz){snakeOver();return;}
+  for(var i=0;i<s.snake.length;i++){if(s.snake[i][0]===nh[0]&&s.snake[i][1]===nh[1]){snakeOver();return;}}
+  s.snake.unshift(nh);
+  if(nh[0]===s.food[0]&&nh[1]===s.food[1]){
+    s.score++;
+    var sc=document.getElementById('snake-score');if(sc)sc.textContent='Score: '+s.score;
+    do{s.food=[Math.floor(Math.random()*s.sz),Math.floor(Math.random()*s.sz)];}
+    while(s.snake.some(function(c){return c[0]===s.food[0]&&c[1]===s.food[1];}));
+  }else{s.snake.pop();}
+  snakeDraw();
+}
+function snakeDraw(){
+  var s=snakeState;if(!s)return;
+  var canvas=document.getElementById('snake-canvas');if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  var c=s.cell,g=s.sz,px=g*c;
+  ctx.fillStyle='#050a1f';ctx.fillRect(0,0,px,px);
+  // Grille légère
+  ctx.strokeStyle='rgba(42,47,108,.4)';ctx.lineWidth=.5;
+  for(var i=0;i<=g;i++){
+    ctx.beginPath();ctx.moveTo(i*c,0);ctx.lineTo(i*c,px);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*c);ctx.lineTo(px,i*c);ctx.stroke();
+  }
+  // Pomme
+  ctx.font=(c+2)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🍎',s.food[0]*c+c/2,s.food[1]*c+c/2);
+  // Corps du serpent
+  for(var j=s.snake.length-1;j>=0;j--){
+    var pct=(s.snake.length-j)/s.snake.length;
+    ctx.fillStyle='hsl('+(110+j*2)+',70%,'+(30+pct*35)+'%)';
+    ctx.beginPath();
+    var _x=s.snake[j][0]*c+1,_y=s.snake[j][1]*c+1,_w=c-2,_h=c-2,_r=3;
+    if(ctx.roundRect){ctx.roundRect(_x,_y,_w,_h,_r);}
+    else{ctx.rect(_x,_y,_w,_h);}
+    ctx.fill();
+  }
+  // Yeux de la tête
+  var hd=s.snake[0];
+  ctx.fillStyle='#fff';
+  ctx.fillRect(hd[0]*c+3,hd[1]*c+3,3,3);
+  ctx.fillRect(hd[0]*c+c-6,hd[1]*c+3,3,3);
+  ctx.fillStyle='#000';
+  ctx.fillRect(hd[0]*c+4,hd[1]*c+4,1,1);
+  ctx.fillRect(hd[0]*c+c-5,hd[1]*c+4,1,1);
+}
+function snakeOver(){
+  var s=snakeState;if(!s)return;
+  s.on=false;
+  if(s.loop){clearInterval(s.loop);s.loop=null;}
+  if(s._kh){document.removeEventListener('keydown',s._kh);s._kh=null;}
+  var canvas=document.getElementById('snake-canvas');
+  if(canvas){
+    var ctx=canvas.getContext('2d');
+    ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#ffd700';ctx.font='bold 26px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('GAME OVER',canvas.width/2,canvas.height/2-18);
+    ctx.font='16px Segoe UI';ctx.fillStyle='#fff';
+    ctx.fillText('Score: '+s.score,canvas.width/2,canvas.height/2+14);
+  }
+  setTimeout(function(){
+    if(s.score>0){addScore(s.score*3);playBeep();}
+  },600);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BADGES & STATS
+// ══════════════════════════════════════════════════════════════════
+var xnBadges={};
+try{xnBadges=JSON.parse(localStorage.getItem("xn_badges")||"{}");}catch(e){xnBadges={};}
+var xnStats={quizCorrect:0,gamesPlayed:0,recipesViewed:0,defiDone:0,daysStreak:0,lastDay:"",langsUsed:[]};
+try{var _xss=JSON.parse(localStorage.getItem("xn_stats")||"{}");Object.keys(_xss).forEach(function(k){xnStats[k]=_xss[k];});}catch(e){}
+function saveStats(){try{localStorage.setItem("xn_stats",JSON.stringify(xnStats));}catch(e){}}
+function trackLangUsed(l){
+  if(!xnStats.langsUsed)xnStats.langsUsed=[];
+  if(xnStats.langsUsed.indexOf(l)===-1){xnStats.langsUsed.push(l);saveStats();}
+}
+var badgeDefs={
+  quiz_first:{icon:"🎓",sv:"Quizmästaren",fr:"Maître Quiz",en:"Quiz Master",desc:{sv:"Första rätta quizsvaret!",fr:"1ère bonne réponse au quiz !",en:"First correct quiz answer!"}},
+  quiz_10:{icon:"🧠",sv:"Hjärnkraft",fr:"Cerveau d'or",en:"Big Brain",desc:{sv:"10 rätta quizsvar!",fr:"10 bonnes réponses au quiz !",en:"10 correct quiz answers!"}},
+  game_first:{icon:"🎮",sv:"Gamern",fr:"Le Gamer",en:"The Gamer",desc:{sv:"Spelade första mini-spelet!",fr:"Premier mini-jeu joué !",en:"Played first mini-game!"}},
+  game_5:{icon:"🕹️",sv:"Game Master",fr:"Game Master",en:"Game Master",desc:{sv:"5 mini-spel spelade!",fr:"5 mini-jeux joués !",en:"5 mini-games played!"}},
+  recipe_first:{icon:"👨‍🍳",sv:"Kocken",fr:"Le Chef",en:"The Chef",desc:{sv:"Hittade första receptet!",fr:"Première recette trouvée !",en:"Found first recipe!"}},
+  defi_first:{icon:"⚡",sv:"Utmanaren",fr:"L'Aventurier",en:"The Challenger",desc:{sv:"Första dagliga utmaningen klar!",fr:"Premier défi du jour réussi !",en:"First daily challenge done!"}},
+  defi_7:{icon:"🔥",sv:"Eldsjälen",fr:"7 jours de feu",en:"7-Day Fire",desc:{sv:"7 dagliga utmaningar klarade!",fr:"7 défis du jour réussis !",en:"7 daily challenges done!"}},
+  score_100:{icon:"⭐",sv:"Stjärnjägaren",fr:"Chasseur d'étoiles",en:"Star Hunter",desc:{sv:"100 poäng uppnådda!",fr:"100 points atteints !",en:"100 points reached!"}},
+  score_500:{icon:"💎",sv:"Diamantspelaren",fr:"Joueur Diamant",en:"Diamond Player",desc:{sv:"500 poäng uppnådda!",fr:"500 points atteints !",en:"500 points reached!"}},
+  polyglot:{icon:"🌍",sv:"Polyglott",fr:"Polyglotte",en:"Polyglot",desc:{sv:"Använt 3 olika språk!",fr:"Utilisé 3 langues différentes !",en:"Used 3 different languages!"}}
+};
+function earnBadge(id){
+  if(xnBadges[id])return;
+  xnBadges[id]=Date.now();
+  try{localStorage.setItem("xn_badges",JSON.stringify(xnBadges));}catch(e){}
+  var b=badgeDefs[id];if(!b)return;
+  var lang=currentLang;
+  var name=b[lang]||b.en;
+  var desc=b.desc[lang]||b.desc.en;
+  var title=lang==="fr"?"🏅 Badge débloqué !":lang==="sv"?"🏅 Märke upplåst!":"🏅 Badge unlocked!";
+  setTimeout(function(){
+    addMsg(title+"<div class='badge-earned-notif' style='display:flex;align-items:center;gap:10px;margin-top:8px;background:rgba(255,215,0,.08);padding:10px;border-radius:10px;border:1px solid var(--accent)'><span style='font-size:2.2rem;line-height:1'>"+b.icon+"</span><div><strong style='color:var(--accent);font-size:.95rem'>"+name+"</strong><br><span style='font-size:.75rem;color:var(--text2)'>"+desc+"</span></div></div>","bot");
+    playBeep();renderBadgePanel();
+  },500);
+}
+function checkBadges(){
+  if(score>=100)earnBadge("score_100");
+  if(score>=500)earnBadge("score_500");
+  if((xnStats.quizCorrect||0)>=1)earnBadge("quiz_first");
+  if((xnStats.quizCorrect||0)>=10)earnBadge("quiz_10");
+  if((xnStats.gamesPlayed||0)>=1)earnBadge("game_first");
+  if((xnStats.gamesPlayed||0)>=5)earnBadge("game_5");
+  if((xnStats.recipesViewed||0)>=1)earnBadge("recipe_first");
+  if((xnStats.defiDone||0)>=1)earnBadge("defi_first");
+  if((xnStats.defiDone||0)>=7)earnBadge("defi_7");
+  if((xnStats.langsUsed||[]).length>=3)earnBadge("polyglot");
+}
+function renderBadgePanel(){
+  var grid=document.getElementById("badgeGrid");
+  var titleEl=document.getElementById("badgePanelTitle");
+  if(!grid)return;
+  var earned=Object.keys(xnBadges).length;
+  var total=Object.keys(badgeDefs).length;
+  var lang=currentLang;
+  if(titleEl)titleEl.textContent="🏅 "+(lang==="sv"?"Märken":lang==="fr"?"Badges":"Badges")+" ("+earned+"/"+total+")";
+  grid.innerHTML="";
+  Object.keys(badgeDefs).forEach(function(id){
+    var b=badgeDefs[id];
+    var got=!!xnBadges[id];
+    var name=b[lang]||b.en;
+    var desc=b.desc[lang]||b.desc.en;
+    var div=document.createElement("div");
+    div.className="badge-item"+(got?" earned":" locked");
+    div.title=desc;
+    div.innerHTML="<span class='badge-icon'>"+b.icon+"</span><span class='badge-name'>"+name+"</span>";
+    grid.appendChild(div);
+  });
+}
+function toggleBadgePanel(){
+  var panel=document.getElementById("badgePanel");if(!panel)return;
+  var open=panel.classList.toggle("open");
+  if(open){
+    var vp=document.getElementById("voicePanel");if(vp)vp.classList.remove("open");
+    var hp=document.getElementById("histPanel");if(hp)hp.classList.remove("open");
+    var lp=document.getElementById("lbPanel");if(lp){lp.classList.remove("open");_lbOpen=false;}
+    renderBadgePanel();
+  }
+  var btn=document.getElementById("badgeBtn");if(btn)btn.classList.toggle("active",open);
+}
+// ══════════════════════════════════════════════════════════════════
+// DÉFI DU JOUR
+// ══════════════════════════════════════════════════════════════════
+var defiJourPool=[
+  {type:"math",sv:{q:"Vad är 7 × 8?",a:"56"},fr:{q:"Combien font 7 × 8 ?",a:"56"},en:{q:"What is 7 × 8?",a:"56"}},
+  {type:"math",sv:{q:"Vad är 144 ÷ 12?",a:"12"},fr:{q:"Combien font 144 ÷ 12 ?",a:"12"},en:{q:"What is 144 ÷ 12?",a:"12"}},
+  {type:"math",sv:{q:"Vad är 15 × 15?",a:"225"},fr:{q:"Combien font 15 × 15 ?",a:"225"},en:{q:"What is 15 × 15?",a:"225"}},
+  {type:"math",sv:{q:"Vad är 1000 – 437?",a:"563"},fr:{q:"Combien font 1000 – 437 ?",a:"563"},en:{q:"What is 1000 – 437?",a:"563"}},
+  {type:"math",sv:{q:"Vad är 8 × 9?",a:"72"},fr:{q:"Combien font 8 × 9 ?",a:"72"},en:{q:"What is 8 × 9?",a:"72"}},
+  {type:"math",sv:{q:"Vad är 13 × 7?",a:"91"},fr:{q:"Combien font 13 × 7 ?",a:"91"},en:{q:"What is 13 × 7?",a:"91"}},
+  {type:"vocab",sv:{q:"Hur säger man 'dog' på franska?",a:"chien"},fr:{q:"Comment dit-on 'chien' en anglais ?",a:"dog"},en:{q:"How do you say 'katt' in English?",a:"cat"}},
+  {type:"vocab",sv:{q:"Vad heter 'butterfly' på svenska?",a:"fjäril"},fr:{q:"Comment dit-on 'papillon' en anglais ?",a:"butterfly"},en:{q:"What is 'stjärna' in English?",a:"star"}},
+  {type:"vocab",sv:{q:"Hur säger man 'apple' på franska?",a:"pomme"},fr:{q:"Comment dit-on 'pomme' en anglais ?",a:"apple"},en:{q:"What is 'maison' in English?",a:"house"}},
+  {type:"vocab",sv:{q:"Vad heter 'moon' på svenska?",a:"måne"},fr:{q:"Comment dit-on 'lune' en espagnol ?",a:"luna"},en:{q:"What is 'Sonne' in English?",a:"sun"}},
+  {type:"trivia",sv:{q:"Vilken planet är närmast solen?",a:"merkurius"},fr:{q:"Quelle planète est la plus proche du soleil ?",a:"mercure"},en:{q:"Which planet is closest to the sun?",a:"mercury"}},
+  {type:"trivia",sv:{q:"Vad är vattnets kemiska formel?",a:"h2o"},fr:{q:"Quelle est la formule chimique de l'eau ?",a:"h2o"},en:{q:"What is the chemical formula of water?",a:"h2o"}},
+  {type:"trivia",sv:{q:"Hur många ben har en spindel?",a:"8"},fr:{q:"Combien de pattes a une araignée ?",a:"8"},en:{q:"How many legs does a spider have?",a:"8"}},
+  {type:"trivia",sv:{q:"Vilket är världens längsta flod?",a:"nilen"},fr:{q:"Quel est le plus long fleuve du monde ?",a:"nil"},en:{q:"What is the world's longest river?",a:"nile"}},
+  {type:"trivia",sv:{q:"Vad heter Frankrikes huvudstad?",a:"paris"},fr:{q:"Quelle est la capitale du Japon ?",a:"tokyo"},en:{q:"What is the capital of Australia?",a:"canberra"}},
+  {type:"trivia",sv:{q:"Vilket år uppfanns Minecraft?",a:"2011"},fr:{q:"En quelle année Minecraft a-t-il été créé ?",a:"2011"},en:{q:"In what year was Minecraft created?",a:"2011"}},
+  {type:"trivia",sv:{q:"Hur många färger finns det i en regnbåge?",a:"7"},fr:{q:"Combien de couleurs y a-t-il dans un arc-en-ciel ?",a:"7"},en:{q:"How many colors are in a rainbow?",a:"7"}},
+  {type:"trivia",sv:{q:"Vilket land uppfann dynamit?",a:"sverige"},fr:{q:"Quel pays a inventé la dynamite ?",a:"suede"},en:{q:"Which country invented dynamite?",a:"sweden"}},
+  {type:"trivia",sv:{q:"Hur långt är ett maraton?",a:"42"},fr:{q:"Quelle est la distance d'un marathon ?",a:"42"},en:{q:"How long is a marathon in km?",a:"42"}},
+  {type:"trivia",sv:{q:"Hur många planeter finns det i solsystemet?",a:"8"},fr:{q:"Combien de planètes y a-t-il dans le système solaire ?",a:"8"},en:{q:"How many planets are in the solar system?",a:"8"}},
+  {type:"trivia",sv:{q:"Vad heter Australiens huvudstad?",a:"canberra"},fr:{q:"Quelle est la capitale de la Suède ?",a:"stockholm"},en:{q:"What is the capital of Sweden?",a:"stockholm"}},
+  {type:"vocab",sv:{q:"Hur säger man 'water' på spanska?",a:"agua"},fr:{q:"Comment dit-on 'eau' en japonais ?",a:"mizu"},en:{q:"What is 'eau' in English?",a:"water"}},
+  {type:"math",sv:{q:"Vad är kvadratroten av 64?",a:"8"},fr:{q:"Quelle est la racine carrée de 64 ?",a:"8"},en:{q:"What is the square root of 64?",a:"8"}},
+  {type:"trivia",sv:{q:"Hur många sekunder är det på en minut?",a:"60"},fr:{q:"Combien de secondes dans une minute ?",a:"60"},en:{q:"How many seconds in a minute?",a:"60"}},
+  {type:"trivia",sv:{q:"Vad heter den snabbaste landlevande djuret?",a:"gepard"},fr:{q:"Quel est l'animal terrestre le plus rapide ?",a:"guepard"},en:{q:"What is the fastest land animal?",a:"cheetah"}},
+  {type:"vocab",sv:{q:"Vad heter 'hello' på japanska?",a:"konnichiwa"},fr:{q:"Comment dit-on 'bonjour' en japonais ?",a:"konnichiwa"},en:{q:"How do you say 'hello' in Japanese?",a:"konnichiwa"}},
+  {type:"trivia",sv:{q:"Hur många sidor har en hexagon?",a:"6"},fr:{q:"Combien de côtés a un hexagone ?",a:"6"},en:{q:"How many sides does a hexagon have?",a:"6"}},
+  {type:"math",sv:{q:"Vad är 25% av 200?",a:"50"},fr:{q:"Combien font 25% de 200 ?",a:"50"},en:{q:"What is 25% of 200?",a:"50"}},
+  {type:"trivia",sv:{q:"Vilket land har flest innevånare?",a:"kina"},fr:{q:"Quel pays a la plus grande population ?",a:"chine"},en:{q:"Which country has the largest population?",a:"china"}},
+  {type:"trivia",sv:{q:"Vad är summan av vinklarna i en triangel?",a:"180"},fr:{q:"Quelle est la somme des angles d'un triangle ?",a:"180"},en:{q:"What is the sum of angles in a triangle?",a:"180"}}
+];
+var defiJourState=null;
+function _todayKey(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function _defiIdx(){
+  var today=_todayKey();
+  var parts=today.split("-").map(Number);
+  return(parts[0]*366+parts[1]*31+parts[2])%defiJourPool.length;
+}
+function detectDefiJour(n,lang){
+  if(lang==="fr")return n.indexOf("defi du jour")!==-1||n.indexOf("challenge du jour")!==-1||n.indexOf("defi quotidien")!==-1;
+  if(lang==="sv")return n.indexOf("dagens utmaning")!==-1||n.indexOf("daglig utmaning")!==-1||n.indexOf("dagens uppdrag")!==-1||n.indexOf("dj")===0&&n.length<=4;
+  return n.indexOf("daily challenge")!==-1||n.indexOf("challenge of the day")!==-1||n.indexOf("defi du jour")!==-1;
+}
+function startDefiJour(lang){
+  var today=_todayKey();
+  var done=localStorage.getItem("xn_dj_done")===today;
+  if(done){
+    return lang==="fr"?"✅ Tu as déjà réussi le défi du jour ! Reviens demain pour un nouveau. 😊":
+           lang==="sv"?"✅ Du har redan klarat dagens utmaning! Kom tillbaka imorgon. 😊":
+           "✅ You already completed today's challenge! Come back tomorrow. 😊";
+  }
+  var defi=defiJourPool[_defiIdx()];
+  var qa=defi[lang]||defi.en;
+  var typeIcon={math:"🔢",vocab:"📖",trivia:"🌍"};
+  var typeLabel={sv:{math:"Matematik",vocab:"Vokabulär",trivia:"Frågesport"},fr:{math:"Maths",vocab:"Vocabulaire",trivia:"Culture générale"},en:{math:"Math",vocab:"Vocabulary",trivia:"Trivia"}};
+  var icon=typeIcon[defi.type]||"❓";
+  var lbl=(typeLabel[lang]||typeLabel.en)[defi.type]||"Trivia";
+  var title=lang==="fr"?"⚡ Défi du Jour":lang==="sv"?"⚡ Dagens Utmaning":"⚡ Daily Challenge";
+  var bonus=lang==="fr"?"+50 points si tu réponds juste !":lang==="sv"?"+50 poäng om du svarar rätt!":"+50 points if correct!";
+  var tip=lang==="fr"?"Réponds dans le chat 👇":lang==="sv"?"Svara i chatten nedan 👇":"Answer in the chat below 👇";
+  defiJourState={q:qa.q,a:qa.a.toLowerCase(),lang:lang,today:today};
+  return "<div class='defi-jour-card'>"+
+    "<div class='dj-header'><span class='dj-icon'>"+icon+"</span><div><div class='dj-title'>"+title+"</div><div class='dj-sub'>"+icon+" "+lbl+" &nbsp;·&nbsp; "+today+"</div></div></div>"+
+    "<div class='dj-question'>"+qa.q+"</div>"+
+    "<span class='dj-bonus'>"+bonus+"</span>"+
+    "<div class='dj-tip'>"+tip+"</div></div>";
+}
+function checkDefiJourAnswer(n,lang){
+  if(!defiJourState)return null;
+  var correct=n.indexOf(defiJourState.a)!==-1;
+  if(correct){
+    localStorage.setItem("xn_dj_done",defiJourState.today);
+    xnStats.defiDone=(xnStats.defiDone||0)+1;
+    saveStats();
+    addScore(50);
+    defiJourState=null;
+    var msg=lang==="fr"?"🎉 Bravo ! Bonne réponse ! <strong>+50 points !</strong> Reviens demain pour un nouveau défi !":
+            lang==="sv"?"🎉 Rätt svar! <strong>+50 poäng!</strong> Kom tillbaka imorgon för en ny utmaning!":
+            "🎉 Correct! <strong>+50 points!</strong> Come back tomorrow for a new challenge!";
+    return "<div class='dj-done'>"+msg+"</div>";
+  }
+  // Mauvaise réponse
+  return lang==="fr"?"❌ Pas tout à fait, essaie encore !":lang==="sv"?"❌ Inte riktigt! Försök igen!":"❌ Not quite! Try again!";
+}
+// ── RESTART JEUX ──
+function _gameMsg(btn){
+  // Remonte jusqu'au div.msg parent pour remplacer en place
+  var el=btn;
+  while(el&&!(el.classList&&el.classList.contains('msg'))){el=el.parentElement;}
+  return el||null;
+}
+function restartMorpion(btn){
+  if(morpionState)morpionState.on=false;
+  var msg=_gameMsg(btn);
+  if(msg){msg.innerHTML=startMorpion(currentLang,true);}
+  else{addMsg(startMorpion(currentLang,true),'bot');}
+}
+function restartMemory(btn){
+  if(memoryState)memoryState.lock=true;
+  var msg=_gameMsg(btn);
+  if(msg){msg.innerHTML=startMemory(currentLang,true);}
+  else{addMsg(startMemory(currentLang,true),'bot');}
+}
+function restartSnake(btn){
+  if(snakeState){
+    if(snakeState.loop){clearInterval(snakeState.loop);snakeState.loop=null;}
+    if(snakeState._kh){document.removeEventListener('keydown',snakeState._kh);snakeState._kh=null;}
+    snakeState.on=false;
+  }
+  var msg=_gameMsg(btn);
+  if(msg){msg.innerHTML=startSnake(currentLang,true);setTimeout(snakeAfterRender,250);}
+  else{addMsg(startSnake(currentLang,true),'bot');setTimeout(snakeAfterRender,250);}
+}
+// ══════════════════════════════════════════════════════════════════
+// PRÉSENCE EN LIGNE
+// ══════════════════════════════════════════════════════════════════
+var PRESENCE_URL="https://jsonblob.com/api/jsonBlob/019e8949-41b7-7e7b-82ad-6c393d3c45b3";
+var _sessionId=Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+var _presenceLock=false;
+var _presenceTimer=null;
+var _presenceExpiry=120000; // 2 minutes = considéré "en ligne"
+
+function updatePresence(remove){
+  if(_presenceLock)return;
+  _presenceLock=true;
+  fetch(PRESENCE_URL)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var now=Date.now();
+      var users=(d&&d.users)?d.users:[];
+      // Supprime notre session et les entrées expirées
+      users=users.filter(function(u){
+        return u.id!==_sessionId&&(now-u.ts)<_presenceExpiry;
+      });
+      // Ajoute notre session si on ne part pas
+      if(!remove){
+        users.push({id:_sessionId,ts:now,name:xnUser?xnUser.name:null});
+      }
+      renderOnline(users.length);
+      fetch(PRESENCE_URL,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({users:users})
+      }).then(function(){_presenceLock=false;}).catch(function(){_presenceLock=false;});
+    })
+    .catch(function(){_presenceLock=false;});
+}
+function renderOnline(count){
+  var el=document.getElementById('onlineCount');
+  var badge=document.getElementById('onlineBadge');
+  if(!el)return;
+  var lang=currentLang;
+  if(count<=0)count=1; // on compte toujours soi-même
+  var txt=lang==='sv'?(count+' online'):lang==='en'?(count+(count===1?' player':' players')+' online'):(count+' en ligne');
+  el.textContent=txt;
+  if(badge)badge.title=lang==='sv'?('Spelare online just nu: '+count):lang==='en'?('Players online right now: '+count):('Joueurs en ligne en ce moment : '+count);
+}
+// ══════════════════════════════════════════════════════════════════
+// WORLD LEADERBOARD + LOGIN SYSTEM
+// ══════════════════════════════════════════════════════════════════
+var BLOB_URL="https://jsonblob.com/api/jsonBlob/019e892c-5336-7905-82fb-3e97dde55955";
+// ── UTILISATEUR CONNECTÉ ──
+var xnUser=null;
+try{var _xu=localStorage.getItem("xn_user");if(_xu)xnUser=JSON.parse(_xu);}catch(e){xnUser=null;}
+
+function _hashPass(name,pass){
+  var str=name.toLowerCase().trim()+"||xearnes||"+pass;
+  var h=5381;
+  for(var i=0;i<str.length;i++){h=((h<<5)+h)+str.charCodeAt(i);h=h&h;}
+  return(Math.abs(h)+0x100000).toString(36);
+}
+function loginUser(name,pass,isNew){
+  name=name.trim();
+  if(!name||name.length<2)return{ok:false,msg:"Pseudo trop court (min 2 caractères) !"};
+  if(/[<>"']/.test(name))return{ok:false,msg:"Pseudo invalide (caractères interdits) !"};
+  if(!pass||pass.length<4)return{ok:false,msg:"Mot de passe trop court (min 4 caractères) !"};
+  var h=_hashPass(name,pass);
+  var key="xn_acc_"+name.toLowerCase().replace(/[^a-z0-9]/g,"_");
+  if(isNew){
+    if(localStorage.getItem(key))return{ok:false,msg:"Ce pseudo est déjà pris sur cet appareil !"};
+    localStorage.setItem(key,h);
+  }else{
+    var stored=localStorage.getItem(key);
+    if(!stored)return{ok:false,msg:"Pseudo introuvable — crée un compte !"};
+    if(stored!==h)return{ok:false,msg:"Mauvais mot de passe !"};
+  }
+  xnUser={name:name,hash:h};
+  try{localStorage.setItem("xn_user",JSON.stringify(xnUser));}catch(e){}
+  return{ok:true};
+}
+function logoutUser(){
+  xnUser=null;
+  localStorage.removeItem("xn_user");
+  renderUserBar();
+}
+function renderUserBar(){
+  var btn=document.getElementById("userBtn");
+  if(!btn)return;
+  if(xnUser){
+    btn.innerHTML="&#128100; "+xnUser.name.slice(0,12);
+    btn.title="Connecté : "+xnUser.name+" — cliquer pour se déconnecter";
+    btn.onclick=function(){if(confirm("Se déconnecter de "+xnUser.name+" ?")){logoutUser();}};
+  }else{
+    btn.innerHTML="&#128100; Connexion";
+    btn.title="Se connecter / créer un compte";
+    btn.onclick=openLoginModal;
+  }
+  // Afficher/masquer hint lb
+  var hint=document.getElementById("lbLoginHint");
+  if(hint)hint.style.display=xnUser?"none":"block";
+  if(!xnUser){
+    var htxt=document.getElementById("lbLoginHintTxt");
+    if(htxt)htxt.textContent=currentLang==="sv"?"Logga in för att synas i världsrankningen!":currentLang==="en"?"Log in to appear in the world ranking!":"Connecte-toi pour figurer dans le classement !";
+  }
+}
+// ── LOGIN MODAL ──
+var _loginTab="login";
+function openLoginModal(){
+  if(xnUser){if(confirm("Se déconnecter de "+xnUser.name+" ?")){logoutUser();}return;}
+  var o=document.getElementById("loginOverlay");if(o)o.classList.add("open");
+  document.getElementById("loginErr").textContent="";
+  document.getElementById("loginName").value="";
+  document.getElementById("loginPass").value="";
+  switchLoginTab("login");
+  setTimeout(function(){var el=document.getElementById("loginName");if(el)el.focus();},100);
+}
+function closeLoginModal(){
+  var o=document.getElementById("loginOverlay");if(o)o.classList.remove("open");
+}
+function switchLoginTab(tab){
+  _loginTab=tab;
+  document.getElementById("tabLogin").classList.toggle("active",tab==="login");
+  document.getElementById("tabRegister").classList.toggle("active",tab==="register");
+  var btn=document.getElementById("loginSubmitBtn");
+  if(btn)btn.textContent=tab==="login"?(currentLang==="sv"?"Logga in":currentLang==="en"?"Log in":"Se connecter"):(currentLang==="sv"?"Skapa konto":currentLang==="en"?"Create account":"Créer mon compte");
+  var tabEl=document.getElementById("tabLogin");
+  if(tabEl)tabEl.textContent=currentLang==="sv"?"Logga in":currentLang==="en"?"Login":"Connexion";
+  var tabEl2=document.getElementById("tabRegister");
+  if(tabEl2)tabEl2.textContent=currentLang==="sv"?"Registrera":currentLang==="en"?"Sign up":"Inscription";
+  document.getElementById("loginErr").textContent="";
+}
+function submitLogin(){
+  var name=document.getElementById("loginName").value.trim();
+  var pass=document.getElementById("loginPass").value;
+  var res=loginUser(name,pass,_loginTab==="register");
+  if(!res.ok){document.getElementById("loginErr").textContent=res.msg;return;}
+  closeLoginModal();
+  renderUserBar();
+  updatePresence(false); // Met à jour la présence avec le nom
+  var isNew=_loginTab==="register";
+  var msg=isNew
+    ?(currentLang==="sv"?"&#127881; Välkommen <strong>"+xnUser.name+"</strong>! Konto skapat! Du kan nu synas i världsrankningen &#127758;":currentLang==="en"?"&#127881; Welcome <strong>"+xnUser.name+"</strong>! Account created! You can now appear in the world ranking &#127758;":"&#127881; Bienvenue <strong>"+xnUser.name+"</strong> ! Compte créé ! Tu peux maintenant figurer dans le classement mondial &#127758;")
+    :(currentLang==="sv"?"&#128075; Kul att se dig igen, <strong>"+xnUser.name+"</strong>!":currentLang==="en"?"&#128075; Welcome back, <strong>"+xnUser.name+"</strong>!":"&#128075; Content de te revoir, <strong>"+xnUser.name+"</strong> !");
+  addMsg(msg,"bot");
+  playBeep();
+  if(score>0)pushScore();
+}
+// ── LEADERBOARD ──
+var _lbOpen=false;
+var _lbCache=null;
+var _pushTimer=null;
+function _escHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function fetchLeaderboard(cb){
+  fetch(BLOB_URL)
+    .then(function(r){return r.json();})
+    .then(function(d){_lbCache=(d&&d.scores)?d.scores:[];cb(_lbCache);})
+    .catch(function(){cb(_lbCache||[]);});
+}
+function pushScore(){
+  if(!xnUser||score<=0)return;
+  clearTimeout(_pushTimer);
+  _pushTimer=setTimeout(function(){
+    fetchLeaderboard(function(scores){
+      scores=scores.filter(function(s){return s.name.toLowerCase()!==xnUser.name.toLowerCase();});
+      scores.push({name:xnUser.name,score:score,date:new Date().toISOString().slice(0,10)});
+      scores.sort(function(a,b){return b.score-a.score;});
+      scores=scores.slice(0,100);
+      fetch(BLOB_URL,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({scores:scores})})
+        .then(function(){_lbCache=scores;if(_lbOpen)renderLeaderboard(scores);})
+        .catch(function(){});
+    });
+  },3000);
+}
+function toggleLeaderboardPanel(){
+  _lbOpen=!_lbOpen;
+  var panel=document.getElementById("lbPanel");if(!panel)return;
+  panel.classList.toggle("open",_lbOpen);
+  if(_lbOpen){
+    var vp=document.getElementById("voicePanel");if(vp)vp.classList.remove("open");
+    var hp=document.getElementById("histPanel");if(hp)hp.classList.remove("open");
+    var bp=document.getElementById("badgePanel");if(bp)bp.classList.remove("open");
+    updateLbTitle();
+    var body=document.getElementById("lbBody");
+    if(body)body.innerHTML="<div class='lb-loading'>&#9203; "+(currentLang==="sv"?"Laddar...":currentLang==="en"?"Loading...":"Chargement...")+"</div>";
+    fetchLeaderboard(function(scores){renderLeaderboard(scores);});
+    renderUserBar();
+  }
+  var btn=document.getElementById("lbBtn");if(btn)btn.classList.toggle("active",_lbOpen);
+}
+function updateLbTitle(){
+  var el=document.getElementById("lbTitle");
+  if(el)el.textContent=currentLang==="sv"?"&#127758; Världsrankning":currentLang==="en"?"&#127758; World Ranking":"&#127758; Classement mondial";
+}
+function renderLeaderboard(scores){
+  var body=document.getElementById("lbBody");
+  var myRank=document.getElementById("lbMyRank");
+  if(!body)return;
+  if(!scores||scores.length===0){
+    body.innerHTML="<div class='lb-empty'>&#128640; Aucun score encore...<br>Sois le premier !</div>";
+    if(myRank)myRank.style.display="none";
+    renderUserBar();return;
+  }
+  var medals=["&#129351;","&#129352;","&#129353;"];
+  var myPos=-1;
+  if(xnUser){for(var i=0;i<scores.length;i++){if(scores[i].name.toLowerCase()===xnUser.name.toLowerCase()){myPos=i;break;}}}
+  var top=scores.slice(0,10);
+  var html="";
+  top.forEach(function(s,i){
+    var isMe=xnUser&&s.name.toLowerCase()===xnUser.name.toLowerCase();
+    var rank=i<3?medals[i]:"<span style='font-size:.8rem;color:var(--text2)'>#"+(i+1)+"</span>";
+    html+="<div class='lb-row"+(isMe?" me":"")+"'>";
+    html+="<span class='lb-rank'>"+rank+"</span>";
+    html+="<div class='lb-info'><div class='lb-name'>"+_escHtml(s.name)+(isMe?" &#128072;":"")+"</div><div class='lb-date'>"+(s.date||"")+"</div></div>";
+    html+="<span class='lb-score'>"+s.score+" &#11088;</span></div>";
+  });
+  body.innerHTML=html;
+  if(myRank){
+    var lang=currentLang;
+    if(xnUser&&myPos===-1&&score>0){
+      myRank.style.display="block";
+      myRank.textContent=(lang==="sv"?"&#128202; Din poäng ("+score+") är inte i topp 10 ännu":lang==="en"?"&#128202; Your score ("+score+") isn't in the top 10 yet":"&#128202; Ton score ("+score+") n'est pas encore dans le top 10");
+    }else if(xnUser&&myPos>=10){
+      myRank.style.display="block";
+      myRank.textContent="&#128202; "+(lang==="sv"?"Du är #":lang==="en"?"You are #":"Tu es #")+(myPos+1);
+    }else{myRank.style.display="none";}
+  }
+  renderUserBar();
 }
 window.addEventListener("load",init);
 </script>
