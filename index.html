@@ -509,10 +509,16 @@ var langs={
 };
 var currentLang=localStorage.getItem("xn_lang")||"sv";
 var allVoices=[],selectedVoiceIndex=0,fullHist=[],userName=localStorage.getItem("xn_name")||"";
-var _selectedVoiceName=localStorage.getItem("xn_voice_name")||"";
+// Préférence de voix par langue (ex: _voicePrefs["fr"]="Google français")
+var _voicePrefs={};
+try{_voicePrefs=JSON.parse(localStorage.getItem("xn_voice_prefs")||"{}");}catch(e){_voicePrefs={};}
+// Compatibilité ancienne clé xn_voice_name → migrer vers nouvelle structure
+(function(){var old=localStorage.getItem("xn_voice_name");if(old){_voicePrefs[localStorage.getItem("xn_lang")||"sv"]=old;localStorage.removeItem("xn_voice_name");}})();
+var _selectedVoiceName=_voicePrefs[localStorage.getItem("xn_lang")||"sv"]||"";
 try{fullHist=JSON.parse(localStorage.getItem("xn_hist")||"[]");}catch(e){fullHist=[];}
 var learnedFacts={};
 try{learnedFacts=JSON.parse(localStorage.getItem("xn_learn")||"{}");}catch(e){learnedFacts={};}
+var learnModeUnlocked=false; // débloqué uniquement avec le code secret
 var convHistory=[];
 var lastTopic={sv:null,fr:null,en:null,es:null,de:null,it:null,pt:null,ja:null,zh:null,ar:null,ru:null};
 var awaitingCorrection=false;
@@ -1339,7 +1345,7 @@ function buildPronResponse(word,toLang,uiLang){
 // ── MÉMOIRE DE CONVERSATION ──
 function addToConvHistory(role,text){
   convHistory.push({role:role,text:text});
-  if(convHistory.length>10)convHistory=convHistory.slice(-10);
+  if(convHistory.length>20)convHistory=convHistory.slice(-20);
 }
 function getLastBotTopic(lang){
   // Cherche un sujet dans les derniers messages du bot
@@ -1353,32 +1359,69 @@ function getLastBotTopic(lang){
   return null;
 }
 function enrichWithContext(n,lang){
-  if(n.split(" ").length>6)return n;
-  var pronouns={
-    fr:[" il "," elle "," ca "," sa "," son "," ses "," leur "," ils "," elles "," y "," en "," ce "],
-    sv:[" han "," hon "," det "," den "," dess "," de "," sin "," sitt "," sina "],
-    en:[" he "," she "," it "," its "," they "," their "," this "," that "," these "]
+  if(n.split(" ").length>8)return n;
+  // Schémas de pronoms à remplacer par le sujet
+  var pronounSubst={
+    fr:[/\bca\b/g,/\bsa\b/g,/\bcela\b/g,/\bce truc\b/g,/\bc est quoi ca\b/g,/\bca marche comment\b/g,/\bcomment ca marche\b/g],
+    sv:[/\bdet\b/g,/\bden\b/g,/\bdetta\b/g],
+    en:[/\bit\b/g,/\bthis\b/g,/\bthat\b/g,/\bthis thing\b/g]
   };
   var followUps={
-    fr:["pourquoi","comment","depuis","combien","quand","lequel","laquelle","et lui","et elle","et ca","encore","aussi","pareil","suite"],
-    sv:["varfor","hur","nar","vem","mer","ocksa","fortsatt"],
-    en:["why","how","when","who","which","and him","and her","more","also","still","tell me more","go on"]
+    fr:["pourquoi","comment","depuis","combien","quand","lequel","laquelle","et lui","et elle","et ca","encore","aussi","pareil","suite","dis moi plus","plus d info","en savoir plus","c est a dire","explique","developpe","et alors","tu peux developper"],
+    sv:["varfor","hur","nar","vem","mer","ocksa","fortsatt","berätta mer","vad mer","förstår inte"],
+    en:["why","how","when","who","which","more","also","still","tell me more","go on","elaborate","what else","explain more","keep going","details","expand","and then"]
   };
-  var prons=pronouns[lang]||pronouns.en;
+  var prons=pronounSubst[lang]||pronounSubst.en;
   var follows=followUps[lang]||followUps.en;
   var padded=" "+n+" ";
-  var hasPronoun=prons.some(function(p){return padded.indexOf(p)!==-1;});
-  var isFollowUp=follows.some(function(w){return n.indexOf(w)===0;});
+  var hasPronoun=prons.some(function(p){return p.test(padded);});
+  var isFollowUp=follows.some(function(w){return n.indexOf(w)===0||n===w;});
   var isVeryShort=n.split(" ").length<=2;
   // Cherche le sujet : d'abord lastTopic, puis dernier message du bot
   var topic=lastTopic[lang]||getLastBotTopic(lang);
-  if((hasPronoun||isFollowUp||isVeryShort)&&topic){
+  if(!topic)return n;
+  if(hasPronoun){
+    // Remplacer les pronoms par le vrai sujet
+    var result=n;
+    prons.forEach(function(p){result=result.replace(p,topic);});
+    return result;
+  }
+  if(isFollowUp||isVeryShort){
     return n+" "+topic;
   }
   return n;
 }
 function updateLastTopic(subject,lang){
   if(subject&&subject.length>2)lastTopic[lang]=subject;
+}
+// ── DÉTECTION "DIS-MOI PLUS" ──
+function detectMoreInfo(n,lang){
+  var p={
+    fr:["plus","encore","suite","continue","dis moi plus","en savoir plus","plus d info","plus de detail","explique encore","donne moi plus","et alors","developpe","approfondis","c est tout","t as plus","seulement ca","c est court"],
+    sv:["mer","fortsätt","berätta mer","mer info","vad mer","och sedan","är det allt","bara det"],
+    en:["more","tell me more","continue","go on","elaborate","what else","explain more","keep going","is that all","details","expand","anything else","that's short","that's it"]
+  };
+  var words=p[lang]||p.en;
+  var nw=n.split(" ").length;
+  return nw<=4&&words.some(function(w){return n.indexOf(w)!==-1;});
+}
+// ── DÉTECTION "ET TOI ?" (opinion de Xearnes) ──
+function detectOpinionRequest(n,lang){
+  var p={
+    fr:["et toi","t en penses","ton avis","tu penses quoi","tu aimes","tu preferes","c est ton truc","tu connais ca","t as une opinion","tu trouves ca","toi tu"],
+    sv:["vad tycker du","och du","din åsikt","gillar du","vad anser du","vad tror du"],
+    en:["what about you","your opinion","do you like","what do you think","and you","your favorite","do you prefer","what's your view","you think"]
+  };
+  var words=p[lang]||p.en;
+  return words.some(function(w){return n.indexOf(w)!==-1;});
+}
+function buildOpinionReply(topic,lang){
+  var t=topic||"ça";
+  var fr=["Moi ? Si j étais humain, je crois que j adorerais <strong>"+t+"</strong> ! C est fascinant. 🤔","Bonne question ! Je n ai pas de vraies préférences... mais <strong>"+t+"</strong>, ça m aurait l air génial ! 🌟","Honnêtement, je ne peux pas ressentir comme toi — mais en analysant tout ce que je sais, <strong>"+t+"</strong> est vraiment impressionnant. 🤖"];
+  var sv=["Jag då? Om jag vore människa tror jag att jag skulle älska <strong>"+t+"</strong>! Det verkar fascinerande 🤔","Bra fråga! Jag har inga riktiga preferenser... men <strong>"+t+"</strong> verkar fantastiskt! 🌟","Ärligt talat kan jag inte känna som du — men <strong>"+t+"</strong> är verkligen imponerande! 🤖"];
+  var en=["Me? If I were human, I think I'd love <strong>"+t+"</strong>! It's fascinating 🤔","Good question! I don't have real feelings... but <strong>"+t+"</strong> sounds amazing! 🌟","Honestly I can't feel things like you — but based on everything I know, <strong>"+t+"</strong> is truly impressive! 🤖"];
+  var arr=lang==="fr"?fr:lang==="sv"?sv:en;
+  return arr[Math.floor(Math.random()*arr.length)];
 }
 // ── CORRECTION INTELLIGENTE ──
 function detectCorrection(n,lang){
@@ -1577,16 +1620,39 @@ function getReply(input,lang,cb){
   // 🔁 CORRECTION DÉTECTÉE
   if(detectCorrection(n,lang))return cb(handleCorrection(n,lang));
   // 🔍 ENRICHIR AVEC CONTEXTE DE CONVERSATION
+  var _origN=n;
   n=enrichWithContext(n,lang);
-  // 0. Prononciation
+  // 💬 "ET TOI ?" — Xearnes donne son avis
+  if(detectOpinionRequest(_origN,lang)){
+    var opTopic=lastTopic[lang]||getLastBotTopic(lang);
+    return cb(buildOpinionReply(opTopic,lang));
+  }
+  // 📖 "DIS-MOI PLUS" — re-chercher Wikipedia sur le dernier sujet
+  if(detectMoreInfo(_origN,lang)){
+    var moreTopic=lastTopic[lang]||getLastBotTopic(lang);
+    if(moreTopic){
+      var moreIntro=lang==="fr"?"Bien sûr, voici plus d infos sur <strong>"+moreTopic+"</strong> :":lang==="sv"?"Självklart, mer om <strong>"+moreTopic+"</strong>:":"Of course, here's more about <strong>"+moreTopic+"</strong>:";
+      return fetchWikiChain([moreTopic],lang,function(w){
+        if(w)return cb(moreIntro+"<br>"+buildWikiHtml(w));
+        return cb(lang==="fr"?"Hmm, je n ai pas plus d infos sur ça pour l instant... Tu veux chercher autre chose ?":lang==="sv"?"Hmm, jag har inte mer info om det just nu... Vill du söka något annat?":"Hmm, I don't have more info on that right now... Want to search something else?");
+      });
+    }
+  }
+  // 0. Code secret → déverrouille le mode apprentissage
+  if(n==="cool555"){
+    learnModeUnlocked=true;
+    return cb(lang==="fr"?"🔓 <strong>Mode apprentissage activé !</strong> Tu peux maintenant m apprendre des choses. Ex : <em>\"La pizza est un plat italien\"</em>":lang==="sv"?"🔓 <strong>Inlärningsmodus aktiverat!</strong> Du kan nu lära mig saker. Ex: <em>\"pizza är en italiensk rätt\"</em>":"🔓 <strong>Learning mode unlocked!</strong> You can now teach me things. Ex: <em>\"pizza is an Italian dish\"</em>");
+  }
+  // 0a. Prononciation
   var prd=detectPronunciation(n,lang);
   if(prd)return cb(buildPronResponse(prd.word,prd.toLang,lang));
-  // 0a. Vérifier la mémoire d'apprentissage
-  var lf=lookupFact(n,lang);
-  if(lf)return cb(lf);
-  // 0b. Apprendre un nouveau fait
-  var nf=detectLearning(n,lang);
-  if(nf){saveFact(nf.subject,nf.fact);var ok=lang==="fr"?"J ai appris : \""+nf.fact+"\" ! Je m en souviendrai !":lang==="sv"?"Jag larde mig: \""+nf.fact+"\"! Jag kommer ihag det!":"Learned: \""+nf.fact+"\"! I will remember that!";return cb(ok);}
+  // 0b. Mémoire d'apprentissage (mode secret uniquement)
+  if(learnModeUnlocked){
+    var lf=lookupFact(n,lang);
+    if(lf)return cb(lf);
+    var nf=detectLearning(n,lang);
+    if(nf){saveFact(nf.subject,nf.fact);var ok=lang==="fr"?"✅ J ai appris : \""+nf.fact+"\" ! Je m en souviendrai !":lang==="sv"?"✅ Jag larde mig: \""+nf.fact+"\"! Jag kommer ihag det!":"✅ Learned: \""+nf.fact+"\"! I will remember that!";return cb(ok);}
+  }
   // 1. Detect name introduction
   var nd=detectName(n);
   if(nd){
@@ -1884,7 +1950,7 @@ function fetchRSS(sourceKey,cb){
   if(!src){cb(null);return;}
   var urls=src.rss instanceof Array?src.rss:[src.rss];
   var proxies=[
-    function(u){return "https://corsproxy.io/?"+encodeURIComponent(u);},
+    function(u){return "https://corsproxy.io/?url="+encodeURIComponent(u);},
     function(u){return "https://api.allorigins.win/get?url="+encodeURIComponent(u);}
   ];
   var pairs=[];
@@ -1927,6 +1993,7 @@ function fetchWikinews(lang,cb){
     .catch(function(){if(!done){clearTimeout(timer);done=true;cb(null);}});
 }
 function buildRSSHtml(items,src,lang){
+  xnStats.newsRead=(xnStats.newsRead||0)+1;saveStats();checkBadges();
   var lbl=lang==="fr"?"Dernières nouvelles":lang==="sv"?"Senaste nyheterna":"Latest headlines";
   var html="<div class='wiki-card'><div class='wc-title'>"+(src.icon||"&#128240;")+" "+(src.name||"News")+" — "+lbl+"</div><div class='wc-text'>";
   items.forEach(function(item,i){
@@ -1974,6 +2041,7 @@ function fetchNews(lang,cb){
   });
 }
 function buildNewsHtml(posts,lang){
+  xnStats.newsRead=(xnStats.newsRead||0)+1;saveStats();checkBadges();
   var lbl=lang==="fr"?"Actualites du jour":lang==="sv"?"Dagens nyheter":"Today's headlines";
   var html="<div class='wiki-card'><div class='wc-title'>&#128240; "+lbl+"</div><div class='wc-text'>";
   posts.forEach(function(t,i){html+="<strong>"+(i+1)+".</strong> "+t+"<br><br>";});
@@ -2053,6 +2121,7 @@ function sendMsg(){
   }
   addToConvHistory("user",txt);
   addMsg(txt,"user");saveMsg("user",txt);
+  xnStats.messagesCount=(xnStats.messagesCount||0)+1;saveStats();checkBadges();
   var td=addTyping();var lang=currentLang;
   var delay=600+Math.floor(Math.random()*400);
   setTimeout(function(){
@@ -2108,11 +2177,11 @@ var _isChromebook=/CrOS/.test(navigator.userAgent);
 // Score de qualité de voix (plus élevé = meilleure qualité)
 function scoreVoice(v){
   var n=(v.name||"").toLowerCase();
-  // Voix robots à éviter absolument
-  if(n.indexOf("espeak")!==-1||n.indexOf("pico")!==-1||n.indexOf("mbrola")!==-1)return -99;
+  // Voix robots — score bas mais pas -99 sur Chromebook (sinon on utilise la voix système par défaut = suédois !)
+  if(n.indexOf("espeak")!==-1||n.indexOf("pico")!==-1||n.indexOf("mbrola")!==-1)return _isChromebook?-10:-99;
   // Sur Chromebook : voix sans marque connue = souvent robotique → score très bas
   var hasKnownBrand=n.indexOf("google")!==-1||n.indexOf("microsoft")!==-1||n.indexOf("wavenet")!==-1||n.indexOf("neural")!==-1||n.indexOf("premium")!==-1||n.indexOf("enhanced")!==-1||n.indexOf("natural")!==-1||n.indexOf("studio")!==-1||n.indexOf("apple")!==-1;
-  if(_isChromebook&&!hasKnownBrand)return -50;
+  if(_isChromebook&&!hasKnownBrand)return -5;
   var s=0;
   // Google = meilleure qualité sur Chromebook (voix en ligne)
   if(n.indexOf("google")!==-1)s+=30;
@@ -2175,7 +2244,9 @@ function populateVoiceSelect(){
 function onVoiceChange(){
   var sel=document.getElementById("voiceSelect");
   _selectedVoiceName=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].value:"";
-  localStorage.setItem("xn_voice_name",_selectedVoiceName);
+  // Sauvegarder par langue — la voix suédoise ne s'applique PAS au français, etc.
+  _voicePrefs[currentLang]=_selectedVoiceName;
+  try{localStorage.setItem("xn_voice_prefs",JSON.stringify(_voicePrefs));}catch(e){}
   var inf=document.getElementById("voiceInfo");
   if(inf)inf.textContent=_selectedVoiceName+" ✅";
 }
@@ -2187,8 +2258,11 @@ function speakText(text,_attempt){
   if(fresh&&fresh.length>0){allVoices=fresh;populateVoiceSelect();}
   var voice=getBestVoice(currentLang);
   var score=voice?scoreVoice(voice):-99;
-  // Si pas de bonne voix (score < 5) et premier essai → attendre 1.5s que Google Voice charge
-  if(score<5&&!_attempt){
+  // Sur Chromebook : si on a une voix eSpeak pour la bonne langue, l'utiliser directement
+  // (les voix Google ne chargeront pas → inutile d'attendre 1.5s)
+  var chromebookEspeak=_isChromebook&&voice&&score<=-50;
+  // Si pas de bonne voix et premier essai → attendre 1.5s que Google Voice charge (sauf Chromebook eSpeak)
+  if(score<5&&!_attempt&&!chromebookEspeak){
     setTimeout(function(){speakText(text,1);},1500);
     return;
   }
@@ -2277,6 +2351,8 @@ function setLang(l){
   currentLang=l;
   localStorage.setItem("xn_lang",l);
   trackLangUsed(l);
+  // Charger la préférence vocale pour cette langue (pas celle de la langue précédente !)
+  _selectedVoiceName=_voicePrefs[l]||"";
   var cfg=langs[l];
   var sel=document.getElementById("langSelect");
   if(sel)sel.value=l;
@@ -3228,7 +3304,7 @@ function morpionClick(i){
       cells[j].disabled=!!(s.b[j]||!s.on);
     }
   }
-  if(w==='X'){setTimeout(function(){addMsg(s.lang==='fr'?'🎉 Bravo, tu as battu Xearnes ! +20 ⭐':s.lang==='sv'?'🎉 Bra jobbat, du slog Xearnes! +20 ⭐':'🎉 You beat Xearnes! +20 ⭐','bot');addScore(20);playBeep();},200);}
+  if(w==='X'){setTimeout(function(){addMsg(s.lang==='fr'?'🎉 Bravo, tu as battu Xearnes ! +20 ⭐':s.lang==='sv'?'🎉 Bra jobbat, du slog Xearnes! +20 ⭐':'🎉 You beat Xearnes! +20 ⭐','bot');addScore(20);playBeep();xnStats.morpionWins=(xnStats.morpionWins||0)+1;saveStats();checkBadges();},200);}
   else if(w==='O'){setTimeout(function(){addMsg(s.lang==='fr'?'😈 Xearnes gagne ! Écris "morpion" pour rejouer.':s.lang==='sv'?'😈 Xearnes vann! Skriv "tre i rad" igen för att spela.':'😈 Xearnes wins! Type "tic tac toe" to replay.','bot');},200);}
   else if(full){setTimeout(function(){addMsg(s.lang==='fr'?'🤝 Match nul ! Bien joué !':s.lang==='sv'?'🤝 Oavgjort! Bra spelat!':'🤝 Draw! Good game!','bot');},200);}
 }
@@ -3276,6 +3352,7 @@ function memoryClick(i){
                  s.lang==='sv'?'🎉 Bra jobbat! Alla par på '+s.moves+' drag! +30 ⭐':
                  '🎉 All pairs found in '+s.moves+' moves! +30 ⭐','bot');
           addScore(30);playBeep();
+          xnStats.memoryDone=(xnStats.memoryDone||0)+1;saveStats();checkBadges();
         },400);
       }
     }else{
@@ -3417,7 +3494,11 @@ function snakeOver(){
     ctx.fillText('Score: '+s.score,canvas.width/2,canvas.height/2+14);
   }
   setTimeout(function(){
-    if(s.score>0){addScore(s.score*3);playBeep();}
+    if(s.score>0){
+      addScore(s.score*3);playBeep();
+      if(s.score>(xnStats.snakeMaxScore||0)){xnStats.snakeMaxScore=s.score;saveStats();}
+      checkBadges();
+    }
   },600);
 }
 
@@ -3426,7 +3507,7 @@ function snakeOver(){
 // ══════════════════════════════════════════════════════════════════
 var xnBadges={};
 try{xnBadges=JSON.parse(localStorage.getItem("xn_badges")||"{}");}catch(e){xnBadges={};}
-var xnStats={quizCorrect:0,gamesPlayed:0,recipesViewed:0,defiDone:0,daysStreak:0,lastDay:"",langsUsed:[]};
+var xnStats={quizCorrect:0,gamesPlayed:0,recipesViewed:0,defiDone:0,daysStreak:0,lastDay:"",langsUsed:[],messagesCount:0,morpionWins:0,memoryDone:0,snakeMaxScore:0,newsRead:0};
 try{var _xss=JSON.parse(localStorage.getItem("xn_stats")||"{}");Object.keys(_xss).forEach(function(k){xnStats[k]=_xss[k];});}catch(e){}
 function saveStats(){try{localStorage.setItem("xn_stats",JSON.stringify(xnStats));}catch(e){}}
 function trackLangUsed(l){
@@ -3434,16 +3515,36 @@ function trackLangUsed(l){
   if(xnStats.langsUsed.indexOf(l)===-1){xnStats.langsUsed.push(l);saveStats();}
 }
 var badgeDefs={
-  quiz_first:{icon:"🎓",sv:"Quizmästaren",fr:"Maître Quiz",en:"Quiz Master",desc:{sv:"Första rätta quizsvaret!",fr:"1ère bonne réponse au quiz !",en:"First correct quiz answer!"}},
-  quiz_10:{icon:"🧠",sv:"Hjärnkraft",fr:"Cerveau d'or",en:"Big Brain",desc:{sv:"10 rätta quizsvar!",fr:"10 bonnes réponses au quiz !",en:"10 correct quiz answers!"}},
-  game_first:{icon:"🎮",sv:"Gamern",fr:"Le Gamer",en:"The Gamer",desc:{sv:"Spelade första mini-spelet!",fr:"Premier mini-jeu joué !",en:"Played first mini-game!"}},
-  game_5:{icon:"🕹️",sv:"Game Master",fr:"Game Master",en:"Game Master",desc:{sv:"5 mini-spel spelade!",fr:"5 mini-jeux joués !",en:"5 mini-games played!"}},
-  recipe_first:{icon:"👨‍🍳",sv:"Kocken",fr:"Le Chef",en:"The Chef",desc:{sv:"Hittade första receptet!",fr:"Première recette trouvée !",en:"Found first recipe!"}},
-  defi_first:{icon:"⚡",sv:"Utmanaren",fr:"L'Aventurier",en:"The Challenger",desc:{sv:"Första dagliga utmaningen klar!",fr:"Premier défi du jour réussi !",en:"First daily challenge done!"}},
-  defi_7:{icon:"🔥",sv:"Eldsjälen",fr:"7 jours de feu",en:"7-Day Fire",desc:{sv:"7 dagliga utmaningar klarade!",fr:"7 défis du jour réussis !",en:"7 daily challenges done!"}},
+  // ── SCORE ──────────────────────────────────────────────────────
+  score_50:{icon:"🌟",sv:"Äventyraren",fr:"L'Aventurier",en:"Adventurer",desc:{sv:"50 poäng uppnådda!",fr:"50 points atteints !",en:"50 points reached!"}},
   score_100:{icon:"⭐",sv:"Stjärnjägaren",fr:"Chasseur d'étoiles",en:"Star Hunter",desc:{sv:"100 poäng uppnådda!",fr:"100 points atteints !",en:"100 points reached!"}},
   score_500:{icon:"💎",sv:"Diamantspelaren",fr:"Joueur Diamant",en:"Diamond Player",desc:{sv:"500 poäng uppnådda!",fr:"500 points atteints !",en:"500 points reached!"}},
-  polyglot:{icon:"🌍",sv:"Polyglott",fr:"Polyglotte",en:"Polyglot",desc:{sv:"Använt 3 olika språk!",fr:"Utilisé 3 langues différentes !",en:"Used 3 different languages!"}}
+  score_1000:{icon:"🏆",sv:"Xearnes-legenden",fr:"Légende Xearnes",en:"Xearnes Legend",desc:{sv:"1000 poäng uppnådda!",fr:"1000 points atteints !",en:"1000 points reached!"}},
+  // ── QUIZ ───────────────────────────────────────────────────────
+  quiz_first:{icon:"🎓",sv:"Quizmästaren",fr:"Maître Quiz",en:"Quiz Master",desc:{sv:"Första rätta quizsvaret!",fr:"1ère bonne réponse au quiz !",en:"First correct quiz answer!"}},
+  quiz_10:{icon:"🧠",sv:"Hjärnkraft",fr:"Cerveau d'or",en:"Big Brain",desc:{sv:"10 rätta quizsvar!",fr:"10 bonnes réponses au quiz !",en:"10 correct quiz answers!"}},
+  quiz_25:{icon:"📚",sv:"Encyklopedisten",fr:"Encyclopédiste",en:"Encyclopedia",desc:{sv:"25 rätta quizsvar!",fr:"25 bonnes réponses au quiz !",en:"25 correct quiz answers!"}},
+  // ── JEUX ───────────────────────────────────────────────────────
+  game_first:{icon:"🎮",sv:"Gamern",fr:"Le Gamer",en:"The Gamer",desc:{sv:"Spelade första mini-spelet!",fr:"Premier mini-jeu joué !",en:"Played first mini-game!"}},
+  game_5:{icon:"🕹️",sv:"Game Master",fr:"Game Master",en:"Game Master",desc:{sv:"5 mini-spel spelade!",fr:"5 mini-jeux joués !",en:"5 mini-games played!"}},
+  game_10:{icon:"🎯",sv:"Spelnarket",fr:"Accro aux jeux",en:"Game Addict",desc:{sv:"10 mini-spel spelade!",fr:"10 mini-jeux joués !",en:"10 mini-games played!"}},
+  morpion_win:{icon:"👑",sv:"Kung av Tre i rad",fr:"Roi du Morpion",en:"Tic-Tac-Toe King",desc:{sv:"Slog Xearnes i Tre i rad!",fr:"Battu Xearnes au Morpion !",en:"Beat Xearnes at Tic-Tac-Toe!"}},
+  memory_ace:{icon:"🃏",sv:"Minnesgeni",fr:"As de la mémoire",en:"Memory Ace",desc:{sv:"Klarade Memory-spelet!",fr:"Réussi le jeu de Mémoire !",en:"Completed the Memory game!"}},
+  snake_pro:{icon:"🐍",sv:"Ormtämjaren",fr:"Dompteur de serpent",en:"Snake Tamer",desc:{sv:"Score 5 i Snake!",fr:"Score 5 au Snake !",en:"Score 5 in Snake!"}},
+  // ── RECETTES ───────────────────────────────────────────────────
+  recipe_first:{icon:"👨‍🍳",sv:"Kocken",fr:"Le Chef",en:"The Chef",desc:{sv:"Hittade första receptet!",fr:"Première recette trouvée !",en:"Found first recipe!"}},
+  recipe_5:{icon:"🍽️",sv:"Gourmanden",fr:"Gourmand",en:"Foodie",desc:{sv:"Hittade 5 recept!",fr:"5 recettes trouvées !",en:"Found 5 recipes!"}},
+  // ── DÉFI DU JOUR ───────────────────────────────────────────────
+  defi_first:{icon:"⚡",sv:"Utmanaren",fr:"L'Aventurier",en:"The Challenger",desc:{sv:"Första dagliga utmaningen klar!",fr:"Premier défi du jour réussi !",en:"First daily challenge done!"}},
+  defi_7:{icon:"🔥",sv:"Eldsjälen",fr:"7 jours de feu",en:"7-Day Fire",desc:{sv:"7 dagliga utmaningar klarade!",fr:"7 défis du jour réussis !",en:"7 daily challenges done!"}},
+  defi_30:{icon:"💫",sv:"Utmanarnas Mästare",fr:"Maître des défis",en:"Challenge Master",desc:{sv:"30 dagliga utmaningar klarade!",fr:"30 défis du jour réussis !",en:"30 daily challenges done!"}},
+  // ── LANGUES ────────────────────────────────────────────────────
+  polyglot:{icon:"🌍",sv:"Polyglott",fr:"Polyglotte",en:"Polyglot",desc:{sv:"Använt 3 olika språk!",fr:"Utilisé 3 langues différentes !",en:"Used 3 different languages!"}},
+  // ── SOCIAL & SPÉCIAUX ──────────────────────────────────────────
+  account_hero:{icon:"🔑",sv:"Xearnes-medborgare",fr:"Citoyen Xearnes",en:"Xearnes Citizen",desc:{sv:"Skapade ett konto!",fr:"Compte créé !",en:"Account created!"}},
+  chat_50:{icon:"💬",sv:"Storprataren",fr:"Grand Bavard",en:"Big Talker",desc:{sv:"50 meddelanden skickade!",fr:"50 messages envoyés !",en:"50 messages sent!"}},
+  night_owl:{icon:"🦉",sv:"Nattuggle",fr:"Oiseau de nuit",en:"Night Owl",desc:{sv:"Använde Xearnes efter kl 22!",fr:"Utilisé Xearnes après 22h !",en:"Used Xearnes after 10 PM!"}},
+  explorer:{icon:"🗺️",sv:"Storforskaren",fr:"Grand Explorateur",en:"Grand Explorer",desc:{sv:"Provat nyheter, quiz, spel och recept!",fr:"Essayé actualités, quiz, jeux et recettes !",en:"Tried news, quiz, games and recipes!"}}
 };
 function earnBadge(id){
   if(xnBadges[id])return;
@@ -3460,16 +3561,38 @@ function earnBadge(id){
   },500);
 }
 function checkBadges(){
+  var h=new Date().getHours();
+  // ── Score ──────────────────────────────────────────────────────
+  if(score>=50)earnBadge("score_50");
   if(score>=100)earnBadge("score_100");
   if(score>=500)earnBadge("score_500");
+  if(score>=1000)earnBadge("score_1000");
+  // ── Quiz ───────────────────────────────────────────────────────
   if((xnStats.quizCorrect||0)>=1)earnBadge("quiz_first");
   if((xnStats.quizCorrect||0)>=10)earnBadge("quiz_10");
+  if((xnStats.quizCorrect||0)>=25)earnBadge("quiz_25");
+  // ── Jeux ───────────────────────────────────────────────────────
   if((xnStats.gamesPlayed||0)>=1)earnBadge("game_first");
   if((xnStats.gamesPlayed||0)>=5)earnBadge("game_5");
+  if((xnStats.gamesPlayed||0)>=10)earnBadge("game_10");
+  if((xnStats.morpionWins||0)>=1)earnBadge("morpion_win");
+  if((xnStats.memoryDone||0)>=1)earnBadge("memory_ace");
+  if((xnStats.snakeMaxScore||0)>=5)earnBadge("snake_pro");
+  // ── Recettes ───────────────────────────────────────────────────
   if((xnStats.recipesViewed||0)>=1)earnBadge("recipe_first");
+  if((xnStats.recipesViewed||0)>=5)earnBadge("recipe_5");
+  // ── Défi du jour ───────────────────────────────────────────────
   if((xnStats.defiDone||0)>=1)earnBadge("defi_first");
   if((xnStats.defiDone||0)>=7)earnBadge("defi_7");
+  if((xnStats.defiDone||0)>=30)earnBadge("defi_30");
+  // ── Langues ────────────────────────────────────────────────────
   if((xnStats.langsUsed||[]).length>=3)earnBadge("polyglot");
+  // ── Social & Spéciaux ──────────────────────────────────────────
+  if(xnUser)earnBadge("account_hero");
+  if((xnStats.messagesCount||0)>=50)earnBadge("chat_50");
+  if(h>=22||h<4)earnBadge("night_owl");
+  // Grand Explorateur : actualités + quiz + jeux + recettes
+  if((xnStats.newsRead||0)>=1&&(xnStats.quizCorrect||0)>=1&&(xnStats.gamesPlayed||0)>=1&&(xnStats.recipesViewed||0)>=1)earnBadge("explorer");
 }
 function renderBadgePanel(){
   var grid=document.getElementById("badgeGrid");
@@ -3567,7 +3690,7 @@ function startDefiJour(lang){
   var title=lang==="fr"?"⚡ Défi du Jour":lang==="sv"?"⚡ Dagens Utmaning":"⚡ Daily Challenge";
   var bonus=lang==="fr"?"+50 points si tu réponds juste !":lang==="sv"?"+50 poäng om du svarar rätt!":"+50 points if correct!";
   var tip=lang==="fr"?"Réponds dans le chat 👇":lang==="sv"?"Svara i chatten nedan 👇":"Answer in the chat below 👇";
-  defiJourState={q:qa.q,a:qa.a.toLowerCase(),lang:lang,today:today};
+  defiJourState={q:qa.q,a:normalize(qa.a),lang:lang,today:today};
   return "<div class='defi-jour-card'>"+
     "<div class='dj-header'><span class='dj-icon'>"+icon+"</span><div><div class='dj-title'>"+title+"</div><div class='dj-sub'>"+icon+" "+lbl+" &nbsp;·&nbsp; "+today+"</div></div></div>"+
     "<div class='dj-question'>"+qa.q+"</div>"+
@@ -3621,9 +3744,15 @@ function restartSnake(btn){
   else{addMsg(startSnake(currentLang,true),'bot');setTimeout(snakeAfterRender,250);}
 }
 // ══════════════════════════════════════════════════════════════════
+// FIREBASE CONFIG — remplace "" par ton URL Firebase pour activer
+// le classement mondial et le compteur en ligne sur tous les appareils
+// Ex: "https://xearnes-abc12-default-rtdb.firebaseio.com"
+// ══════════════════════════════════════════════════════════════════
+var FIREBASE_URL="https://xearnes-61d04-default-rtdb.europe-west1.firebasedatabase.app/";
+
+// ══════════════════════════════════════════════════════════════════
 // PRÉSENCE EN LIGNE
 // ══════════════════════════════════════════════════════════════════
-var PRESENCE_URL="https://jsonblob.com/api/jsonBlob/019e8949-41b7-7e7b-82ad-6c393d3c45b3";
 var _sessionId=Math.random().toString(36).slice(2,10)+Date.now().toString(36);
 var _presenceLock=false;
 var _presenceTimer=null;
@@ -3632,27 +3761,38 @@ var _presenceExpiry=120000; // 2 minutes = considéré "en ligne"
 function updatePresence(remove){
   if(_presenceLock)return;
   _presenceLock=true;
-  fetch(PRESENCE_URL)
+  // Mode local : pas de Firebase configuré
+  if(!FIREBASE_URL){renderOnline(1);_presenceLock=false;return;}
+  var myUrl=FIREBASE_URL+"/xearnes/presence/"+_sessionId+".json";
+  if(remove){
+    // Supprimer notre session au départ
+    fetch(myUrl,{method:"DELETE"})
+      .then(function(){_presenceLock=false;})
+      .catch(function(){_presenceLock=false;});
+    return;
+  }
+  // Écrire notre présence
+  var myData={ts:Date.now(),name:xnUser?xnUser.name:null};
+  fetch(myUrl,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(myData)})
+    .then(function(){return fetch(FIREBASE_URL+"/xearnes/presence.json");})
     .then(function(r){return r.json();})
     .then(function(d){
       var now=Date.now();
-      var users=(d&&d.users)?d.users:[];
-      // Supprime notre session et les entrées expirées
-      users=users.filter(function(u){
-        return u.id!==_sessionId&&(now-u.ts)<_presenceExpiry;
-      });
-      // Ajoute notre session si on ne part pas
-      if(!remove){
-        users.push({id:_sessionId,ts:now,name:xnUser?xnUser.name:null});
+      var count=0;
+      if(d&&typeof d==="object"){
+        // Compter les sessions récentes (< 2 min)
+        Object.values(d).forEach(function(u){if(u&&u.ts&&(now-u.ts)<_presenceExpiry)count++;});
+        // Nettoyer les très vieilles sessions (>6 min) — meilleur effort
+        Object.keys(d).forEach(function(k){
+          if(d[k]&&d[k].ts&&(now-d[k].ts)>_presenceExpiry*3){
+            fetch(FIREBASE_URL+"/xearnes/presence/"+k+".json",{method:"DELETE"}).catch(function(){});
+          }
+        });
       }
-      renderOnline(users.length);
-      fetch(PRESENCE_URL,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({users:users})
-      }).then(function(){_presenceLock=false;}).catch(function(){_presenceLock=false;});
+      renderOnline(Math.max(1,count));
+      _presenceLock=false;
     })
-    .catch(function(){_presenceLock=false;});
+    .catch(function(){renderOnline(1);_presenceLock=false;});
 }
 function renderOnline(count){
   var el=document.getElementById('onlineCount');
@@ -3667,7 +3807,6 @@ function renderOnline(count){
 // ══════════════════════════════════════════════════════════════════
 // WORLD LEADERBOARD + LOGIN SYSTEM
 // ══════════════════════════════════════════════════════════════════
-var BLOB_URL="https://jsonblob.com/api/jsonBlob/019e892c-5336-7905-82fb-3e97dde55955";
 // ── UTILISATEUR CONNECTÉ ──
 var xnUser=null;
 try{var _xu=localStorage.getItem("xn_user");if(_xu)xnUser=JSON.parse(_xu);}catch(e){xnUser=null;}
@@ -3755,6 +3894,7 @@ function submitLogin(){
   if(!res.ok){document.getElementById("loginErr").textContent=res.msg;return;}
   closeLoginModal();
   renderUserBar();
+  checkBadges(); // Badge "Citoyen Xearnes" pour toute connexion
   updatePresence(false); // Met à jour la présence avec le nom
   var isNew=_loginTab==="register";
   var msg=isNew
@@ -3770,24 +3910,43 @@ var _lbCache=null;
 var _pushTimer=null;
 function _escHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function fetchLeaderboard(cb){
-  fetch(BLOB_URL)
+  // Mode local — pas de Firebase
+  if(!FIREBASE_URL){
+    var loc=[];try{loc=JSON.parse(localStorage.getItem("xn_lb")||"[]");}catch(e){}
+    _lbCache=loc;cb(loc);return;
+  }
+  fetch(FIREBASE_URL+"/xearnes/leaderboard.json")
     .then(function(r){return r.json();})
-    .then(function(d){_lbCache=(d&&d.scores)?d.scores:[];cb(_lbCache);})
+    .then(function(d){
+      if(!d){_lbCache=[];cb([]);return;}
+      var arr=Object.values(d).filter(function(x){return x&&x.name&&typeof x.score==="number";});
+      arr.sort(function(a,b){return b.score-a.score;});
+      arr=arr.slice(0,100);
+      _lbCache=arr;cb(arr);
+    })
     .catch(function(){cb(_lbCache||[]);});
 }
 function pushScore(){
   if(!xnUser||score<=0)return;
   clearTimeout(_pushTimer);
   _pushTimer=setTimeout(function(){
-    fetchLeaderboard(function(scores){
-      scores=scores.filter(function(s){return s.name.toLowerCase()!==xnUser.name.toLowerCase();});
-      scores.push({name:xnUser.name,score:score,date:new Date().toISOString().slice(0,10)});
-      scores.sort(function(a,b){return b.score-a.score;});
-      scores=scores.slice(0,100);
-      fetch(BLOB_URL,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({scores:scores})})
-        .then(function(){_lbCache=scores;if(_lbOpen)renderLeaderboard(scores);})
-        .catch(function(){});
-    });
+    var entry={name:xnUser.name,score:score,date:new Date().toISOString().slice(0,10)};
+    // Toujours sauvegarder localement
+    var loc=[];try{loc=JSON.parse(localStorage.getItem("xn_lb")||"[]");}catch(e){}
+    var idx=loc.findIndex(function(x){return x.name.toLowerCase()===xnUser.name.toLowerCase();});
+    if(idx>=0){if(score>loc[idx].score)loc[idx]=entry;}else{loc.push(entry);}
+    loc.sort(function(a,b){return b.score-a.score;});
+    try{localStorage.setItem("xn_lb",JSON.stringify(loc.slice(0,100)));}catch(e){}
+    if(!FIREBASE_URL){_lbCache=loc;if(_lbOpen)renderLeaderboard(loc);return;}
+    // Envoi Firebase — une entrée par utilisateur (clé = pseudo normalisé)
+    var key=xnUser.name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);
+    fetch(FIREBASE_URL+"/xearnes/leaderboard/"+key+".json",{
+      method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(entry)
+    })
+    .then(function(){fetchLeaderboard(function(s){_lbCache=s;if(_lbOpen)renderLeaderboard(s);});})
+    .catch(function(){});
   },3000);
 }
 function toggleLeaderboardPanel(){
@@ -3808,14 +3967,17 @@ function toggleLeaderboardPanel(){
 }
 function updateLbTitle(){
   var el=document.getElementById("lbTitle");
-  if(el)el.textContent=currentLang==="sv"?"&#127758; Världsrankning":currentLang==="en"?"&#127758; World Ranking":"&#127758; Classement mondial";
+  if(el)el.innerHTML=currentLang==="sv"?"&#127758; Världsrankning":currentLang==="en"?"&#127758; World Ranking":"&#127758; Classement mondial";
 }
 function renderLeaderboard(scores){
   var body=document.getElementById("lbBody");
   var myRank=document.getElementById("lbMyRank");
   if(!body)return;
   if(!scores||scores.length===0){
-    body.innerHTML="<div class='lb-empty'>&#128640; Aucun score encore...<br>Sois le premier !</div>";
+    var emptyMsg=FIREBASE_URL
+      ?(currentLang==="sv"?"&#128640; Inga poäng än... Var den förste!":currentLang==="en"?"&#128640; No scores yet... Be the first!":"&#128640; Aucun score encore... Sois le premier !")
+      :(currentLang==="sv"?"&#128640; Inga poäng ännu. Anslut Firebase för världsrankning!":currentLang==="en"?"&#128640; No scores yet. Connect Firebase for world ranking!":"&#128640; Aucun score encore. <br><small>Mode local — configure Firebase pour le classement mondial !</small>");
+    body.innerHTML="<div class='lb-empty'>"+emptyMsg+"</div>";
     if(myRank)myRank.style.display="none";
     renderUserBar();return;
   }
