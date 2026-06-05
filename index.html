@@ -329,6 +329,8 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       </div>
     </div>
     <button class="vp-test" onclick="testVoice()">&#127897; Tester</button>
+    <button class="vp-test" onclick="diagVoices()" style="margin-top:4px;background:rgba(255,255,255,.07)">&#128269; Diagnostic voix</button>
+    <div id="voiceDiag" style="font-size:.7rem;color:var(--text2);margin-top:6px;line-height:1.5;display:none"></div>
     <div class="vp-check-row">
       <input type="checkbox" id="autoVoice" checked>
       <label for="autoVoice">Voix automatique</label>
@@ -637,11 +639,22 @@ var kb={
   {p:["football","coupe du monde","fifa"],r:["Le football est le sport le plus populaire avec 4 milliards de fans ! La Coupe du Monde a lieu tous les 4 ans. Le Bresil est le pays le plus titre (5 fois)."]},
   {p:["jeux olympiques","olympiques"],r:["Les Jeux Olympiques modernes ont ete relances en 1896 a Athenes ! Ils reunissent plus de 200 pays tous les 4 ans pour la paix et le sport."]},
   {p:["iss","station spatiale","astronaute"],r:["La Station Spatiale Internationale orbite a 400 km d altitude ! Elle tourne autour de la Terre 16 fois par jour et accueille des astronautes en permanence."]},
-  {p:["blague","une blague","raconte moi une blague","fais moi rire"],r:[
-   "Pourquoi les plongeurs plongent-ils toujours en arriere ? Parce que sinon ils tomberaient dans le bateau !",
-   "Comment appelle-t-on un chat tombe dans un pot de peinture le jour de Noel ? Un chat-peint de Noel !",
-   "Pourquoi les mathematiciens ont-ils peur des forets ? A cause des racines !",
-   "Qu\u0027est-ce qu\u0027un canif ? Un petit fien !"
+  {p:["blague","une blague","raconte moi une blague","fais moi rire","blague svp","encore une blague","une autre blague"],r:[
+   "Pourquoi les plongeurs plongent-ils toujours en arriere ? Parce que sinon ils tomberaient dans le bateau ! 😂",
+   "Comment appelle-t-on un chat tombe dans un pot de peinture le jour de Noel ? Un chat-peint de Noel ! 🎄",
+   "Pourquoi les mathematiciens ont-ils peur des forets ? A cause des racines ! 🌳",
+   "Qu est-ce qu un canif ? Un petit fien ! 😄",
+   "Qu est-ce qu un crocodile qui surveille des cereales ? Un Kellogg s ! 🐊",
+   "Pourquoi l epouvantail a eu un prix ? Parce qu il etait exceptionnel dans son domaine ! 🌾",
+   "Comment appelle-t-on un boomerang qui ne revient pas ? Un baton ! 🪃",
+   "Pourquoi Peter Pan vole-t-il toujours ? Parce que Neverland ! ✈️",
+   "Qu est-ce qu un chat qui tombe dans une poubelle ? Une catastrophe ! 🐱",
+   "Comment appelle-t-on un chien sans pattes ? Peu importe, il ne viendra pas de toute facon ! 🐕",
+   "Qu est-ce que 1000 avocats au fond de la mer ? Un grand guacamole ! 🥑",
+   "Pourquoi les robots ne mangent-ils pas ? Parce qu ils ont deja des circuits integres ! 🤖",
+   "Que dit un geek quand il eternue ? Java ! 💻",
+   "Comment appelle-t-on un cerf sans yeux ? Pas la moindre idee ! 🦌",
+   "Qu est-ce que deux crocodiles sur un toit ? Des gouttières ! 😂"
   ]}
  ],
  en:[
@@ -1653,6 +1666,8 @@ function getReply(input,lang,cb){
     var nf=detectLearning(n,lang);
     if(nf){saveFact(nf.subject,nf.fact);var ok=lang==="fr"?"✅ J ai appris : \""+nf.fact+"\" ! Je m en souviendrai !":lang==="sv"?"✅ Jag larde mig: \""+nf.fact+"\"! Jag kommer ihag det!":"✅ Learned: \""+nf.fact+"\"! I will remember that!";return cb(ok);}
   }
+  // 0c. Stats
+  if(detectStats(n,lang))return cb(buildStatsHtml(lang));
   // 1. Detect name introduction
   var nd=detectName(n);
   if(nd){
@@ -2121,7 +2136,12 @@ function sendMsg(){
   }
   addToConvHistory("user",txt);
   addMsg(txt,"user");saveMsg("user",txt);
-  xnStats.messagesCount=(xnStats.messagesCount||0)+1;saveStats();checkBadges();
+  xnStats.messagesCount=(xnStats.messagesCount||0)+1;
+  // Tracker les messages rapides (speedster)
+  var now=Date.now();
+  if(!xnStats._speedStart||now-xnStats._speedStart>60000){xnStats._speedStart=now;xnStats._speedCount=1;}
+  else{xnStats._speedCount=(xnStats._speedCount||0)+1;if(xnStats._speedCount>=10)xnStats.speedMessages=10;}
+  saveStats();checkBadges();
   var td=addTyping();var lang=currentLang;
   var delay=600+Math.floor(Math.random()*400);
   setTimeout(function(){
@@ -2251,6 +2271,24 @@ function onVoiceChange(){
   if(inf)inf.textContent=_selectedVoiceName+" ✅";
 }
 function testVoice(){speakText(langs[currentLang].testPhrase);}
+function diagVoices(){
+  var el=document.getElementById("voiceDiag");
+  if(!el)return;
+  el.style.display="block";
+  var fresh=window.speechSynthesis.getVoices();
+  if(fresh&&fresh.length>0)allVoices=fresh;
+  var all=allVoices;
+  if(!all||!all.length){el.innerHTML="❌ Aucune voix trouvée !";return;}
+  var sv=all.filter(function(v){return v.lang.toLowerCase().indexOf("sv")===0;});
+  var google=all.filter(function(v){return v.name.toLowerCase().indexOf("google")!==-1;});
+  var espeak=all.filter(function(v){return v.name.toLowerCase().indexOf("espeak")!==-1;});
+  var html="<strong>Total voix : "+all.length+"</strong><br>";
+  html+="🔵 Google TTS : "+(google.length?google.map(function(v){return v.name;}).join(", "):"<span style='color:#e74c3c'>AUCUNE ❌</span>")+"<br>";
+  html+="🇸🇪 Voix suédoises : "+(sv.length?sv.map(function(v){return v.name+(v.name.toLowerCase().indexOf("google")!==-1?" ✅":" 🔇");}).join(", "):"<span style='color:#e74c3c'>AUCUNE ❌</span>")+"<br>";
+  html+="🤖 eSpeak : "+(espeak.length?espeak.map(function(v){return v.name;}).join(", "):"aucun")+"<br>";
+  html+=_isChromebook?"📱 <strong>Chromebook détecté</strong>":"💻 PC/Mac";
+  el.innerHTML=html;
+}
 function speakText(text,_attempt){
   if(!window.speechSynthesis)return;
   // Toujours rafraîchir la liste des voix (importantes : Google charge en async)
@@ -2347,6 +2385,79 @@ function doSpeak(text,voice,rate,pitch){
     },10000);
   },150);
 }
+// ── MESSAGE DE BIENVENUE QUOTIDIEN ──────────────────────────────
+function getDailyWelcome(lang){
+  var day=new Date().getDay(); // 0=dim,1=lun,...,6=sam
+  var msgs={
+    fr:[
+      "Bon dimanche ! Détends-toi et pose-moi des questions 😌",
+      "Bonne semaine ! On commence fort aujourd hui 💪",
+      "Mardi = jour parfait pour apprendre quelque chose de nouveau ! 🧠",
+      "Mercredi — mi-chemin ! Prêt pour un défi quiz ? ⚡",
+      "Jeudi, presque le weekend... courage ! 😄",
+      "Vendredi !!! Bonne humeur garantie 🎉",
+      "Weekend ! Mode fun activé, qu est-ce qu on fait ? 🎮"
+    ],
+    sv:[
+      "God söndag! Vila och ställ mig frågor 😌",
+      "God måndag! Vi börjar veckan starkt 💪",
+      "Tisdag — perfekt dag att lära sig något nytt! 🧠",
+      "Onsdag — halvvägs! Redo för ett quiz-utmaning? ⚡",
+      "Torsdag, snart helg... kämpa på! 😄",
+      "Fredag!!! Bra humör garanterat 🎉",
+      "Helg! Roligt läge aktiverat, vad gör vi? 🎮"
+    ],
+    en:[
+      "Happy Sunday! Relax and ask me anything 😌",
+      "Happy Monday! Let's start the week strong 💪",
+      "Tuesday — perfect day to learn something new! 🧠",
+      "Wednesday — halfway there! Ready for a quiz challenge? ⚡",
+      "Thursday, almost the weekend... keep going! 😄",
+      "Friday!!! Good vibes guaranteed 🎉",
+      "Weekend! Fun mode activated, what are we doing? 🎮"
+    ]
+  };
+  var arr=msgs[lang]||msgs.en;
+  return arr[day];
+}
+// ── PAGE DE STATS ────────────────────────────────────────────────
+function detectStats(n,lang){
+  var p={
+    fr:["mes stats","statistiques","mes statistiques","mon profil","mes scores","bilan","mes points","mes badges","combien j ai","combien de points"],
+    sv:["mina stats","statistik","min profil","mina poäng","mina märken","sammanfattning"],
+    en:["my stats","statistics","my profile","my scores","my points","my badges","how many points","summary"]
+  };
+  var words=p[lang]||p.en;
+  return words.some(function(w){return n.indexOf(w)!==-1;});
+}
+function buildStatsHtml(lang){
+  var earned=Object.keys(xnBadges).length;
+  var total=Object.keys(badgeDefs).length;
+  var rows=[
+    {icon:"⭐",label:{fr:"Score total",sv:"Total poäng",en:"Total score"},val:score},
+    {icon:"🏅",label:{fr:"Badges gagnés",sv:"Märken intjänade",en:"Badges earned"},val:earned+"/"+total},
+    {icon:"💬",label:{fr:"Messages envoyés",sv:"Meddelanden skickade",en:"Messages sent"},val:xnStats.messagesCount||0},
+    {icon:"🎓",label:{fr:"Quiz réussis",sv:"Quiz rätt",en:"Quiz correct"},val:xnStats.quizCorrect||0},
+    {icon:"🎮",label:{fr:"Jeux joués",sv:"Spel spelade",en:"Games played"},val:xnStats.gamesPlayed||0},
+    {icon:"👑",label:{fr:"Victoires Morpion",sv:"Tre i rad vinster",en:"Tic-Tac-Toe wins"},val:xnStats.morpionWins||0},
+    {icon:"🃏",label:{fr:"Memory terminés",sv:"Memory klarade",en:"Memory completed"},val:xnStats.memoryDone||0},
+    {icon:"🐍",label:{fr:"Score max Snake",sv:"Snake bästa score",en:"Snake best score"},val:xnStats.snakeMaxScore||0},
+    {icon:"👨‍🍳",label:{fr:"Recettes vues",sv:"Recept visade",en:"Recipes viewed"},val:xnStats.recipesViewed||0},
+    {icon:"⚡",label:{fr:"Défis réussis",sv:"Utmaningar klarade",en:"Challenges done"},val:xnStats.defiDone||0},
+    {icon:"📰",label:{fr:"Actualités lues",sv:"Nyheter lästa",en:"News read"},val:xnStats.newsRead||0},
+    {icon:"🌍",label:{fr:"Langues utilisées",sv:"Språk använda",en:"Languages used"},val:(xnStats.langsUsed||[]).length}
+  ];
+  var title={fr:"📊 Tes statistiques",sv:"📊 Dina statistik",en:"📊 Your stats"}[lang]||"📊 Stats";
+  var html="<div class='wiki-card'><div class='wc-title'>"+title+"</div><div class='wc-text' style='display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:4px 0'>";
+  rows.forEach(function(r){
+    html+="<div style='display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);padding:6px 8px;border-radius:8px'>";
+    html+="<span style='font-size:1.2rem'>"+r.icon+"</span>";
+    html+="<div><div style='font-size:.7rem;color:var(--text2)'>"+r.label[lang]+"</div>";
+    html+="<div style='font-size:.95rem;font-weight:700;color:var(--accent)'>"+r.val+"</div></div></div>";
+  });
+  html+="</div></div>";
+  return html;
+}
 function setLang(l){
   currentLang=l;
   localStorage.setItem("xn_lang",l);
@@ -2359,7 +2470,7 @@ function setLang(l){
   document.getElementById("sendBtn").textContent=cfg.send;
   document.getElementById("userInput").placeholder=cfg.placeholder;
   document.getElementById("welcomeTitle").textContent=cfg.welcomeTitle;
-  document.getElementById("welcomeDesc").textContent=cfg.welcomeDesc;
+  document.getElementById("welcomeDesc").textContent=getDailyWelcome(l);
   document.getElementById("histTitle").textContent=cfg.histTitle;
   buildChips();
   populateVoiceSelect();
@@ -3520,31 +3631,55 @@ var badgeDefs={
   score_100:{icon:"⭐",sv:"Stjärnjägaren",fr:"Chasseur d'étoiles",en:"Star Hunter",desc:{sv:"100 poäng uppnådda!",fr:"100 points atteints !",en:"100 points reached!"}},
   score_500:{icon:"💎",sv:"Diamantspelaren",fr:"Joueur Diamant",en:"Diamond Player",desc:{sv:"500 poäng uppnådda!",fr:"500 points atteints !",en:"500 points reached!"}},
   score_1000:{icon:"🏆",sv:"Xearnes-legenden",fr:"Légende Xearnes",en:"Xearnes Legend",desc:{sv:"1000 poäng uppnådda!",fr:"1000 points atteints !",en:"1000 points reached!"}},
+  score_2500:{icon:"🥇",sv:"Xearnes-experten",fr:"Expert Xearnes",en:"Xearnes Expert",desc:{sv:"2500 poäng uppnådda!",fr:"2500 points atteints !",en:"2500 points reached!"}},
+  score_5000:{icon:"🚀",sv:"Xearnes-mästaren",fr:"Maître Xearnes",en:"Xearnes Master",desc:{sv:"5000 poäng uppnådda!",fr:"5000 points atteints !",en:"5000 points reached!"}},
+  score_10000:{icon:"💰",sv:"Tiotusenaren",fr:"Dix Millième",en:"Ten Thousander",desc:{sv:"10 000 poäng uppnådda!",fr:"10 000 points atteints !",en:"10,000 points reached!"}},
+  score_100000:{icon:"👑",sv:"Kung av Xearnes",fr:"Roi du Score",en:"Score King",desc:{sv:"100 000 poäng uppnådda!",fr:"100 000 points atteints !",en:"100,000 points reached!"}},
+  score_1000000:{icon:"🌌",sv:"Guden av Xearnes",fr:"Dieu du Score",en:"Score God",desc:{sv:"1 000 000 poäng — du är en legend!",fr:"1 000 000 points — tu es une légende !",en:"1,000,000 points — you are a legend!"}},
   // ── QUIZ ───────────────────────────────────────────────────────
   quiz_first:{icon:"🎓",sv:"Quizmästaren",fr:"Maître Quiz",en:"Quiz Master",desc:{sv:"Första rätta quizsvaret!",fr:"1ère bonne réponse au quiz !",en:"First correct quiz answer!"}},
   quiz_10:{icon:"🧠",sv:"Hjärnkraft",fr:"Cerveau d'or",en:"Big Brain",desc:{sv:"10 rätta quizsvar!",fr:"10 bonnes réponses au quiz !",en:"10 correct quiz answers!"}},
   quiz_25:{icon:"📚",sv:"Encyklopedisten",fr:"Encyclopédiste",en:"Encyclopedia",desc:{sv:"25 rätta quizsvar!",fr:"25 bonnes réponses au quiz !",en:"25 correct quiz answers!"}},
+  quiz_50:{icon:"🔬",sv:"Vetenskapsmannen",fr:"Le Scientifique",en:"The Scientist",desc:{sv:"50 rätta quizsvar!",fr:"50 bonnes réponses au quiz !",en:"50 correct quiz answers!"}},
+  quiz_100:{icon:"🎖️",sv:"Professorn",fr:"Le Professeur",en:"The Professor",desc:{sv:"100 rätta quizsvar — du är ett geni!",fr:"100 bonnes réponses — tu es un génie !",en:"100 correct answers — you're a genius!"}},
   // ── JEUX ───────────────────────────────────────────────────────
   game_first:{icon:"🎮",sv:"Gamern",fr:"Le Gamer",en:"The Gamer",desc:{sv:"Spelade första mini-spelet!",fr:"Premier mini-jeu joué !",en:"Played first mini-game!"}},
   game_5:{icon:"🕹️",sv:"Game Master",fr:"Game Master",en:"Game Master",desc:{sv:"5 mini-spel spelade!",fr:"5 mini-jeux joués !",en:"5 mini-games played!"}},
   game_10:{icon:"🎯",sv:"Spelnarket",fr:"Accro aux jeux",en:"Game Addict",desc:{sv:"10 mini-spel spelade!",fr:"10 mini-jeux joués !",en:"10 mini-games played!"}},
+  game_25:{icon:"🏅",sv:"Pro Gamer",fr:"Pro Gamer",en:"Pro Gamer",desc:{sv:"25 mini-spel spelade!",fr:"25 mini-jeux joués !",en:"25 mini-games played!"}},
+  game_50:{icon:"🏟️",sv:"Spelchampion",fr:"Champion des jeux",en:"Game Champion",desc:{sv:"50 mini-spel spelade!",fr:"50 mini-jeux joués !",en:"50 mini-games played!"}},
   morpion_win:{icon:"👑",sv:"Kung av Tre i rad",fr:"Roi du Morpion",en:"Tic-Tac-Toe King",desc:{sv:"Slog Xearnes i Tre i rad!",fr:"Battu Xearnes au Morpion !",en:"Beat Xearnes at Tic-Tac-Toe!"}},
+  morpion_5:{icon:"🤴",sv:"Imbattable i Tre i rad",fr:"Imbattable au Morpion",en:"Unbeatable",desc:{sv:"Slog Xearnes 5 gånger i Tre i rad!",fr:"Battu Xearnes 5 fois au Morpion !",en:"Beat Xearnes 5 times at Tic-Tac-Toe!"}},
   memory_ace:{icon:"🃏",sv:"Minnesgeni",fr:"As de la mémoire",en:"Memory Ace",desc:{sv:"Klarade Memory-spelet!",fr:"Réussi le jeu de Mémoire !",en:"Completed the Memory game!"}},
+  memory_5:{icon:"🧩",sv:"Minnesexpert",fr:"Expert mémoire",en:"Memory Expert",desc:{sv:"Klarade Memory 5 gånger!",fr:"Réussi la Mémoire 5 fois !",en:"Completed Memory 5 times!"}},
   snake_pro:{icon:"🐍",sv:"Ormtämjaren",fr:"Dompteur de serpent",en:"Snake Tamer",desc:{sv:"Score 5 i Snake!",fr:"Score 5 au Snake !",en:"Score 5 in Snake!"}},
+  snake_master:{icon:"🐍🔥",sv:"Orm-mästaren",fr:"Maître du serpent",en:"Snake Master",desc:{sv:"Score 20 i Snake!",fr:"Score 20 au Snake !",en:"Score 20 in Snake!"}},
   // ── RECETTES ───────────────────────────────────────────────────
   recipe_first:{icon:"👨‍🍳",sv:"Kocken",fr:"Le Chef",en:"The Chef",desc:{sv:"Hittade första receptet!",fr:"Première recette trouvée !",en:"Found first recipe!"}},
   recipe_5:{icon:"🍽️",sv:"Gourmanden",fr:"Gourmand",en:"Foodie",desc:{sv:"Hittade 5 recept!",fr:"5 recettes trouvées !",en:"Found 5 recipes!"}},
+  recipe_10:{icon:"🍴",sv:"Stjärnkocken",fr:"Chef étoilé",en:"Star Chef",desc:{sv:"Hittade 10 recept!",fr:"10 recettes trouvées !",en:"Found 10 recipes!"}},
   // ── DÉFI DU JOUR ───────────────────────────────────────────────
   defi_first:{icon:"⚡",sv:"Utmanaren",fr:"L'Aventurier",en:"The Challenger",desc:{sv:"Första dagliga utmaningen klar!",fr:"Premier défi du jour réussi !",en:"First daily challenge done!"}},
   defi_7:{icon:"🔥",sv:"Eldsjälen",fr:"7 jours de feu",en:"7-Day Fire",desc:{sv:"7 dagliga utmaningar klarade!",fr:"7 défis du jour réussis !",en:"7 daily challenges done!"}},
   defi_30:{icon:"💫",sv:"Utmanarnas Mästare",fr:"Maître des défis",en:"Challenge Master",desc:{sv:"30 dagliga utmaningar klarade!",fr:"30 défis du jour réussis !",en:"30 daily challenges done!"}},
+  defi_100:{icon:"🌠",sv:"Utmandarlegenden",fr:"Légende des défis",en:"Challenge Legend",desc:{sv:"100 dagliga utmaningar klarade — episkt!",fr:"100 défis réussis — épique !",en:"100 daily challenges — epic!"}},
   // ── LANGUES ────────────────────────────────────────────────────
   polyglot:{icon:"🌍",sv:"Polyglott",fr:"Polyglotte",en:"Polyglot",desc:{sv:"Använt 3 olika språk!",fr:"Utilisé 3 langues différentes !",en:"Used 3 different languages!"}},
-  // ── SOCIAL & SPÉCIAUX ──────────────────────────────────────────
+  polyglot_all:{icon:"🌐",sv:"Språkmästaren",fr:"Maître des langues",en:"Language Master",desc:{sv:"Använt 5 eller fler språk!",fr:"Utilisé 5 langues ou plus !",en:"Used 5 or more languages!"}},
+  // ── ACTUALITÉS ─────────────────────────────────────────────────
+  news_first:{icon:"📰",sv:"Nyhetsläsaren",fr:"Lecteur de presse",en:"News Reader",desc:{sv:"Läste första nyheten!",fr:"Première actualité lue !",en:"Read first news!"}},
+  news_5:{icon:"📡",sv:"Journalisten",fr:"Le Journaliste",en:"The Journalist",desc:{sv:"Läste 5 nyheter!",fr:"5 actualités lues !",en:"Read 5 news articles!"}},
+  // ── SOCIAL & CHAT ──────────────────────────────────────────────
   account_hero:{icon:"🔑",sv:"Xearnes-medborgare",fr:"Citoyen Xearnes",en:"Xearnes Citizen",desc:{sv:"Skapade ett konto!",fr:"Compte créé !",en:"Account created!"}},
   chat_50:{icon:"💬",sv:"Storprataren",fr:"Grand Bavard",en:"Big Talker",desc:{sv:"50 meddelanden skickade!",fr:"50 messages envoyés !",en:"50 messages sent!"}},
+  chat_200:{icon:"📢",sv:"Oratorn",fr:"L'Orateur",en:"The Orator",desc:{sv:"200 meddelanden skickade!",fr:"200 messages envoyés !",en:"200 messages sent!"}},
+  chat_500:{icon:"📣",sv:"Chattsstjärnan",fr:"Star du chat",en:"Chat Star",desc:{sv:"500 meddelanden skickade!",fr:"500 messages envoyés !",en:"500 messages sent!"}},
+  // ── SPÉCIAUX & SECRETS ─────────────────────────────────────────
   night_owl:{icon:"🦉",sv:"Nattuggle",fr:"Oiseau de nuit",en:"Night Owl",desc:{sv:"Använde Xearnes efter kl 22!",fr:"Utilisé Xearnes après 22h !",en:"Used Xearnes after 10 PM!"}},
-  explorer:{icon:"🗺️",sv:"Storforskaren",fr:"Grand Explorateur",en:"Grand Explorer",desc:{sv:"Provat nyheter, quiz, spel och recept!",fr:"Essayé actualités, quiz, jeux et recettes !",en:"Tried news, quiz, games and recipes!"}}
+  early_bird:{icon:"🌅",sv:"Morgonpiggen",fr:"Lève-tôt",en:"Early Bird",desc:{sv:"Använde Xearnes före kl 7!",fr:"Utilisé Xearnes avant 7h du matin !",en:"Used Xearnes before 7 AM!"}},
+  weekend:{icon:"🎉",sv:"Helgkrigaren",fr:"Guerrier du weekend",en:"Weekend Warrior",desc:{sv:"Spelade Xearnes på helgen!",fr:"Joué à Xearnes le weekend !",en:"Used Xearnes on the weekend!"}},
+  explorer:{icon:"🗺️",sv:"Storforskaren",fr:"Grand Explorateur",en:"Grand Explorer",desc:{sv:"Provat nyheter, quiz, spel och recept!",fr:"Essayé actualités, quiz, jeux et recettes !",en:"Tried news, quiz, games and recipes!"}},
+  speedster:{icon:"⚡🏃",sv:"Blixtsnabb",fr:"Éclair",en:"Speedster",desc:{sv:"Skickade 10 meddelanden på en minut!",fr:"10 messages en une minute !",en:"10 messages in one minute!"}}
 };
 function earnBadge(id){
   if(xnBadges[id])return;
@@ -3562,37 +3697,63 @@ function earnBadge(id){
 }
 function checkBadges(){
   var h=new Date().getHours();
+  var day=new Date().getDay(); // 0=dim, 6=sam
   // ── Score ──────────────────────────────────────────────────────
   if(score>=50)earnBadge("score_50");
   if(score>=100)earnBadge("score_100");
   if(score>=500)earnBadge("score_500");
   if(score>=1000)earnBadge("score_1000");
+  if(score>=2500)earnBadge("score_2500");
+  if(score>=5000)earnBadge("score_5000");
+  if(score>=10000)earnBadge("score_10000");
+  if(score>=100000)earnBadge("score_100000");
+  if(score>=1000000)earnBadge("score_1000000");
   // ── Quiz ───────────────────────────────────────────────────────
   if((xnStats.quizCorrect||0)>=1)earnBadge("quiz_first");
   if((xnStats.quizCorrect||0)>=10)earnBadge("quiz_10");
   if((xnStats.quizCorrect||0)>=25)earnBadge("quiz_25");
+  if((xnStats.quizCorrect||0)>=50)earnBadge("quiz_50");
+  if((xnStats.quizCorrect||0)>=100)earnBadge("quiz_100");
   // ── Jeux ───────────────────────────────────────────────────────
   if((xnStats.gamesPlayed||0)>=1)earnBadge("game_first");
   if((xnStats.gamesPlayed||0)>=5)earnBadge("game_5");
   if((xnStats.gamesPlayed||0)>=10)earnBadge("game_10");
+  if((xnStats.gamesPlayed||0)>=25)earnBadge("game_25");
+  if((xnStats.gamesPlayed||0)>=50)earnBadge("game_50");
   if((xnStats.morpionWins||0)>=1)earnBadge("morpion_win");
+  if((xnStats.morpionWins||0)>=5)earnBadge("morpion_5");
   if((xnStats.memoryDone||0)>=1)earnBadge("memory_ace");
+  if((xnStats.memoryDone||0)>=5)earnBadge("memory_5");
   if((xnStats.snakeMaxScore||0)>=5)earnBadge("snake_pro");
+  if((xnStats.snakeMaxScore||0)>=20)earnBadge("snake_master");
   // ── Recettes ───────────────────────────────────────────────────
   if((xnStats.recipesViewed||0)>=1)earnBadge("recipe_first");
   if((xnStats.recipesViewed||0)>=5)earnBadge("recipe_5");
+  if((xnStats.recipesViewed||0)>=10)earnBadge("recipe_10");
   // ── Défi du jour ───────────────────────────────────────────────
   if((xnStats.defiDone||0)>=1)earnBadge("defi_first");
   if((xnStats.defiDone||0)>=7)earnBadge("defi_7");
   if((xnStats.defiDone||0)>=30)earnBadge("defi_30");
+  if((xnStats.defiDone||0)>=100)earnBadge("defi_100");
   // ── Langues ────────────────────────────────────────────────────
   if((xnStats.langsUsed||[]).length>=3)earnBadge("polyglot");
-  // ── Social & Spéciaux ──────────────────────────────────────────
+  if((xnStats.langsUsed||[]).length>=5)earnBadge("polyglot_all");
+  // ── Actualités ─────────────────────────────────────────────────
+  if((xnStats.newsRead||0)>=1)earnBadge("news_first");
+  if((xnStats.newsRead||0)>=5)earnBadge("news_5");
+  // ── Social & Chat ──────────────────────────────────────────────
   if(xnUser)earnBadge("account_hero");
   if((xnStats.messagesCount||0)>=50)earnBadge("chat_50");
+  if((xnStats.messagesCount||0)>=200)earnBadge("chat_200");
+  if((xnStats.messagesCount||0)>=500)earnBadge("chat_500");
+  // ── Spéciaux & Secrets ─────────────────────────────────────────
   if(h>=22||h<4)earnBadge("night_owl");
+  if(h<7)earnBadge("early_bird");
+  if(day===0||day===6)earnBadge("weekend");
   // Grand Explorateur : actualités + quiz + jeux + recettes
   if((xnStats.newsRead||0)>=1&&(xnStats.quizCorrect||0)>=1&&(xnStats.gamesPlayed||0)>=1&&(xnStats.recipesViewed||0)>=1)earnBadge("explorer");
+  // Speedster : 10 messages en moins d'1 minute
+  if((xnStats.speedMessages||0)>=10)earnBadge("speedster");
 }
 function renderBadgePanel(){
   var grid=document.getElementById("badgeGrid");
