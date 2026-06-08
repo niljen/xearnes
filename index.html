@@ -1621,9 +1621,9 @@ function detectName(n){
   for(var i=0;i<pats.length;i++){var m=n.match(pats[i]);if(m&&m[1]&&m[1].length>1)return m[1][0].toUpperCase()+m[1].slice(1);}
   return null;
 }
-// 🤖 GEMINI 1.5 FLASH
+// 🤖 GEMINI 2.5 FLASH
 var GEMINI_API_KEY="";
-var GEMINI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+var GEMINI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 // 🔬 INTERNAL MODE
 var _internalMode=false;
 try{_internalMode=localStorage.getItem("xn_internal")==="1";}catch(e){}
