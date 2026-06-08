@@ -1653,6 +1653,15 @@ function activateInternalMode(lang,cb){
   });
 }
 if(_internalMode){setTimeout(function(){fetchGeminiKey(function(){});},2000);}
+function sanitizeGemini(t){
+  return t
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g,"<em>$1</em>")
+    .replace(/\n/g,"<br>");
+}
 function callGemini(question,lang,cb){
   if(!GEMINI_API_KEY||!_internalMode){cb(null);return;}
   var sysLang=lang==="fr"?"Réponds toujours en français.":lang==="sv"?"Svara alltid på svenska.":"Always respond in English.";
@@ -1663,13 +1672,13 @@ function callGemini(question,lang,cb){
     body:JSON.stringify({
       system_instruction:{parts:[{text:sysPrompt}]},
       contents:[{parts:[{text:question}]}],
-      generationConfig:{maxOutputTokens:350,temperature:0.75}
+      generationConfig:{maxOutputTokens:500,temperature:0.75}
     })
   })
   .then(function(r){return r.json();})
   .then(function(d){
     var t=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text;
-    if(t)cb(t.trim());else cb(null);
+    if(t)cb(sanitizeGemini(t.trim()));else cb(null);
   })
   .catch(function(){cb(null);});
 }
