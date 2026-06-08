@@ -1621,9 +1621,9 @@ function detectName(n){
   for(var i=0;i<pats.length;i++){var m=n.match(pats[i]);if(m&&m[1]&&m[1].length>1)return m[1][0].toUpperCase()+m[1].slice(1);}
   return null;
 }
-// 🤖 GEMINI 2.0 FLASH
+// 🤖 GEMINI 1.5 FLASH
 var GEMINI_API_KEY="";
-var GEMINI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+var GEMINI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 // 🔬 INTERNAL MODE
 var _internalMode=false;
 try{_internalMode=localStorage.getItem("xn_internal")==="1";}catch(e){}
@@ -1652,7 +1652,7 @@ function activateInternalMode(lang,cb){
        "🔬 <strong>Internal mode activated!</strong> Gemini Flash 2.0 is now available. Welcome!");
   });
 }
-if(_internalMode){fetchGeminiKey(function(){});}
+if(_internalMode){setTimeout(function(){fetchGeminiKey(function(){});},2000);}
 function callGemini(question,lang,cb){
   if(!GEMINI_API_KEY||!_internalMode){cb(null);return;}
   var sysLang=lang==="fr"?"Réponds toujours en français.":lang==="sv"?"Svara alltid på svenska.":"Always respond in English.";
