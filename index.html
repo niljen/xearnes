@@ -6,10 +6,10 @@
 <title>Xearnes</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0a0f2c;--card:#0d1235;--border:#2a2f6c;--accent:#ffd700;--accent2:#ffe44d;--text:#e0e0ff;--text2:#aaaacc;--danger:#f85149;--radius:12px}
+:root{--bg:#0a0f2c;--card:#0d1235;--border:#2a2f6c;--accent:#DAA520;--accent2:#E8C547;--text:#e0e0ff;--text2:#aaaacc;--danger:#f85149;--radius:12px}
 body{background:var(--bg);color:var(--text);font-family:Segoe UI,system-ui,sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 header{background:var(--card);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-.logo{font-size:1.5rem;font-weight:800;letter-spacing:3px;color:#ffd700;text-shadow:0 0 12px rgba(255,215,0,.6)}
+.logo{font-size:1.5rem;font-weight:800;letter-spacing:3px;color:#DAA520;text-shadow:0 0 12px rgba(218,165,32,.6)}
 .badge{font-size:.65rem;background:var(--accent);color:#000;padding:2px 7px;border-radius:20px;font-weight:700;margin-left:4px}
 .header-btns{margin-left:auto;display:flex;gap:5px;align-items:center;overflow-x:auto;flex-shrink:1;min-width:0}
 .lang-btn{background:var(--border);color:var(--text);border:none;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:.8rem;transition:.2s}
@@ -185,7 +185,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .mp-cell{width:56px;height:56px;font-size:1.6rem;font-weight:900;border:2px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);cursor:pointer;transition:.15s}
 .mp-cell:not([disabled]):hover{background:var(--accent);color:#000;border-color:var(--accent);transform:scale(1.05)}
 .mp-x{color:#f85149!important;border-color:#f85149!important}
-.mp-o{color:#ffd700!important;border-color:#ffd700!important}
+.mp-o{color:#DAA520!important;border-color:#DAA520!important}
 .memory-grid{display:grid;gap:7px;margin-top:4px}
 .mem-card{width:54px;height:54px;font-size:.2rem;border:2px solid var(--border);border-radius:10px;background:var(--card);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;user-select:none}
 .mem-card:not([disabled]):not(.flipped):not(.matched):hover{border-color:var(--accent);transform:scale(1.08)}
@@ -299,6 +299,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <button class="icon-btn" id="lbBtn" onclick="toggleLeaderboardPanel()" title="Classement mondial">&#127758;</button>
     <button class="icon-btn" id="badgeBtn" onclick="toggleBadgePanel()" title="Badges">&#127942;</button>
     <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()" title="Historique">&#128214;</button>
+    <span id="internalInd" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:#1a3a2a;color:#4ade80;border:1px solid #4ade80;border-radius:20px;padding:2px 8px;font-weight:700">🔬 Internal</span>
     <button class="icon-btn" id="fullBtn" onclick="toggleFullscreen()" title="Plein ecran">&#9974;</button>
     <button class="user-btn" id="userBtn" onclick="openLoginModal()">&#128100; Connexion</button>
   </div>
@@ -1620,12 +1621,139 @@ function detectName(n){
   for(var i=0;i<pats.length;i++){var m=n.match(pats[i]);if(m&&m[1]&&m[1].length>1)return m[1][0].toUpperCase()+m[1].slice(1);}
   return null;
 }
+// 🤖 GEMINI 2.0 FLASH
+var GEMINI_API_KEY="";
+var GEMINI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+// 🔬 INTERNAL MODE
+var _internalMode=false;
+try{_internalMode=localStorage.getItem("xn_internal")==="1";}catch(e){}
+function verifyInternalCode(code,cb){
+  if(!FIREBASE_URL)return cb(false);
+  fetch(FIREBASE_URL+"/xearnes/internal/codes/"+encodeURIComponent(code)+".json")
+    .then(function(r){return r.json();})
+    .then(function(d){cb(d===true);})
+    .catch(function(){cb(false);});
+}
+function fetchGeminiKey(cb){
+  if(!FIREBASE_URL)return cb(null);
+  fetch(FIREBASE_URL+"/xearnes/internal/gemini_key.json")
+    .then(function(r){return r.json();})
+    .then(function(k){if(k&&typeof k==="string"){GEMINI_API_KEY=k;}cb(k||null);})
+    .catch(function(){cb(null);});
+}
+function activateInternalMode(lang,cb){
+  _internalMode=true;
+  localStorage.setItem("xn_internal","1");
+  var ind=document.getElementById("internalInd");
+  if(ind)ind.style.display="inline-flex";
+  fetchGeminiKey(function(){
+    cb(lang==="fr"?"🔬 <strong>Mode Interne activé !</strong> Gemini Flash 2.0 est maintenant disponible. Bienvenue !":
+       lang==="sv"?"🔬 <strong>Internt läge aktiverat!</strong> Gemini Flash 2.0 är nu tillgänglig. Välkommen!":
+       "🔬 <strong>Internal mode activated!</strong> Gemini Flash 2.0 is now available. Welcome!");
+  });
+}
+if(_internalMode){fetchGeminiKey(function(){});}
+function callGemini(question,lang,cb){
+  if(!GEMINI_API_KEY||!_internalMode){cb(null);return;}
+  var sysLang=lang==="fr"?"Réponds toujours en français.":lang==="sv"?"Svara alltid på svenska.":"Always respond in English.";
+  var sysPrompt="Tu t appelles Xearnes, un assistant amical, intelligent et amusant. "+sysLang+" Réponds de manière concise (3-5 phrases max), claire et sympathique. Ne mentionne jamais que tu es Gemini ou une IA de Google. Tu parles avec des jeunes donc sois dynamique et utilise des emojis !";
+  fetch(GEMINI_URL+"?key="+GEMINI_API_KEY,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      system_instruction:{parts:[{text:sysPrompt}]},
+      contents:[{parts:[{text:question}]}],
+      generationConfig:{maxOutputTokens:350,temperature:0.75}
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var t=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text;
+    if(t)cb(t.trim());else cb(null);
+  })
+  .catch(function(){cb(null);});
+}
+// 🎮 SYSTÈME DE COMMANDES SECRÈTES
+var _cheatUsed={};
+var _customCheats={};
+try{_customCheats=JSON.parse(localStorage.getItem("xn_cheats")||"{}");}catch(e){_customCheats={};}
+var _cheatCooldowns={};
+var _builtinCheats={
+  "legend youssef 77291":{pts:100000,msg:{fr:"👑 LEGEND MODE ! +100 000 points pour le vrai champion !",en:"👑 LEGEND MODE! +100,000 points for the true champion!",sv:"👑 LEGEND MODE! +100 000 poäng för den sanne mästaren!"}},
+  "godmode 58341":{pts:500000,msg:{fr:"⚡ GOD MODE ACTIVÉ ! +500 000 points ! Tu es invincible !",en:"⚡ GOD MODE ON! +500,000 points! You're invincible!",sv:"⚡ GOD MODE AKTIVERAT! +500 000 poäng! Du är oslagbar!"}},
+  "superstar 92746":{pts:50000,msg:{fr:"🌟 SUPERSTAR ! +50 000 points ! Tu brilles !",en:"🌟 SUPERSTAR! +50,000 points! You shine!",sv:"🌟 SUPERSTAR! +50 000 poäng! Du lyser!"}},
+  "xearnes master 13857":{pts:10000,msg:{fr:"🏆 XEARNES MASTER ! +10 000 points !",en:"🏆 XEARNES MASTER! +10,000 points!",sv:"🏆 XEARNES MASTER! +10 000 poäng!"}},
+  "hyper mode 64923":{pts:25000,msg:{fr:"🔥 HYPER MODE ! +25 000 points !",en:"🔥 HYPER MODE! +25,000 points!",sv:"🔥 HYPER MODE! +25 000 poäng!"}},
+  "ultra boost 31748":{pts:75000,msg:{fr:"💥 ULTRA BOOST ! +75 000 points !",en:"💥 ULTRA BOOST! +75,000 points!",sv:"💥 ULTRA BOOST! +75 000 poäng!"}},
+  "xearnes vip 85612":{pts:200000,msg:{fr:"💎 XEARNES VIP ! +200 000 points ! Bienvenue dans le club d elite !",en:"💎 XEARNES VIP! +200,000 points! Welcome to the elite club!",sv:"💎 XEARNES VIP! +200 000 poäng! Välkommen till elitklubben!"}},
+  "bonus 47293":{pts:1000,cooldown:60000,msg:{fr:"✨ BONUS ! +1 000 points ! (Réutilisable dans 60s)",en:"✨ BONUS! +1,000 points! (Reusable in 60s)",sv:"✨ BONUS! +1 000 poäng! (Återanvändbar om 60s)"}}
+};
+function detectCheat(input,lang){
+  var n=input.trim().toLowerCase();
+  // Créer une commande : "crée commande [nom] [pin5chiffres] [points]"
+  var cm=n.match(/^(cree|cr.e|create|skapa)\s+commande?\s+(.+?)\s+(\d{5})\s+([+-]?\d+)$/);
+  if(cm){
+    var cName=cm[2].trim();var cPin=cm[3];var cPts=parseInt(cm[4]);
+    if(cName&&cPin&&!isNaN(cPts)){
+      var cKey=cName+" "+cPin;
+      _customCheats[cKey]={pts:cPts};
+      localStorage.setItem("xn_cheats",JSON.stringify(_customCheats));
+      return (lang==="fr"?"✅ Commande créée !<br>📝 Nom : <strong>\""+cKey+"\"</strong><br>💰 Valeur : <strong>"+(cPts>=0?"+":"")+cPts.toLocaleString()+" points</strong><br>🔐 Code secret : <strong>"+cPin+"</strong> — ne le partage pas !":
+              lang==="sv"?"✅ Kommando skapat!<br>📝 Namn: <strong>\""+cKey+"\"</strong><br>💰 Värde: <strong>"+(cPts>=0?"+":"")+cPts.toLocaleString()+" poäng</strong><br>🔐 Hemlig kod: <strong>"+cPin+"</strong>":
+              "✅ Command created!<br>📝 Name: <strong>\""+cKey+"\"</strong><br>💰 Value: <strong>"+(cPts>=0?"+":"")+cPts.toLocaleString()+" points</strong><br>🔐 Secret code: <strong>"+cPin+"</strong>");
+    }
+  }
+  // Supprimer une commande : "supprime commande [nom]"
+  var dm=n.match(/^(supprime|efface|delete|ta bort)\s+commande?\s+(.+)$/);
+  if(dm){
+    var dName=dm[2].trim();
+    if(_customCheats[dName]){delete _customCheats[dName];localStorage.setItem("xn_cheats",JSON.stringify(_customCheats));
+      return "🗑️ Commande <strong>\""+dName+"\"</strong> supprimée !";}
+    return "❓ Commande introuvable : \""+dName+"\"";
+  }
+  // Lister les commandes
+  if(n==="liste commandes"||n==="list commands"||n==="lista kommandon"||n==="mes commandes"){
+    var list="🎮 <strong>Commandes secrètes :</strong><br>";
+    Object.keys(_builtinCheats).forEach(function(k){list+="• <code>"+k+"</code> → +"+_builtinCheats[k].pts.toLocaleString()+" pts<br>";});
+    if(Object.keys(_customCheats).length>0){
+      list+="<br>✨ <strong>Mes commandes :</strong><br>";
+      Object.keys(_customCheats).forEach(function(k){list+="• <code>"+k+"</code> → "+(_customCheats[k].pts>=0?"+":"")+_customCheats[k].pts.toLocaleString()+" pts<br>";});
+    }
+    list+="<br>💡 <em>crée commande [nom] [points]</em> pour créer les tiennes !<br>💡 <em>supprime commande [nom]</em> pour en supprimer une.";
+    return list;
+  }
+  // Commandes intégrées
+  if(_builtinCheats[n]){
+    var ch=_builtinCheats[n];var now=Date.now();
+    if(ch.cooldown){
+      if(_cheatCooldowns[n]&&(now-_cheatCooldowns[n])<ch.cooldown){
+        var rem=Math.ceil((ch.cooldown-(now-_cheatCooldowns[n]))/1000);
+        return "⏱️ Attends encore <strong>"+rem+"s</strong> avant de réutiliser cette commande !";
+      }
+      _cheatCooldowns[n]=now;
+    } else {
+      if(_cheatUsed[n])return "🚫 Cette commande a déjà été utilisée dans cette session !";
+      _cheatUsed[n]=true;
+    }
+    addScore(ch.pts);
+    return ch.msg[lang]||ch.msg.fr||ch.msg.en;
+  }
+  // Commandes personnalisées
+  if(_customCheats[n]){
+    var cc=_customCheats[n];addScore(cc.pts);
+    return "✨ Commande <strong>\""+n+"\"</strong> ! "+(cc.pts>=0?"+":"")+cc.pts.toLocaleString()+" points !";
+  }
+  return null;
+}
 function getReply(input,lang,cb){
   var cfg=langs[lang];
   var n=normalize(input.trim().toLowerCase());
   n=fixTypos(n,lang);
   // ⛔ FILTRE DE SÉCURITÉ — vérifié en premier
   if(detectHarmful(n,lang)){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
+  // 🎮 CHEAT CODES
+  var _cheatRes=detectCheat(input,lang);
+  if(_cheatRes)return cb(_cheatRes);
   // ✏️ CORRECTION EN ATTENTE
   if(awaitingCorrection)return cb(handleCorrectionAnswer(n,lang));
   // 🏆 DÉFI DU JOUR EN COURS ?
@@ -1640,11 +1768,20 @@ function getReply(input,lang,cb){
     var opTopic=lastTopic[lang]||getLastBotTopic(lang);
     return cb(buildOpinionReply(opTopic,lang));
   }
-  // 📖 "DIS-MOI PLUS" — re-chercher Wikipedia sur le dernier sujet
+  // 📖 "DIS-MOI PLUS" — Gemini ou Wikipedia sur le dernier sujet
   if(detectMoreInfo(_origN,lang)){
     var moreTopic=lastTopic[lang]||getLastBotTopic(lang);
     if(moreTopic){
-      var moreIntro=lang==="fr"?"Bien sûr, voici plus d infos sur <strong>"+moreTopic+"</strong> :":lang==="sv"?"Självklart, mer om <strong>"+moreTopic+"</strong>:":"Of course, here's more about <strong>"+moreTopic+"</strong>:";
+      var moreIntro=lang==="fr"?"Bien sûr, voici plus sur <strong>"+moreTopic+"</strong> :":lang==="sv"?"Självklart, mer om <strong>"+moreTopic+"</strong>:":"Of course, here's more about <strong>"+moreTopic+"</strong>:";
+      if(GEMINI_API_KEY){
+        callGemini((lang==="fr"?"Explique-moi plus en détail : ":lang==="sv"?"Berätta mer detaljerat om: ":"Tell me more in detail about: ")+moreTopic,lang,function(r){
+          if(r)return cb(moreIntro+"<br>"+r);
+          fetchWikiChain([moreTopic],lang,function(w){
+            if(w)return cb(moreIntro+"<br>"+buildWikiHtml(w));
+            return cb(lang==="fr"?"Hmm, je n ai pas plus d infos là-dessus...":lang==="sv"?"Hmm, jag har inte mer info om det...":"Hmm, I don't have more info on that...");
+          });
+        });return;
+      }
       return fetchWikiChain([moreTopic],lang,function(w){
         if(w)return cb(moreIntro+"<br>"+buildWikiHtml(w));
         return cb(lang==="fr"?"Hmm, je n ai pas plus d infos sur ça pour l instant... Tu veux chercher autre chose ?":lang==="sv"?"Hmm, jag har inte mer info om det just nu... Vill du söka något annat?":"Hmm, I don't have more info on that right now... Want to search something else?");
@@ -1698,7 +1835,15 @@ function getReply(input,lang,cb){
   }
   // 4. Image IA
   var imgP=detectImageRequest(n,lang);
-  if(imgP)return cb(buildImageHtml(imgP,lang));
+  if(imgP){
+    if(_internalMode){
+      callGemini((lang==="fr"?"Décris de façon créative et vivante pour un jeune : ":lang==="sv"?"Beskriv kreativt för en ung person: ":"Describe creatively and vividly: ")+imgP,lang,function(r){
+        if(r)return cb("🎨 <em>"+imgP+"</em><br><br>"+r);
+        return cb(lang==="fr"?"🎨 Impossible de générer une image pour l instant.":lang==="sv"?"🎨 Det gick inte att skapa bilden.":"🎨 Could not generate image right now.");
+      });return;
+    }
+    return cb(lang==="fr"?"🎨 La génération d images n est pas disponible en mode standard.":lang==="sv"?"🎨 Bildgenerering är inte tillgänglig i standardläge.":"🎨 Image generation is not available in standard mode.");
+  }
   // 5. Histoire
   var stP=detectStory(n,lang);if(stP)return cb(generateStory(stP,lang));
   // 6. Poème
@@ -1814,9 +1959,26 @@ function getReply(input,lang,cb){
   if(subject&&subject.length>1)queries.push(subject);
   var wq=getWikiQuery(n,lang);
   if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
-  // 8. Wikipedia + Reddit ELI5 en parallèle — le premier qui répond gagne !
+  // 8. Gemini (si clé dispo) → Wikipedia/Reddit/DDG fallback
+  if(GEMINI_API_KEY){
+    callGemini(input.trim(),lang,function(r){
+      if(r)return cb(r);
+      // Fallback Wikipedia si Gemini échoue
+      if(queries.length>0){
+        fetchWikiChain(queries,lang,function(res){
+          if(res)return cb(buildWikiHtml(res));
+          if(km)return cb(pick(km.entry.r));
+          cb(pick(cfg.defaults));
+        });
+      }else{
+        if(km)return cb(pick(km.entry.r));
+        cb(pick(cfg.defaults));
+      }
+    });
+    return;
+  }
+  // 8b. Sans Gemini : Wikipedia + Reddit ELI5 + DDG en parallèle
   if(queries.length>0){
-    // Vérifier le cache d'abord
     var cached=lookupWikiCache(queries[0]);
     if(cached)return cb(buildWikiHtml(cached));
     var done=false;
@@ -2145,6 +2307,30 @@ function sendMsg(){
   var td=addTyping();var lang=currentLang;
   var delay=600+Math.floor(Math.random()*400);
   setTimeout(function(){
+    // 🔬 Vérifier si c'est le code Internal mode
+    if(!_internalMode&&FIREBASE_URL&&/^[A-Za-z0-9]{6,30}$/.test(txt)){
+      verifyInternalCode(txt,function(valid){
+        if(valid){
+          activateInternalMode(lang,function(msg){
+            td.remove();addMsg(msg,"bot");saveMsg("bot",msg);
+            addToConvHistory("bot",msg);
+            if(document.getElementById("autoVoice").checked)speakText(msg);
+          });
+        } else {
+          getReply(txt,lang,function(reply){
+            td.remove();addMsg(reply,"bot");saveMsg("bot",reply);
+            addToConvHistory("bot",reply);
+            var sub=extractSubject(normalize(txt.toLowerCase()),lang);
+            updateLastTopic(sub,lang);
+            if(document.getElementById("autoVoice").checked){speakText(reply);}
+            sendXeNotif(reply);
+            var xeQ=maybeXeQuestion(lang);
+            if(xeQ){setTimeout(function(){addMsg(xeQ,"bot");addToConvHistory("bot",xeQ);if(document.getElementById("autoVoice").checked)speakText(xeQ);},1200);}
+          });
+        }
+      });
+      return;
+    }
     getReply(txt,lang,function(reply){
       td.remove();addMsg(reply,"bot");saveMsg("bot",reply);
       addToConvHistory("bot",reply);
@@ -3599,7 +3785,7 @@ function snakeOver(){
   if(canvas){
     var ctx=canvas.getContext('2d');
     ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='#ffd700';ctx.font='bold 26px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='#DAA520';ctx.font='bold 26px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('GAME OVER',canvas.width/2,canvas.height/2-18);
     ctx.font='16px Segoe UI';ctx.fillStyle='#fff';
     ctx.fillText('Score: '+s.score,canvas.width/2,canvas.height/2+14);
