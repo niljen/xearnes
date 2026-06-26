@@ -2560,7 +2560,7 @@ var _isChromebook=/CrOS/.test(navigator.userAgent);
 function scoreVoice(v){
   var n=(v.name||"").toLowerCase();
   // Voix robots — score bas mais pas -99 sur Chromebook (sinon on utilise la voix système par défaut = suédois !)
-  if(n.indexOf("espeak")!==-1||n.indexOf("pico")!==-1||n.indexOf("mbrola")!==-1)return _isChromebook?-10:-99;
+  if(n.indexOf("espeak")!==-1||n.indexOf("pico")!==-1||n.indexOf("mbrola")!==-1)return -99;
   // Sur Chromebook : voix sans marque connue = souvent robotique → score très bas
   var hasKnownBrand=n.indexOf("google")!==-1||n.indexOf("microsoft")!==-1||n.indexOf("wavenet")!==-1||n.indexOf("neural")!==-1||n.indexOf("premium")!==-1||n.indexOf("enhanced")!==-1||n.indexOf("natural")!==-1||n.indexOf("studio")!==-1||n.indexOf("apple")!==-1;
   if(_isChromebook&&!hasKnownBrand)return -5;
@@ -2658,13 +2658,17 @@ function speakText(text,_attempt){
   if(fresh&&fresh.length>0){allVoices=fresh;populateVoiceSelect();}
   var voice=getBestVoice(currentLang);
   var score=voice?scoreVoice(voice):-99;
-  // Sur Chromebook : si on a une voix eSpeak pour la bonne langue, l'utiliser directement
-  // (les voix Google ne chargeront pas → inutile d'attendre 1.5s)
-  var chromebookEspeak=_isChromebook&&voice&&score<=-50;
-  // Si pas de bonne voix et premier essai → attendre 1.5s que Google Voice charge (sauf Chromebook eSpeak)
-  if(score<5&&!_attempt&&!chromebookEspeak){
-    setTimeout(function(){speakText(text,1);},1500);
+  // Sur Chromebook : attendre plus longtemps que Google Voice charge
+  var waitTime=_isChromebook?2500:1500;
+  // Si pas de bonne voix et premier essai → attendre que Google Voice charge
+  if(score<5&&!_attempt){
+    setTimeout(function(){speakText(text,1);},waitTime);
     return;
+  }
+  // Si toujours pas de bonne voix sur Chromebook → forcer une voix Google si disponible
+  if(_isChromebook&&score<5){
+    var googleVoice=allVoices.filter(function(v){return v.name.toLowerCase().indexOf("google")!==-1;})[0];
+    if(googleVoice)voice=googleVoice;
   }
   var rateEl=document.getElementById("voiceRate");
   var pitchEl=document.getElementById("voicePitch");
