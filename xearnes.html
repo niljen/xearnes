@@ -2658,17 +2658,22 @@ function speakText(text,_attempt){
   if(fresh&&fresh.length>0){allVoices=fresh;populateVoiceSelect();}
   var voice=getBestVoice(currentLang);
   var score=voice?scoreVoice(voice):-99;
-  // Sur Chromebook : attendre plus longtemps que Google Voice charge
-  var waitTime=_isChromebook?2500:1500;
   // Si pas de bonne voix et premier essai → attendre que Google Voice charge
   if(score<5&&!_attempt){
-    setTimeout(function(){speakText(text,1);},waitTime);
+    setTimeout(function(){speakText(text,1);},2500);
     return;
   }
-  // Si toujours pas de bonne voix sur Chromebook → forcer une voix Google si disponible
-  if(_isChromebook&&score<5){
-    var googleVoice=allVoices.filter(function(v){return v.name.toLowerCase().indexOf("google")!==-1;})[0];
-    if(googleVoice)voice=googleVoice;
+  // Sur Chromebook : si voix mauvaise (eSpeak etc.) → forcer Google même en anglais
+  if(score<0){
+    var anyGoogle=allVoices.filter(function(v){return v.name.toLowerCase().indexOf("google")!==-1;});
+    if(anyGoogle.length>0){
+      // Préférer la voix Google dans la bonne langue, sinon n'importe quelle Google
+      var googleLang=anyGoogle.filter(function(v){return v.lang.toLowerCase().indexOf(currentLang)===0;});
+      voice=googleLang.length>0?googleLang[0]:anyGoogle[0];
+    } else {
+      // Aucune voix Google disponible → utiliser la voix par défaut du navigateur (sans forcer)
+      voice=null;
+    }
   }
   var rateEl=document.getElementById("voiceRate");
   var pitchEl=document.getElementById("voicePitch");
