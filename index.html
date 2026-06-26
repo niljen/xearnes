@@ -333,7 +333,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <button class="vp-test" onclick="diagVoices()" style="margin-top:4px;background:rgba(255,255,255,.07)">&#128269; Diagnostic voix</button>
     <div id="voiceDiag" style="font-size:.7rem;color:var(--text2);margin-top:6px;line-height:1.5;display:none"></div>
     <div class="vp-check-row">
-      <input type="checkbox" id="autoVoice" checked>
+      <input type="checkbox" id="autoVoice">
       <label for="autoVoice">Voix automatique</label>
     </div>
   </div>
@@ -2671,8 +2671,13 @@ function speakText(text,_attempt){
       var googleLang=anyGoogle.filter(function(v){return v.lang.toLowerCase().indexOf(currentLang)===0;});
       voice=googleLang.length>0?googleLang[0]:anyGoogle[0];
     } else {
-      // Aucune voix Google disponible → utiliser la voix par défaut du navigateur (sans forcer)
-      voice=null;
+      // Aucune voix Google → voix désactivée, message affiché une seule fois
+      if(!window._voiceWarningShown){
+        window._voiceWarningShown=true;
+        var msg=currentLang==="sv"?"🔇 Röst är inte tillgänglig på skolans Chromebook.":currentLang==="fr"?"🔇 La voix n'est pas disponible sur les Chromebooks d'école.":"🔇 Voice is not available on school Chromebooks.";
+        addMsg(msg,"bot");
+      }
+      return;
     }
   }
   var rateEl=document.getElementById("voiceRate");
