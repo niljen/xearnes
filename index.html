@@ -1710,6 +1710,7 @@ var xnSec=(function(){
 })();
 // 🤖 GEMINI 2.5 FLASH
 var GEMINI_API_KEY="";
+var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
 var GEMINI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 // 🔬 INTERNAL MODE
 var _internalMode=false;
@@ -1777,6 +1778,48 @@ function callGemini(question,lang,cb,_attempt){
   })
   .catch(function(){
     if(_attempt<3){setTimeout(function(){callGemini(question,lang,cb,_attempt+1);},1500*_attempt);}
+    else{cb(null);}
+  });
+}
+function callClaude(question,lang,cb,_attempt){
+  _attempt=_attempt||1;
+  var sysLang=lang==="fr"?"Réponds toujours en français.":lang==="sv"?"Svara alltid på svenska.":"Always respond in English.";
+  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées et approfondies. Tu t'adaptes à l'humeur de la conversation. Tu utilises des emojis de temps en temps. Tu parles de façon naturelle et intelligente. Tu ne mentionnes jamais que tu es Claude ou une IA d'Anthropic. Tu es Xearnes — une IA unique et puissante. 🐺";
+  var msgs=[];
+  var hist=convHistory.slice(-14);
+  var lastRole=null;
+  for(var i=0;i<hist.length;i++){
+    var r=hist[i].role==="bot"?"assistant":"user";
+    if(r===lastRole)continue;
+    msgs.push({role:r,content:hist[i].text.replace(/<[^>]+>/g,"").slice(0,600)});
+    lastRole=r;
+  }
+  while(msgs.length>0&&msgs[0].role!=="user")msgs.shift();
+  if(msgs.length===0)msgs=[{role:"user",content:question}];
+  fetch(CLAUDE_WORKER_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-haiku-4-5-20251001",
+      max_tokens:1024,
+      system:sysPrompt,
+      messages:msgs
+    })
+  })
+  .then(function(r){
+    if((r.status===529||r.status===429||r.status===500)&&_attempt<3){
+      setTimeout(function(){callClaude(question,lang,cb,_attempt+1);},1500*_attempt);
+      return null;
+    }
+    return r.json();
+  })
+  .then(function(d){
+    if(d===null)return;
+    var t=d&&d.content&&d.content[0]&&d.content[0].text;
+    if(t)cb(sanitizeGemini(t.trim()));else cb(null);
+  })
+  .catch(function(){
+    if(_attempt<3){setTimeout(function(){callClaude(question,lang,cb,_attempt+1);},1500*_attempt);}
     else{cb(null);}
   });
 }
@@ -2084,7 +2127,23 @@ function getReply(input,lang,cb){
     });
     return;
   }
-  // 8b. Sans Gemini : Wikipedia + Reddit ELI5 + DDG en parallèle
+  // 8b. Sans Gemini : essayer Claude d'abord
+  callClaude(input.trim(),lang,function(r){
+    if(r)return cb(r);
+    // Fallback Wikipedia si Claude échoue
+    if(queries.length>0){
+      fetchWikiChain(queries,lang,function(res){
+        if(res)return cb(buildWikiHtml(res));
+        if(km)return cb(pick(km.entry.r));
+        cb(pick(cfg.defaults));
+      });
+    }else{
+      if(km)return cb(pick(km.entry.r));
+      cb(pick(cfg.defaults));
+    }
+  });
+  return;
+  // 8c. Sans Claude ni Gemini : Wikipedia + Reddit ELI5 + DDG en parallèle
   if(queries.length>0){
     var cached=lookupWikiCache(queries[0]);
     if(cached)return cb(buildWikiHtml(cached));
