@@ -265,9 +265,10 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 </head>
 <body>
 <header>
-  <div style="display:flex;align-items:center">
+  <div style="display:flex;align-items:center;gap:8px">
     <span class="logo">Xearnes</span><span class="badge">AI</span>
     <span class="speaking-dot" id="speakDot"></span>
+    <span id="userCountBadge" style="font-size:.7rem;color:var(--text2);cursor:default" title="Inscrits">👥 <span id="userCountNum">...</span></span>
   </div>
   <div class="header-btns">
     <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#129302;</span>
@@ -3001,7 +3002,11 @@ function stopVoiceInput(){
   if(inp)inp.placeholder=langs[currentLang].placeholder;
   if(recognition){try{recognition.stop();}catch(e){}}
 }
+function loadUserCount(){
+  fetch("https://api.countapi.xyz/get/xearnes-nilje/users").then(function(r){return r.json();}).then(function(d){if(d&&d.value)document.getElementById("userCountNum").textContent=d.value;}).catch(function(){document.getElementById("userCountNum").textContent="";});
+}
 function init(){
+  loadUserCount();
   if(window.speechSynthesis){
     allVoices=window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged=function(){
@@ -4445,6 +4450,10 @@ function submitLogin(){
   checkBadges(); // Badge "Citoyen Xearnes" pour toute connexion
   updatePresence(false); // Met à jour la présence avec le nom
   var isNew=_loginTab==="register";
+  if(isNew&&!localStorage.getItem("xn_counted")){
+    localStorage.setItem("xn_counted","1");
+    fetch("https://api.countapi.xyz/hit/xearnes-nilje/users").then(function(r){return r.json();}).then(function(d){if(d&&d.value)document.getElementById("userCountNum").textContent=d.value;}).catch(function(){});
+  }
   var msg=isNew
     ?(currentLang==="sv"?"&#127881; Välkommen <strong>"+xnUser.name+"</strong>! Konto skapat! Du kan nu synas i världsrankningen &#127758;":currentLang==="en"?"&#127881; Welcome <strong>"+xnUser.name+"</strong>! Account created! You can now appear in the world ranking &#127758;":"&#127881; Bienvenue <strong>"+xnUser.name+"</strong> ! Compte créé ! Tu peux maintenant figurer dans le classement mondial &#127758;")
     :(currentLang==="sv"?"&#128075; Kul att se dig igen, <strong>"+xnUser.name+"</strong>!":currentLang==="en"?"&#128075; Welcome back, <strong>"+xnUser.name+"</strong>!":"&#128075; Content de te revoir, <strong>"+xnUser.name+"</strong> !");
