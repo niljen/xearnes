@@ -1810,18 +1810,26 @@ function callClaude(question,lang,cb,_attempt){
     })
   })
   .then(function(r){
-    if((r.status===529||r.status===429||r.status===500)&&_attempt<3){
+    if((r.status===529||r.status===429||r.status===500||r.status===503)&&_attempt<3){
       setTimeout(function(){callClaude(question,lang,cb,_attempt+1);},1500*_attempt);
       return null;
     }
-    return r.json();
+    return r.json().then(function(d){return {status:r.status,data:d};});
   })
-  .then(function(d){
-    if(d===null)return;
+  .then(function(res){
+    if(res===null)return;
+    var d=res.data;
+    if(res.status!==200){
+      var errMsg=d&&d.error&&d.error.message?d.error.message:"HTTP "+res.status;
+      console.error("[Xearnes Claude] Erreur "+res.status+":",errMsg,d);
+      cb(null);return;
+    }
     var t=d&&d.content&&d.content[0]&&d.content[0].text;
-    if(t)cb(sanitizeGemini(t.trim()));else cb(null);
+    if(t)cb(sanitizeGemini(t.trim()));
+    else{console.error("[Xearnes Claude] Réponse inattendue:",d);cb(null);}
   })
-  .catch(function(){
+  .catch(function(e){
+    console.error("[Xearnes Claude] Erreur réseau:",e);
     if(_attempt<3){setTimeout(function(){callClaude(question,lang,cb,_attempt+1);},1500*_attempt);}
     else{cb(null);}
   });
@@ -2112,21 +2120,25 @@ function getReply(input,lang,cb){
   if(subject&&subject.length>1)queries.push(subject);
   var wq=getWikiQuery(n,lang);
   if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
-  // 8. Gemini (si clé dispo) → Wikipedia/Reddit/DDG fallback
+  // 8. Gemini (si clé dispo) → Claude fallback → Wikipedia/DDG fallback
   if(GEMINI_API_KEY){
     callGemini(input.trim(),lang,function(r){
       if(r)return cb(r);
-      // Fallback Wikipedia si Gemini échoue
-      if(queries.length>0){
-        fetchWikiChain(queries,lang,function(res){
-          if(res)return cb(buildWikiHtml(res));
+      // Gemini a échoué (429/503) → essayer Claude en fallback
+      callClaude(input.trim(),lang,function(rc){
+        if(rc)return cb(rc);
+        // Fallback Wikipedia si Claude aussi échoue
+        if(queries.length>0){
+          fetchWikiChain(queries,lang,function(res){
+            if(res)return cb(buildWikiHtml(res));
+            if(km)return cb(pick(km.entry.r));
+            cb(pick(cfg.defaults));
+          });
+        }else{
           if(km)return cb(pick(km.entry.r));
           cb(pick(cfg.defaults));
-        });
-      }else{
-        if(km)return cb(pick(km.entry.r));
-        cb(pick(cfg.defaults));
-      }
+        }
+      });
     });
     return;
   }
@@ -3003,7 +3015,7 @@ function stopVoiceInput(){
   if(recognition){try{recognition.stop();}catch(e){}}
 }
 function loadUserCount(){
-  fetch("https://api.countapi.xyz/get/xearnes-nilje/users").then(function(r){return r.json();}).then(function(d){if(d&&d.value)document.getElementById("userCountNum").textContent=d.value;}).catch(function(){document.getElementById("userCountNum").textContent="";});
+  fetch("https://api.counterapi.dev/v1/xearnes-nilje/xearnes-users").then(function(r){return r.json();}).then(function(d){if(d&&d.count!=null)document.getElementById("userCountNum").textContent=d.count;}).catch(function(){document.getElementById("userCountNum").textContent="";});
 }
 function init(){
   loadUserCount();
@@ -4452,7 +4464,7 @@ function submitLogin(){
   var isNew=_loginTab==="register";
   if(isNew&&!localStorage.getItem("xn_counted")){
     localStorage.setItem("xn_counted","1");
-    fetch("https://api.countapi.xyz/hit/xearnes-nilje/users").then(function(r){return r.json();}).then(function(d){if(d&&d.value)document.getElementById("userCountNum").textContent=d.value;}).catch(function(){});
+    fetch("https://api.counterapi.dev/v1/xearnes-nilje/xearnes-users/up").then(function(r){return r.json();}).then(function(d){if(d&&d.count!=null)document.getElementById("userCountNum").textContent=d.count;}).catch(function(){});
   }
   var msg=isNew
     ?(currentLang==="sv"?"&#127881; Välkommen <strong>"+xnUser.name+"</strong>! Konto skapat! Du kan nu synas i världsrankningen &#127758;":currentLang==="en"?"&#127881; Welcome <strong>"+xnUser.name+"</strong>! Account created! You can now appear in the world ranking &#127758;":"&#127881; Bienvenue <strong>"+xnUser.name+"</strong> ! Compte créé ! Tu peux maintenant figurer dans le classement mondial &#127758;")
