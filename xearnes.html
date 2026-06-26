@@ -268,7 +268,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   <div style="display:flex;align-items:center;gap:8px">
     <span class="logo">Xearnes</span><span class="badge">AI</span>
     <span class="speaking-dot" id="speakDot"></span>
-    <span id="userCountBadge" style="font-size:.7rem;color:var(--text2);cursor:default" title="Inscrits">👥 <span id="userCountNum">...</span></span>
+    <span id="userCountBadge" style="display:none">👥 <span id="userCountNum"></span></span>
   </div>
   <div class="header-btns">
     <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#129302;</span>
@@ -3014,9 +3014,7 @@ function stopVoiceInput(){
   if(inp)inp.placeholder=langs[currentLang].placeholder;
   if(recognition){try{recognition.stop();}catch(e){}}
 }
-function loadUserCount(){
-  fetch("https://api.counterapi.dev/v1/xearnes-nilje/xearnes-users").then(function(r){return r.json();}).then(function(d){if(d&&d.count!=null)document.getElementById("userCountNum").textContent=d.count;}).catch(function(){document.getElementById("userCountNum").textContent="";});
-}
+function loadUserCount(){}
 function init(){
   loadUserCount();
   if(window.speechSynthesis){
@@ -4464,7 +4462,7 @@ function submitLogin(){
   var isNew=_loginTab==="register";
   if(isNew&&!localStorage.getItem("xn_counted")){
     localStorage.setItem("xn_counted","1");
-    fetch("https://api.counterapi.dev/v1/xearnes-nilje/xearnes-users/up").then(function(r){return r.json();}).then(function(d){if(d&&d.count!=null)document.getElementById("userCountNum").textContent=d.count;}).catch(function(){});
+    /* counter API removed - CORS issues */
   }
   var msg=isNew
     ?(currentLang==="sv"?"&#127881; Välkommen <strong>"+xnUser.name+"</strong>! Konto skapat! Du kan nu synas i världsrankningen &#127758;":currentLang==="en"?"&#127881; Welcome <strong>"+xnUser.name+"</strong>! Account created! You can now appear in the world ranking &#127758;":"&#127881; Bienvenue <strong>"+xnUser.name+"</strong> ! Compte créé ! Tu peux maintenant figurer dans le classement mondial &#127758;")
