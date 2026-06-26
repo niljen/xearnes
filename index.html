@@ -2998,16 +2998,27 @@ function init(){
       allVoices=window.speechSynthesis.getVoices();
       populateVoiceSelect();
     };
-    // Précharger les voix après 2s (les voix Google/réseau se chargent en asynchrone)
+    // Trick pour déclencher le chargement des voix Google sur Chromebook
+    if(_isChromebook){
+      var u=new SpeechSynthesisUtterance('');
+      u.volume=0;
+      window.speechSynthesis.speak(u);
+    }
+    // Précharger les voix après 1s
     setTimeout(function(){
       var fresh=window.speechSynthesis.getVoices();
       if(fresh&&fresh.length>allVoices.length){allVoices=fresh;populateVoiceSelect();}
-    },2000);
-    // Deuxième tentative après 5s (connexion lente / Chromebook)
+    },1000);
+    // Deuxième tentative après 3s (Chromebook)
     setTimeout(function(){
       var fresh=window.speechSynthesis.getVoices();
       if(fresh&&fresh.length>0){allVoices=fresh;populateVoiceSelect();}
-    },5000);
+    },3000);
+    // Troisième tentative après 6s (connexion lente)
+    setTimeout(function(){
+      var fresh=window.speechSynthesis.getVoices();
+      if(fresh&&fresh.length>0){allVoices=fresh;populateVoiceSelect();}
+    },6000);
   }
   var savedRate=parseFloat(localStorage.getItem("xn_voice_rate")||"0.90");
   var savedPitch=parseFloat(localStorage.getItem("xn_voice_pitch")||"1.0");
