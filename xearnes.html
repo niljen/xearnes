@@ -261,6 +261,23 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .lb-login-hint{padding:10px;text-align:center;font-size:.8rem;color:var(--text2);border-top:1px solid var(--border)}
 .lb-login-hint button{background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 14px;font-weight:700;cursor:pointer;margin-top:6px;font-size:.8rem}
 @media(max-width:640px){.lb-panel{position:fixed;top:0;right:0;bottom:0;z-index:100;width:260px}}
+/* ── CONVERSATIONS ── */
+.conv-panel{width:240px;background:var(--card);border-right:1px solid var(--border);display:none;flex-direction:column;flex-shrink:0;overflow:hidden}
+.conv-panel.open{display:flex}
+.conv-ph{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.conv-ph-title{font-size:.78rem;font-weight:700;color:var(--accent)}
+.conv-new{background:var(--accent);color:#000;border:none;border-radius:7px;padding:5px 10px;font-size:.73rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+.conv-new:hover{filter:brightness(1.15)}
+.conv-list{overflow-y:auto;flex:1;padding:7px}
+.conv-item{padding:8px 10px;border-radius:8px;font-size:.76rem;margin-bottom:4px;cursor:pointer;transition:.2s;border:1px solid transparent;position:relative;padding-right:30px}
+.conv-item:hover{background:var(--border)}
+.conv-item.active{background:rgba(218,165,32,.12);border-color:var(--accent)}
+.conv-item .ci-title{font-weight:600;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.conv-item .ci-date{color:var(--text2);font-size:.63rem;margin-top:2px}
+.conv-item .ci-del{position:absolute;top:50%;right:7px;transform:translateY(-50%);background:none;border:none;color:var(--danger);cursor:pointer;font-size:.78rem;opacity:0;transition:.15s;padding:2px 5px;border-radius:4px;line-height:1}
+.conv-item:hover .ci-del{opacity:1}
+.conv-empty{text-align:center;color:var(--text2);font-size:.78rem;padding:24px 10px;line-height:1.9}
+@media(max-width:640px){.conv-panel{position:fixed;top:0;left:0;bottom:0;z-index:100;width:270px}}
 </style>
 </head>
 <body>
@@ -299,6 +316,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Mode jour/nuit">&#9728;</button>
     <button class="icon-btn" id="lbBtn" onclick="toggleLeaderboardPanel()" title="Classement mondial">&#127758;</button>
     <button class="icon-btn" id="badgeBtn" onclick="toggleBadgePanel()" title="Badges">&#127942;</button>
+    <button class="icon-btn" id="convBtn" onclick="toggleConvPanel()" title="Conversations">&#128172;</button>
     <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()" title="Historique">&#128214;</button>
     <span id="internalInd" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:#1a3a2a;color:#4ade80;border:1px solid #4ade80;border-radius:20px;padding:2px 8px;font-weight:700">🔬 Internal</span>
     <button class="icon-btn" id="fullBtn" onclick="toggleFullscreen()" title="Plein ecran">&#9974;</button>
@@ -337,6 +355,13 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <input type="checkbox" id="autoVoice">
       <label for="autoVoice">Voix automatique</label>
     </div>
+  </div>
+  <div class="conv-panel" id="convPanel">
+    <div class="conv-ph">
+      <span class="conv-ph-title">&#128172; Conversations</span>
+      <button class="conv-new" onclick="newConversation()">&#10133; Nouveau</button>
+    </div>
+    <div class="conv-list" id="convList"><div class="conv-empty">&#128172;<br>Aucune conversation<br>sauvegardée</div></div>
   </div>
   <div class="chat-wrap">
     <div class="chat" id="chat">
@@ -1357,10 +1382,105 @@ function buildPronResponse(word,toLang,uiLang){
   if(uiLang==="sv")return "Jag känner inte till uttalet av \""+word+"\" på "+ln+" ännu.";
   return "I don't know the pronunciation of \""+word+"\" in "+ln+" yet. Try Google Translate to listen!";
 }
+// ── CONVERSATIONS SAUVEGARDÉES (A+B+C) ──
+var savedConversations=[];
+var currentConvId=null;
+try{savedConversations=JSON.parse(localStorage.getItem("xn_saved_convs")||"[]");}catch(e){savedConversations=[];}
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function saveCurrentConversation(){
+  if(convHistory.length===0)return;
+  var title="";
+  for(var i=0;i<convHistory.length;i++){if(convHistory[i].role==="user"){title=convHistory[i].text.replace(/<[^>]+>/g,"").slice(0,38);break;}}
+  if(!title)return;
+  var now=Date.now();
+  if(currentConvId){
+    var found=false;
+    for(var i=0;i<savedConversations.length;i++){
+      if(savedConversations[i].id===currentConvId){savedConversations[i].messages=convHistory.slice();savedConversations[i].updatedAt=now;savedConversations[i].title=title;found=true;break;}
+    }
+    if(!found)currentConvId=null;
+  }
+  if(!currentConvId){
+    currentConvId=now;
+    savedConversations.unshift({id:currentConvId,title:title,lang:currentLang,messages:convHistory.slice(),updatedAt:now});
+    localStorage.setItem("xn_last_conv_id",""+currentConvId);
+  }
+  if(savedConversations.length>30)savedConversations=savedConversations.slice(0,30);
+  try{localStorage.setItem("xn_saved_convs",JSON.stringify(savedConversations));}catch(e){}
+  renderConvList();
+}
+function renderConvList(){
+  var list=document.getElementById("convList");
+  if(!list)return;
+  if(savedConversations.length===0){list.innerHTML='<div class="conv-empty">&#128172;<br>Aucune conversation<br>sauvegardée</div>';return;}
+  var html="";
+  for(var i=0;i<savedConversations.length;i++){
+    var c=savedConversations[i];
+    var isActive=c.id===currentConvId;
+    var d=new Date(c.updatedAt);
+    var dateStr=d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
+    html+='<div class="conv-item'+(isActive?" active":"")+'" onclick="switchConv('+c.id+')">'
+      +'<div class="ci-title">'+escapeHtml(c.title)+'</div>'
+      +'<div class="ci-date">'+dateStr+'</div>'
+      +'<button class="ci-del" onclick="event.stopPropagation();deleteConv('+c.id+')" title="Supprimer">&#128465;</button>'
+      +'</div>';
+  }
+  list.innerHTML=html;
+}
+function switchConv(id){
+  var conv=null;
+  for(var i=0;i<savedConversations.length;i++){if(savedConversations[i].id===id){conv=savedConversations[i];break;}}
+  if(!conv)return;
+  currentConvId=id;
+  convHistory=conv.messages.slice();
+  localStorage.setItem("xn_last_conv_id",""+id);
+  var chat=document.getElementById("chat");
+  var welcome=document.getElementById("welcome");
+  if(welcome)welcome.style.display="none";
+  chat.innerHTML="";
+  for(var i=0;i<conv.messages.length;i++){
+    var m=conv.messages[i];
+    var div=document.createElement("div");
+    div.className="msg "+m.role;
+    if(m.role==="bot"){div.innerHTML=m.text;addShareBtn(div,m.text);}
+    else{div.textContent=m.text;}
+    chat.appendChild(div);
+  }
+  chat.scrollTop=chat.scrollHeight;
+  renderConvList();
+  if(window.innerWidth<=640){var p=document.getElementById("convPanel");if(p)p.classList.remove("open");}
+}
+function newConversation(){
+  currentConvId=null;
+  convHistory=[];
+  localStorage.removeItem("xn_last_conv_id");
+  var chat=document.getElementById("chat");
+  if(chat)chat.innerHTML="";
+  var welcome=document.getElementById("welcome");
+  if(welcome)welcome.style.display="";
+  renderConvList();
+  if(window.innerWidth<=640){var p=document.getElementById("convPanel");if(p)p.classList.remove("open");}
+}
+function deleteConv(id){
+  savedConversations=savedConversations.filter(function(c){return c.id!==id;});
+  try{localStorage.setItem("xn_saved_convs",JSON.stringify(savedConversations));}catch(e){}
+  if(currentConvId===id)newConversation();
+  else renderConvList();
+}
+function toggleConvPanel(){
+  var panel=document.getElementById("convPanel");
+  if(!panel)return;
+  var open=panel.classList.toggle("open");
+  if(open){
+    renderConvList();
+    var vp=document.getElementById("voicePanel");if(vp)vp.classList.remove("open");
+  }
+}
 // ── MÉMOIRE DE CONVERSATION ──
 function addToConvHistory(role,text){
   convHistory.push({role:role,text:text});
   if(convHistory.length>20)convHistory=convHistory.slice(-20);
+  if(role==="bot")saveCurrentConversation();
 }
 function getLastBotTopic(lang){
   // Cherche un sujet dans les derniers messages du bot
@@ -3017,6 +3137,13 @@ function stopVoiceInput(){
 function loadUserCount(){}
 function init(){
   loadUserCount();
+  // Restaurer la dernière conversation
+  var lastId=localStorage.getItem("xn_last_conv_id");
+  if(lastId){
+    var lastConv=null;
+    for(var i=0;i<savedConversations.length;i++){if(""+savedConversations[i].id===lastId){lastConv=savedConversations[i];break;}}
+    if(lastConv&&lastConv.messages&&lastConv.messages.length>0){setTimeout(function(){switchConv(lastConv.id);},50);}
+  }
   if(window.speechSynthesis){
     allVoices=window.speechSynthesis.getVoices();
     window.speechSynthesis.onvoiceschanged=function(){
