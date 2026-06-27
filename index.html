@@ -3041,12 +3041,19 @@ function startVoiceInput(){
     clearTimeout(_micTimer);
     _micAttempts=0;
     var transcript="";
-    for(var i=0;i<e.results.length;i++){transcript+=e.results[i][0].transcript;}
+    var isFinal=false;
+    for(var i=0;i<e.results.length;i++){
+      transcript+=e.results[i][0].transcript;
+      if(e.results[i].isFinal)isFinal=true;
+    }
     var inp=document.getElementById("userInput");
     if(inp){inp.value=transcript;autoResize(inp);}
-    _finalSent=true;
-    stopVoiceInput();
-    setTimeout(function(){sendMsg();},200);
+    // Attendre la transcription finale avant d'envoyer (évite envoi partiel ou double)
+    if(isFinal&&!_finalSent){
+      _finalSent=true;
+      stopVoiceInput();
+      setTimeout(function(){sendMsg();},200);
+    }
   };
   recognition.onerror=function(e){
     clearTimeout(_micTimer);
