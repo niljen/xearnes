@@ -1428,6 +1428,15 @@ function renderConvList(){
   }
   list.innerHTML=html;
 }
+function clearChatMsgs(){
+  var chat=document.getElementById("chat");
+  if(!chat)return;
+  var toRemove=[];
+  for(var i=0;i<chat.children.length;i++){
+    if(chat.children[i].id!=="welcome")toRemove.push(chat.children[i]);
+  }
+  toRemove.forEach(function(el){el.remove();});
+}
 function switchConv(id){
   var conv=null;
   for(var i=0;i<savedConversations.length;i++){if(savedConversations[i].id===id){conv=savedConversations[i];break;}}
@@ -1438,7 +1447,7 @@ function switchConv(id){
   var chat=document.getElementById("chat");
   var welcome=document.getElementById("welcome");
   if(welcome)welcome.style.display="none";
-  chat.innerHTML="";
+  clearChatMsgs();
   for(var i=0;i<conv.messages.length;i++){
     var m=conv.messages[i];
     var div=document.createElement("div");
@@ -1455,8 +1464,7 @@ function newConversation(){
   currentConvId=null;
   convHistory=[];
   localStorage.removeItem("xn_last_conv_id");
-  var chat=document.getElementById("chat");
-  if(chat)chat.innerHTML="";
+  clearChatMsgs();
   var welcome=document.getElementById("welcome");
   if(welcome)welcome.style.display="";
   renderConvList();
