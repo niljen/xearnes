@@ -1436,7 +1436,6 @@ function toggleConvPanel(){
 // ── MÉMOIRE DE CONVERSATION ──
 function addToConvHistory(role,text){
   convHistory.push({role:role,text:text});
-  if(convHistory.length>20)convHistory=convHistory.slice(-20);
   if(role==="bot")saveCurrentConversation();
 }
 function getLastBotTopic(lang){
@@ -1840,7 +1839,7 @@ function callGemini(question,lang,cb,_attempt){
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       system_instruction:{parts:[{text:sysPrompt}]},
-      contents:(function(){var h=convHistory.slice(-14),c=[],lr=null;for(var i=0;i<h.length;i++){var r=h[i].role==="bot"?"model":"user";if(r===lr)continue;c.push({role:r,parts:[{text:h[i].text.replace(/<[^>]+>/g,"").slice(0,600)}]});lr=r;}while(c.length>0&&c[0].role!=="user")c.shift();return c.length>0?c:[{role:"user",parts:[{text:question}]}];}()),
+      contents:(function(){var h=convHistory,c=[],lr=null;for(var i=0;i<h.length;i++){var r=h[i].role==="bot"?"model":"user";if(r===lr)continue;c.push({role:r,parts:[{text:h[i].text.replace(/<[^>]+>/g,"").slice(0,600)}]});lr=r;}while(c.length>0&&c[0].role!=="user")c.shift();return c.length>0?c:[{role:"user",parts:[{text:question}]}];}()),
       generationConfig:{maxOutputTokens:4096,temperature:0.85}
     })
   })
@@ -1866,7 +1865,7 @@ function callClaude(question,lang,cb,_attempt){
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
   var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu ne mentionnes jamais que tu es Claude ou une IA d'Anthropic. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef.";
   var msgs=[];
-  var hist=convHistory.slice(-14);
+  var hist=convHistory;
   var lastRole=null;
   for(var i=0;i<hist.length;i++){
     var r=hist[i].role==="bot"?"assistant":"user";
