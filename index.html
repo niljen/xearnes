@@ -2817,8 +2817,8 @@ function cleanForSpeech(text,lang){
     text=text.replace(/Xearnes/gi,"Zearnes");
     text=text.replace(/[^\x20-\x7E\xC0-ɏ]/g," ");
   }
-  // 5. Limiter la longueur (éviter les lectures trop longues)
-  if(text.length>400)text=text.substring(0,400)+"...";
+  // 5. Limiter la longueur
+  if(text.length>1500)text=text.substring(0,1500)+"...";
   // Nettoyer les espaces en trop
   text=text.replace(/\s+/g," ").trim();
   return text;
