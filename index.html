@@ -825,13 +825,7 @@ function detectArDu(n,lang){
   return null;
 }
 function bestMatch(n,lang){
-  var base=kb[lang]||[];var best=null,bs=0;
-  for(var i=0;i<base.length;i++){var e=base[i],s=0;
-    for(var j=0;j<e.p.length;j++){var ph=e.p[j];
-      if(n.indexOf(ph)!==-1){s+=ph.split(" ").length*3;}
-      else{ph.split(" ").forEach(function(w){if(w.length>2&&n.indexOf(w)!==-1)s++;});}}
-    if(s>bs){bs=s;best=e;}}
-  return bs>=2?{entry:best,score:bs}:null;
+  return null; // Claude répond à toutes les questions à la place
 }
 function tryMath(t){
   var s=t.replace(/\bplus\b/g,"+").replace(/\bmoins\b/g,"-").replace(/\bfois\b/g,"*").replace(/\btimes\b/g,"*").replace(/\bminus\b/g,"-");
