@@ -2057,12 +2057,10 @@ function getReply(input,lang,cb){
   if(detectMemory(n,lang))return cb(startMemory(lang));
   if(detectSnake(n,lang)){var _sh=startSnake(lang);setTimeout(snakeAfterRender,250);return cb(_sh);}
   if(detectGamesMenu(n,lang))return cb(buildGamesMenu(lang));
-  // Recette — priorité haute (avant histoire/image/etc.)
+  // Recette — Claude génère la recette directement
   if(detectRecette(n,lang)){
-    fetchLindaRecipe(lang,function(r){
-      if(r){xnStats.recipesViewed=(xnStats.recipesViewed||0)+1;saveStats();checkBadges();cb(buildLindaRecipeHtml(r,lang));}
-      else cb(buildRecetteHtml(lang));
-    });
+    xnStats.recipesViewed=(xnStats.recipesViewed||0)+1;saveStats();checkBadges();
+    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(pick(cfg.defaults));});
     return;
   }
   // 4. Image IA
@@ -3427,89 +3425,10 @@ function showScoreInfo(){
   playBeep();
 }
 // ── FEATURE 10 : RECETTES ───────────────────────────
-var recettesDB={
-  fr:[
-    {name:"Crepes",i:["2 oeufs","200g farine","300ml lait","beurre"],s:["Melange farine + oeufs","Ajoute le lait progressivement","Chauffe la poele avec un peu de beurre","Verse une louche de pate, laisse dorer 1 min, retourne !"]},
-    {name:"Gateau au chocolat",i:["200g chocolat","3 oeufs","150g sucre","100g farine","125g beurre"],s:["Fais fondre chocolat + beurre","Bats oeufs + sucre jusqu a ce que ca blanchisse","Melange tout ensemble","Cuits 25 min a 180 degres"]},
-    {name:"Salade de fruits",i:["Pomme, banane, orange","Sucre en poudre","Jus de citron"],s:["Coupe les fruits en petits morceaux","Presse le citron par-dessus","Ajoute une cuillere de sucre","Melange et mets au frigo 30 min"]},
-    {name:"Sandwich jambon-fromage",i:["2 tranches de pain","Jambon","Fromage","Beurre","Moutarde (optionnel)"],s:["Beurre le pain","Ajoute le jambon et le fromage","Referme le sandwich","Tu peux le toaster pour le rendre croustillant !"]}
-  ],
-  en:[
-    {name:"Pancakes",i:["2 eggs","200g flour","300ml milk","butter"],s:["Mix flour and eggs","Add milk gradually","Heat pan with a little butter","Pour batter, wait 1 min, flip!"]},
-    {name:"Chocolate cake",i:["200g chocolate","3 eggs","150g sugar","100g flour","125g butter"],s:["Melt chocolate + butter","Beat eggs + sugar until pale","Mix everything together","Bake 25 min at 180 degrees"]},
-    {name:"Fruit salad",i:["Apple, banana, orange","Sugar","Lemon juice"],s:["Cut fruits into small pieces","Squeeze lemon over them","Add a spoon of sugar","Mix and chill 30 min in fridge"]}
-  ],
-  sv:[
-    {name:"Pannkakor",i:["2 agg","200g mjol","300ml mjolk","smor"],s:["Bland mjol och agg","Tillsatt mjolk gradvis","Varma stekpannan med lite smor","Hall i smet, vantas 1 min, vand!"]},
-    {name:"Chokladkaka",i:["200g choklad","3 agg","150g socker","100g mjol","125g smor"],s:["Smalt choklad + smor","Vispa agg + socker","Bland allt","Grädda 25 min i 180 grader"]},
-    {name:"Fruktsallad",i:["Apple, banan, apelsin","Socker","Citronjuice"],s:["Skär frukterna i bitar","Pressa citron over","Tillsatt lite socker","Bland och svalna 30 min"]}
-  ]
-};
 function detectRecette(n,lang){
   if(lang==="fr")return n.indexOf("recette")!==-1||n.indexOf("cuisinier")!==-1||n.indexOf("cuisiner")!==-1||n.indexOf("preparer")!==-1||n.indexOf("faire a manger")!==-1||n.indexOf("faire des crepes")!==-1||n.indexOf("faire un gateau")!==-1||n.indexOf("bakskola")!==-1||n.indexOf("patisserie")!==-1||n.indexOf("ingredients")!==-1||n.indexOf("gateau")!==-1;
   if(lang==="sv")return n.indexOf("recept")!==-1||n.indexOf("laga mat")!==-1||n.indexOf("laga")!==-1||n.indexOf("pannkakor")!==-1||n.indexOf("baka")!==-1||n.indexOf("bakskola")!==-1||n.indexOf("tarta")!==-1||n.indexOf("kaka")!==-1||n.indexOf("matlagning")!==-1||n.indexOf("bakning")!==-1||n.indexOf("koka")!==-1||n.indexOf("steka")!==-1||n.indexOf("gradda")!==-1||n.indexOf("matratt")!==-1||n.indexOf("linda")!==-1||n.indexOf("bullar")!==-1||n.indexOf("kanelbulle")!==-1||n.indexOf("muffins")!==-1||n.indexOf("pajdeg")!==-1;
   return n.indexOf("recipe")!==-1||n.indexOf("how to cook")!==-1||n.indexOf("how to make")!==-1||n.indexOf("bake")!==-1||n.indexOf("bakskola")!==-1||n.indexOf("ingredient")!==-1||n.indexOf("cooking")!==-1;
-}
-function cleanRecipeTitle(title){
-  // Enlever "Linda", "Lindas", "Linda's", "Bakskola" du titre
-  return title
-    .replace(/linda[''s]*\s*/gi,"")
-    .replace(/bakskola[s]?\s*/gi,"")
-    .replace(/\s*[-–|]\s*.*/,"") // enlever tout après un tiret (ex: "Gateau - Site")
-    .replace(/^\s*|\s*$/g,"")
-    .replace(/\s+/g," ")
-    .trim();
-}
-function fetchLindaRecipe(lang,cb){
-  var rss="https://lindasbakskola.se/feed/";
-  var api="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(rss)+"&count=20";
-  var _done=false;
-  // Timeout 5 secondes — si l'API ne répond pas, on utilise le fallback local
-  var _timer=setTimeout(function(){if(!_done){_done=true;cb(null);}},5000);
-  fetch(api)
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(_done)return;
-      clearTimeout(_timer);_done=true;
-      if(d.status==="ok"&&d.items&&d.items.length>0){
-        // Choisir une recette aléatoire
-        var item=d.items[Math.floor(Math.random()*Math.min(d.items.length,20))];
-        var title=cleanRecipeTitle(item.title||"Recette");
-        // Extraire la description (enlever HTML)
-        var desc=(item.description||item.content||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,200);
-        var img=item.thumbnail||item.enclosure&&item.enclosure.link||"";
-        cb({title:title,desc:desc,link:item.link,img:img});
-      }else{
-        cb(null);
-      }
-    })
-    .catch(function(){if(!_done){clearTimeout(_timer);_done=true;cb(null);}});
-}
-function buildRecetteHtml(lang){
-  xnStats.recipesViewed=(xnStats.recipesViewed||0)+1;saveStats();checkBadges();
-  // Fallback local si pas internet
-  var list=recettesDB[lang]||recettesDB.en;
-  var r=list[Math.floor(Math.random()*list.length)];
-  var ingLbl=lang==="fr"?"Ingrédients":lang==="sv"?"Ingredienser":"Ingredients";
-  var stLbl=lang==="fr"?"Étapes":lang==="sv"?"Steg":"Steps";
-  var html="<div class='recipe-card'><div class='recipe-title'>&#127859; "+r.name+"</div>";
-  html+="<strong>"+ingLbl+" :</strong><div class='recipe-step'>"+r.i.map(function(x){return "• "+x;}).join("<br>")+"</div>";
-  html+="<strong style='display:block;margin-top:8px'>"+stLbl+" :</strong>";
-  r.s.forEach(function(s,i){html+="<div class='recipe-step'><strong>"+(i+1)+".</strong> "+s+"</div>";});
-  html+="</div>";
-  return html;
-}
-function buildLindaRecipeHtml(recipe,lang){
-  var src=lang==="fr"?"Source : Bakskola":lang==="sv"?"Källa: Bakskola":"Source: Bakskola";
-  var voir=lang==="fr"?"Voir la recette complète ↗":lang==="sv"?"Se hela receptet ↗":"See full recipe ↗";
-  var html="<div class='recipe-card'>";
-  if(recipe.img)html+="<img src='"+recipe.img+"' style='width:100%;border-radius:8px;margin-bottom:8px;max-height:160px;object-fit:cover' onerror='this.style.display=`none`'>";
-  html+="<div class='recipe-title'>&#127859; "+recipe.title+"</div>";
-  if(recipe.desc)html+="<div class='recipe-step' style='margin-top:6px;color:var(--text2)'>"+recipe.desc+"...</div>";
-  html+="<div style='margin-top:8px;font-size:.72rem;color:var(--text2)'>"+src+"</div>";
-  if(recipe.link)html+="<a href='"+recipe.link+"' target='_blank' style='display:inline-block;margin-top:8px;color:var(--accent);font-size:.78rem;text-decoration:none'>"+voir+"</a>";
-  html+="</div>";
-  return html;
 }
 // ── FEATURE 11 : DEFINITIONS ────────────────────────
 var dicoData={
