@@ -1,0 +1,29 @@
+<svg viewBox="0 0 680 680" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <radialGradient id="bg7" cx="50%" cy="40%" r="70%">
+    <stop offset="0%" stop-color="#1a2560"/>
+    <stop offset="100%" stop-color="#050815"/>
+  </radialGradient>
+  <radialGradient id="sf7" cx="38%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="#ffe566"/>
+    <stop offset="55%" stop-color="#f5a800"/>
+    <stop offset="100%" stop-color="#c47d00"/>
+  </radialGradient>
+</defs>
+<rect width="680" height="680" rx="80" fill="url(#bg7)"/>
+<circle cx="80" cy="60" r="1.5" fill="#fff" opacity="0.5"/>
+<circle cx="580" cy="80" r="1.5" fill="#fff" opacity="0.6"/>
+<circle cx="50" cy="200" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="630" cy="180" r="1.5" fill="#fff" opacity="0.5"/>
+<circle cx="100" cy="450" r="1" fill="#fff" opacity="0.3"/>
+<circle cx="600" cy="420" r="1.5" fill="#fff" opacity="0.4"/>
+<circle cx="160" cy="30" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="420" cy="100" r="1" fill="#fff" opacity="0.3"/>
+<circle cx="590" cy="330" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="70" cy="340" r="1.5" fill="#fff" opacity="0.5"/>
+<circle cx="200" cy="580" r="1" fill="#fff" opacity="0.4"/>
+<circle cx="480" cy="580" r="1.5" fill="#fff" opacity="0.3"/>
+<polygon points="340,120 386,212 487,227 414,299 431,400 340,353 249,400 266,299 193,227 294,212" fill="url(#sf7)"/>
+<text x="340" y="560" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="62" font-weight="800" letter-spacing="10" fill="#DAA520">XEARNES</text>
+<text x="340" y="602" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="18" font-weight="400" letter-spacing="6" fill="#aaaacc" opacity="0.8">AI ASSISTANT</text>
+</svg>

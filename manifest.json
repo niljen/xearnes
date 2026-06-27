@@ -1,0 +1,18 @@
+{
+  "name": "Xearnes AI",
+  "short_name": "Xearnes",
+  "description": "Xearnes — AI Assistant créé par Youssef, 11 ans, Malmö",
+  "start_url": "/xearnes/",
+  "display": "standalone",
+  "background_color": "#0a0f2c",
+  "theme_color": "#DAA520",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
