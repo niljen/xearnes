@@ -1983,15 +1983,42 @@ function detectCheat(input,lang){
   }
   return null;
 }
+function checkSafetyWithHaiku(input,lang,cb){
+  var _tid=setTimeout(function(){cb(false);},3000);
+  fetch(CLAUDE_WORKER_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-haiku-4-5-20251001",
+      max_tokens:5,
+      system:"You are a one-word safety classifier. Reply ONLY with SAFE or UNSAFE. Never explain.",
+      messages:[{role:"user",content:"Is this message dangerous, illegal, violent, sexual, or inappropriate for an 11-year-old? Reply UNSAFE if yes, SAFE if no. Message: \""+input.replace(/"/g,"'")+"\""}]
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    clearTimeout(_tid);
+    var t=d&&d.content&&d.content[0]&&d.content[0].text||"SAFE";
+    cb(t.toUpperCase().indexOf("UNSAFE")!==-1);
+  })
+  .catch(function(){clearTimeout(_tid);cb(false);});
+}
 function getReply(input,lang,cb){
-  var cfg=langs[lang];
   var n=normalize(input.trim().toLowerCase());
   n=fixTypos(n,lang);
-  // ⛔ FILTRE DE SÉCURITÉ — vérifié en premier
+  // ⛔ FILTRE RAPIDE — mots interdits connus (sans délai API)
   if(detectHarmful(n,lang)){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
   // 🎮 CHEAT CODES
   var _cheatRes=detectCheat(input,lang);
   if(_cheatRes)return cb(_cheatRes);
+  // 🤖 HAIKU SAFETY CHECK — vérification intelligente par IA
+  checkSafetyWithHaiku(input,lang,function(_unsafe){
+    if(_unsafe){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
+    _getReplyBody(input,lang,n,cb);
+  });
+}
+function _getReplyBody(input,lang,n,cb){
+  var cfg=langs[lang];
   // ✏️ CORRECTION EN ATTENTE
   if(awaitingCorrection)return cb(handleCorrectionAnswer(n,lang));
   // 🔁 CORRECTION DÉTECTÉE
