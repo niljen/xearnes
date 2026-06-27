@@ -2006,16 +2006,19 @@ function checkSafetyWithHaiku(input,lang,cb){
 function getReply(input,lang,cb){
   var n=normalize(input.trim().toLowerCase());
   n=fixTypos(n,lang);
-  // ⛔ FILTRE RAPIDE — mots interdits connus (sans délai API)
-  if(detectHarmful(n,lang)){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
   // 🎮 CHEAT CODES
   var _cheatRes=detectCheat(input,lang);
   if(_cheatRes)return cb(_cheatRes);
-  // 🤖 HAIKU SAFETY CHECK — vérification intelligente par IA
-  checkSafetyWithHaiku(input,lang,function(_unsafe){
-    if(_unsafe){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
-    _getReplyBody(input,lang,n,cb);
-  });
+  // ⛔ FILTRE DÉTECTE QUELQUE CHOSE → Haiku juge si c'est vraiment dangereux
+  if(detectHarmful(n,lang)){
+    checkSafetyWithHaiku(input,lang,function(_reallyUnsafe){
+      if(_reallyUnsafe){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
+      _getReplyBody(input,lang,n,cb);
+    });
+    return;
+  }
+  // ✅ Rien de suspect → réponse normale directement
+  _getReplyBody(input,lang,n,cb);
 }
 function _getReplyBody(input,lang,n,cb){
   var cfg=langs[lang];
