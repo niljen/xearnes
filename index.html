@@ -2187,17 +2187,8 @@ function getReply(input,lang,cb){
   // 4. Small talk (greetings, thanks, etc.) — only for short messages
   var st=detectSmallTalk(n,lang);
   if(st)return cb(st);
-  // 5. Knowledge base — high confidence match (score >= 4)
+  // 5. Knowledge base — utilisé uniquement comme dernier recours (Claude répond en priorité)
   var km=bestMatch(n,lang);
-  if(km&&km.score>=4){
-    var ans=pick(km.entry.r);
-    // Utiliser le prénom de temps en temps
-    if(userName&&Math.random()<0.25){
-      var prefix=lang==="fr"?"Bonne question "+userName+" ! ":lang==="sv"?"Bra fråga "+userName+"! ":"Good question "+userName+"! ";
-      ans=prefix+ans;
-    }
-    return cb(ans);
-  }
   // 5b. Reddit TIL — fait du jour
   if(detectTIL(n,lang)){
     fetchRedditTIL(function(post){
