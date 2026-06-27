@@ -76,10 +76,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .tr-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:6px}
 .tr-from{font-size:.75rem;color:var(--text2);margin-bottom:4px}
 .tr-result{font-size:1.1rem;font-weight:700;color:var(--accent2)}
-.quiz-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:6px}
-.qz-q{font-size:.9rem;font-weight:600;margin-bottom:10px;line-height:1.5}
-.qz-opt{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 12px;margin-bottom:6px;cursor:pointer;font-size:.85rem;transition:.2s}
-.qz-opt:hover{background:var(--accent);color:#000;border-color:var(--accent)}
 .wod-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:6px}
 .wod-word{font-size:1.2rem;font-weight:800;color:var(--accent);margin-bottom:4px}
 .wod-def{font-size:.85rem;color:var(--text2);line-height:1.5}
@@ -217,16 +213,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .badge-icon{font-size:1.8rem;line-height:1}
 .badge-name{font-size:.6rem;font-weight:700;color:var(--accent);line-height:1.2;margin-top:2px}
 .badge-prog{font-size:.55rem;color:var(--text2);margin-top:1px}
-/* ── DÉFI DU JOUR ── */
-.defi-jour-card{background:linear-gradient(135deg,#1a2060 0%,#0a0f2c 100%);border:2px solid var(--accent);border-radius:12px;padding:14px;margin-top:6px}
-.dj-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.dj-icon{font-size:2rem;line-height:1}
-.dj-title{font-size:.95rem;font-weight:800;color:var(--accent);letter-spacing:.5px}
-.dj-sub{font-size:.7rem;color:var(--text2);margin-top:2px}
-.dj-question{font-size:1rem;font-weight:700;color:var(--text);margin:8px 0 10px;line-height:1.5}
-.dj-bonus{display:inline-block;background:rgba(255,215,0,.15);border:1px solid var(--accent);border-radius:20px;padding:3px 10px;font-size:.75rem;color:var(--accent2);font-weight:700}
-.dj-tip{font-size:.72rem;color:var(--text2);margin-top:8px}
-.dj-done{background:rgba(39,174,96,.15);border:2px solid #27ae60;border-radius:10px;padding:10px;text-align:center;margin-top:6px;font-size:.88rem;color:#2ecc71;font-weight:700;line-height:1.5}
 @keyframes badgePop{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 .badge-earned-notif{animation:badgePop .4s ease}
 @media(max-width:640px){.badge-panel{position:fixed;top:0;right:0;bottom:0;z-index:100;width:240px}}
@@ -471,7 +457,7 @@ var langs={
  fr:{code:"fr-FR",send:"Envoyer",placeholder:"Ecris un message...",
   welcomeTitle:"Bonjour ! Je suis Xearnes",
   welcomeDesc:"Pose-moi une question en francais, suedois ou anglais !",
-  chips:["Ouvre YouTube","Actualites Figaro","Raconte une blague","Mode defi quiz","Histoire interactive","20 questions"],
+  chips:["Ouvre YouTube","Actualites Figaro","Raconte une blague","Histoire interactive","Recette du jour"],
   histTitle:"Historique",testPhrase:"Bonjour ! Je suis Xearnes et je parle francais. Bienvenue !",
   defaults:["Hmm, je ne suis pas sur. Tu peux reformuler ?",
             "Bonne question ! Pas de reponse parfaite.",
@@ -481,7 +467,7 @@ var langs={
  en:{code:"en-US",send:"Send",placeholder:"Type a message...",
   welcomeTitle:"Hey! I am Xearnes",
   welcomeDesc:"Ask me anything in English, Swedish or French!",
-  chips:["Open YouTube","Sydsvenskan news","Tell me a joke","Quiz challenge","Interactive story","20 questions"],
+  chips:["Open YouTube","Sydsvenskan news","Tell me a joke","Interactive story","Recipe of the day"],
   histTitle:"History",testPhrase:"Hello! I am Xearnes and I speak English. Welcome!",
   defaults:["Hmm, I am not sure. Can you rephrase?","Good question! I do not have a perfect answer.",
             "I am still learning! Try something else.","I did not quite understand. Can you explain?"],
@@ -1160,44 +1146,6 @@ function checkRiddle(n,lang){
   if(n.indexOf(currentRiddle.a)!==-1){var ok=lang==="fr"?"Bravo ! C est \""+currentRiddle.a+"\" ! Tu es fort !":lang==="sv"?"Bra jobbat! Det är \""+currentRiddle.a+"\"!":"Correct! It is \""+currentRiddle.a+"\"! Well done!";currentRiddle=null;return ok;}
   if(n.indexOf("reponse")!==-1||n.indexOf("answer")!==-1||n.indexOf("svar")!==-1||n.indexOf("je sais pas")!==-1){var ans=lang==="fr"?"La réponse était : \""+currentRiddle.a+"\"":lang==="sv"?"Svaret var: \""+currentRiddle.a+"\"":"The answer was: \""+currentRiddle.a+"\"";currentRiddle=null;return ans;}
   return lang==="fr"?"Pas tout à fait... Essaie encore ! (tape réponse pour savoir)":lang==="sv"?"Inte riktigt... Försök igen!":"Not quite... Try again! (type answer to reveal)";
-}
-// ── QUIZ ──
-var currentQuiz=null,quizOpts=[];
-function detectQuiz(n,lang){
-  if(lang==="fr")return n.indexOf("quiz")!==-1||n.indexOf("teste moi")!==-1||n.indexOf("interroge moi")!==-1;
-  if(lang==="sv")return n.indexOf("quiz")!==-1||n.indexOf("testa mig")!==-1;
-  return n.indexOf("quiz")!==-1||n.indexOf("test me")!==-1||n.indexOf("trivia")!==-1;
-}
-function fetchQuiz(lang,cb){
-  fetch("https://opentdb.com/api.php?amount=1&type=multiple")
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(!d.results||!d.results.length){cb(null);return;}
-      var q=d.results[0],div=document.createElement("div");
-      div.innerHTML=q.question;var question=div.textContent;
-      quizOpts=q.incorrect_answers.slice();quizOpts.push(q.correct_answer);
-      quizOpts.sort(function(){return Math.random()-.5;});
-      div.innerHTML=q.correct_answer;
-      currentQuiz={q:question,a:div.textContent.toLowerCase(),opts:quizOpts.slice()};
-      cb(currentQuiz);
-    }).catch(function(){cb(null);});
-}
-function buildQuizHtml(quiz,lang){
-  var html="<div class='quiz-card'><div class='qz-q'>"+quiz.q+"</div>";
-  ["A","B","C","D"].forEach(function(l,i){var div=document.createElement("div");div.innerHTML=quiz.opts[i]||"";html+="<div class='qz-opt' onclick='answerQuiz(\""+l+"\")'>"+l+". "+div.textContent+"</div>";});
-  return html+"</div>";
-}
-function answerQuiz(letter){var inp=document.getElementById("userInput");if(inp){inp.value=letter;sendMsg();}}
-function checkQuizAnswer(n,lang){
-  if(!currentQuiz)return null;
-  var idx=["a","b","c","d"].indexOf(n.trim());
-  if(idx===-1){for(var i=0;i<quizOpts.length;i++){var div=document.createElement("div");div.innerHTML=quizOpts[i];if(n.indexOf(div.textContent.toLowerCase())!==-1){idx=i;break;}}}
-  if(idx===-1)return null;
-  var div=document.createElement("div");div.innerHTML=quizOpts[idx];
-  var correct=div.textContent.toLowerCase()===currentQuiz.a||quizOpts[idx]===currentQuiz.a;
-  if(correct){xnStats.quizCorrect=(xnStats.quizCorrect||0)+1;saveStats();addScore(10);}
-  var res=correct?(lang==="fr"?"🎉 Bonne réponse ! C est : "+currentQuiz.a:lang==="sv"?"🎉 Rätt! Svaret är: "+currentQuiz.a:"🎉 Correct! The answer is: "+currentQuiz.a):(lang==="fr"?"❌ Mauvaise ! La bonne était : "+currentQuiz.a:lang==="sv"?"❌ Fel! Rätt svar: "+currentQuiz.a:"❌ Wrong! Correct answer: "+currentQuiz.a);
-  currentQuiz=null;return res;
 }
 // ── IMAGES IA ──
 function detectImageRequest(n,lang){
@@ -2046,8 +1994,6 @@ function getReply(input,lang,cb){
   if(_cheatRes)return cb(_cheatRes);
   // ✏️ CORRECTION EN ATTENTE
   if(awaitingCorrection)return cb(handleCorrectionAnswer(n,lang));
-  // 🏆 DÉFI DU JOUR EN COURS ?
-  if(defiJourState){var da=checkDefiJourAnswer(n,lang);if(da)return cb(da);}
   // 🔁 CORRECTION DÉTECTÉE
   if(detectCorrection(n,lang))return cb(handleCorrection(n,lang));
   // 🔍 ENRICHIR AVEC CONTEXTE DE CONVERSATION
@@ -2106,15 +2052,11 @@ function getReply(input,lang,cb){
   }
   // 2. Devinette en cours ?
   if(currentRiddle){var ra=checkRiddle(n,lang);if(ra)return cb(ra);}
-  // 3. Quiz en cours ?
-  if(currentQuiz){var qa=checkQuizAnswer(n,lang);if(qa)return cb(qa);}
   // ── MINI-JEUX (priorité haute — avant Wikipedia/KB) ──
   if(detectMorpion(n,lang))return cb(startMorpion(lang));
   if(detectMemory(n,lang))return cb(startMemory(lang));
   if(detectSnake(n,lang)){var _sh=startSnake(lang);setTimeout(snakeAfterRender,250);return cb(_sh);}
   if(detectGamesMenu(n,lang))return cb(buildGamesMenu(lang));
-  // 🏆 DÉFI DU JOUR
-  if(detectDefiJour(n,lang))return cb(startDefiJour(lang));
   // Recette — priorité haute (avant histoire/image/etc.)
   if(detectRecette(n,lang)){
     fetchLindaRecipe(lang,function(r){
@@ -2156,8 +2098,6 @@ function getReply(input,lang,cb){
   if(detectWod(n,lang))return cb(buildWodHtml(getWod(lang)));
   // 11. Devinette nouvelle
   if(detectRiddle(n,lang))return cb(startRiddle(lang));
-  // 12. Quiz nouvelle question
-  if(detectQuiz(n,lang)){fetchQuiz(lang,function(q){if(q)cb(buildQuizHtml(q,lang));else cb(pick(cfg.defaults));});return;}
   // 3. Traduction
   var tr=detectTranslation(n,lang);
   if(tr){fetchTranslation(tr.text,lang,tr.to,function(res){if(res)cb(buildTranslationHtml(tr.text,res,tr.to));else cb(pick(cfg.defaults));});return;}
@@ -2176,15 +2116,8 @@ function getReply(input,lang,cb){
   // ── NOUVELLES FONCTIONNALITES ──
   // Pendu en cours ?
   if(penduState)return cb(buildPenduHtml());
-  // 20 questions en cours ?
-  if(vingtQState){var vqa=checkVingtQ(n,lang);if(vqa)return cb(vqa);}
-  // Défi en cours (réponse via boutons, pas texte) — si defi actif, ignorer les autres routes
   // Pendu commande
   if(detectPendu(n,lang))return cb(startPendu(lang));
-  // 20 questions commande
-  if(detectVingtQ(n,lang))return cb(startVingtQ(lang));
-  // Mode défi
-  if(detectDefi(n,lang)){startDefi(lang,function(msg){cb(msg);});return;}
   // Définition
   var dw=detectDef(n,lang);
   if(dw){var dl=lookupDef(dw,lang);if(dl)return cb(buildDefHtml(dl.w,dl.def,lang));}
@@ -2902,7 +2835,7 @@ function getDailyWelcome(lang){
       "Bon dimanche ! Détends-toi et pose-moi des questions 😌",
       "Bonne semaine ! On commence fort aujourd hui 💪",
       "Mardi = jour parfait pour apprendre quelque chose de nouveau ! 🧠",
-      "Mercredi — mi-chemin ! Prêt pour un défi quiz ? ⚡",
+      "Mercredi — mi-chemin ! On continue à apprendre ! 🧠",
       "Jeudi, presque le weekend... courage ! 😄",
       "Vendredi !!! Bonne humeur garantie 🎉",
       "Weekend ! Mode fun activé, qu est-ce qu on fait ? 🎮"
@@ -2911,7 +2844,7 @@ function getDailyWelcome(lang){
       "God söndag! Vila och ställ mig frågor 😌",
       "God måndag! Vi börjar veckan starkt 💪",
       "Tisdag — perfekt dag att lära sig något nytt! 🧠",
-      "Onsdag — halvvägs! Redo för ett quiz-utmaning? ⚡",
+      "Onsdag — halvvägs! Vi fortsätter lära oss! 🧠",
       "Torsdag, snart helg... kämpa på! 😄",
       "Fredag!!! Bra humör garanterat 🎉",
       "Helg! Roligt läge aktiverat, vad gör vi? 🎮"
@@ -2920,7 +2853,7 @@ function getDailyWelcome(lang){
       "Happy Sunday! Relax and ask me anything 😌",
       "Happy Monday! Let's start the week strong 💪",
       "Tuesday — perfect day to learn something new! 🧠",
-      "Wednesday — halfway there! Ready for a quiz challenge? ⚡",
+      "Wednesday — halfway there! Keep on learning! 🧠",
       "Thursday, almost the weekend... keep going! 😄",
       "Friday!!! Good vibes guaranteed 🎉",
       "Weekend! Fun mode activated, what are we doing? 🎮"
@@ -2946,13 +2879,11 @@ function buildStatsHtml(lang){
     {icon:"⭐",label:{fr:"Score total",sv:"Total poäng",en:"Total score"},val:score},
     {icon:"🏅",label:{fr:"Badges gagnés",sv:"Märken intjänade",en:"Badges earned"},val:earned+"/"+total},
     {icon:"💬",label:{fr:"Messages envoyés",sv:"Meddelanden skickade",en:"Messages sent"},val:xnStats.messagesCount||0},
-    {icon:"🎓",label:{fr:"Quiz réussis",sv:"Quiz rätt",en:"Quiz correct"},val:xnStats.quizCorrect||0},
     {icon:"🎮",label:{fr:"Jeux joués",sv:"Spel spelade",en:"Games played"},val:xnStats.gamesPlayed||0},
     {icon:"👑",label:{fr:"Victoires Morpion",sv:"Tre i rad vinster",en:"Tic-Tac-Toe wins"},val:xnStats.morpionWins||0},
     {icon:"🃏",label:{fr:"Memory terminés",sv:"Memory klarade",en:"Memory completed"},val:xnStats.memoryDone||0},
     {icon:"🐍",label:{fr:"Score max Snake",sv:"Snake bästa score",en:"Snake best score"},val:xnStats.snakeMaxScore||0},
     {icon:"👨‍🍳",label:{fr:"Recettes vues",sv:"Recept visade",en:"Recipes viewed"},val:xnStats.recipesViewed||0},
-    {icon:"⚡",label:{fr:"Défis réussis",sv:"Utmaningar klarade",en:"Challenges done"},val:xnStats.defiDone||0},
     {icon:"📰",label:{fr:"Actualités lues",sv:"Nyheter lästa",en:"News read"},val:xnStats.newsRead||0},
     {icon:"🌍",label:{fr:"Langues utilisées",sv:"Språk använda",en:"Languages used"},val:(xnStats.langsUsed||[]).length}
   ];
@@ -3489,9 +3420,9 @@ function addScore(pts){
 }
 function showScoreInfo(){
   var lang=currentLang;
-  var msg=lang==="fr"?"&#11088; Ton score total : <strong>"+score+" points</strong> ! Fais des quiz, trouve des mots au pendu, gagne au 20 questions pour marquer des points !":
-          lang==="sv"?"&#11088; Din totala poäng: <strong>"+score+" poäng</strong>!":
-          "&#11088; Your total score: <strong>"+score+" points</strong>! Do quizzes, hangman and 20 questions to earn points!";
+  var msg=lang==="fr"?"&#11088; Ton score total : <strong>"+score+" points</strong> ! Joue au pendu, au Snake, au Memory pour marquer des points !":
+          lang==="sv"?"&#11088; Din totala poäng: <strong>"+score+" poäng</strong>! Spela hänga gubben, Snake och Memory för att tjäna poäng!":
+          "&#11088; Your total score: <strong>"+score+" points</strong>! Play hangman, Snake and Memory to earn points!";
   addMsg(msg,"bot");
   playBeep();
 }
@@ -3643,134 +3574,6 @@ function buildDefHtml(wd,def,lang){
   var cap=wd.charAt(0).toUpperCase()+wd.slice(1);
   return "<div class='wod-card'><div class='wod-word'>&#128218; "+cap+"</div><div class='wod-def'><strong>"+lbl+" :</strong> "+def+"</div></div>";
 }
-// ── FEATURE 12 : MODE DEFI ──────────────────────────
-var defiState=null;
-function detectDefi(n,lang){
-  if(lang==="fr")return n.indexOf("mode defi")!==-1||(n.indexOf("defi")!==-1&&n.indexOf("quiz")!==-1)||n.indexOf("5 questions")!==-1||n.indexOf("chrono")!==-1&&n.indexOf("quiz")!==-1;
-  if(lang==="sv")return n.indexOf("utmaning")!==-1&&n.indexOf("quiz")!==-1||n.indexOf("5 fragor")!==-1;
-  return (n.indexOf("challenge")!==-1&&n.indexOf("quiz")!==-1)||n.indexOf("5 question quiz")!==-1||n.indexOf("speed quiz")!==-1;
-}
-function startDefi(lang,cb){
-  if(defiState){cb(lang==="fr"?"Un defi est deja en cours !":"Challenge already running!");return;}
-  defiState={q:[],cur:0,score:0,lang:lang,timeLeft:60,interval:null};
-  fetch("https://opentdb.com/api.php?amount=5&type=multiple&difficulty=easy")
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(!d.results||!d.results.length){defiState=null;cb(lang==="fr"?"Impossible de charger le defi !":"Could not load challenge!");return;}
-      defiState.q=d.results;
-      var lbl=lang==="fr"?"&#127942; Mode Défi lancé ! 5 questions en 60 secondes. C est parti !":lang==="sv"?"&#127942; Utmaningsläge! 5 frågor på 60 sekunder. Kör!":"&#127942; Challenge Mode! 5 questions in 60 seconds. Go!";
-      cb(lbl);
-      setTimeout(function(){askDefiQ();},900);
-      defiState.interval=setInterval(function(){
-        if(!defiState)return;
-        defiState.timeLeft--;
-        var te=document.getElementById("defiTimer");
-        if(te)te.textContent="&#9203; "+defiState.timeLeft+"s";
-        if(defiState.timeLeft<=0){clearInterval(defiState.interval);finishDefi(lang);}
-      },1000);
-    }).catch(function(){defiState=null;cb(lang==="fr"?"Mode defi indisponible !":"Challenge mode unavailable!");});
-}
-function askDefiQ(){
-  if(!defiState||defiState.cur>=defiState.q.length){finishDefi(defiState?defiState.lang:currentLang);return;}
-  var qd=defiState.q[defiState.cur];
-  var tmp=document.createElement("div");
-  tmp.innerHTML=qd.question;var q=tmp.textContent;
-  var opts=qd.incorrect_answers.slice();opts.push(qd.correct_answer);
-  opts.sort(function(){return Math.random()-.5;});
-  tmp.innerHTML=qd.correct_answer;
-  defiState.currentOpts=opts;
-  defiState.currentCorrect=tmp.textContent.toLowerCase();
-  var lang=defiState.lang;
-  var html="<div class='defi-card'><div class='defi-timer' id='defiTimer'>&#9203; "+defiState.timeLeft+"s</div><div class='qz-q'>&#10067; Q"+(defiState.cur+1)+"/5 : "+q+"</div>";
-  ["A","B","C","D"].forEach(function(l,i){
-    var od=document.createElement("div");od.innerHTML=opts[i]||"";
-    html+="<div class='qz-opt' onclick='answerDefi(\""+l+"\")'>"+l+". "+od.textContent+"</div>";
-  });
-  html+="</div>";
-  addMsg(html,"bot");playBeep();
-}
-function answerDefi(letter){
-  if(!defiState)return;
-  var idx=["a","b","c","d"].indexOf(letter.toLowerCase());
-  if(idx===-1)return;
-  var od=document.createElement("div");od.innerHTML=defiState.currentOpts[idx]||"";
-  var correct=od.textContent.toLowerCase()===defiState.currentCorrect;
-  if(correct)defiState.score++;
-  defiState.cur++;
-  var lang=defiState.lang;
-  var fb=correct?(lang==="fr"?"&#10003; Correct !":"&#10003; Correct!"):(lang==="fr"?"&#10007; Rate ! C etait : "+defiState.currentCorrect:"&#10007; Wrong! It was: "+defiState.currentCorrect);
-  addMsg(fb,"bot");
-  if(defiState.cur>=5||defiState.timeLeft<=0){setTimeout(function(){finishDefi(lang);},600);}
-  else{setTimeout(function(){askDefiQ();},800);}
-}
-function finishDefi(lang){
-  if(!defiState)return;
-  clearInterval(defiState.interval);
-  var sc=defiState.score;defiState=null;
-  addScore(sc*10);
-  var msg=lang==="fr"?"&#127942; Defi termine ! Score : "+sc+"/5. Tu gagnes +"+(sc*10)+" points ! Total : &#11088; "+score:
-          lang==="sv"?"&#127942; Utmaning klar! Poäng: "+sc+"/5. +"+sc*10+" poäng!":
-          "&#127942; Challenge done! Score: "+sc+"/5. +"+(sc*10)+" points! Total: &#11088; "+score;
-  addMsg(msg,"bot");
-  if(document.getElementById("autoVoice")&&document.getElementById("autoVoice").checked)speakText(msg);
-}
-// ── FEATURE 13 : 20 QUESTIONS ───────────────────────
-var vingtQItems=[
-  {fr:"elephant",en:"elephant",sv:"elefant",h:{fr:["Je suis un animal","Je suis tres grand et gris","J ai une longue trompe","Je vis en Afrique ou en Asie"],en:["I am an animal","I am very large and grey","I have a long trunk","I live in Africa or Asia"],sv:["Jag är ett djur","Jag är mycket stor och grå","Jag har en lång snabel","Jag lever i Afrika"]}},
-  {fr:"soleil",en:"sun",sv:"solen",h:{fr:["Je brille dans le ciel","Je suis une etoile","Je rechauff la Terre","Je ne suis pas vivant"],en:["I shine in the sky","I am a star","I warm the Earth","I am not alive"],sv:["Jag lyser på himlen","Jag är en stjärna","Jag värmer Jorden","Jag är inte levande"]}},
-  {fr:"pizza",en:"pizza",sv:"pizza",h:{fr:["Je suis de la nourriture","Je suis ronde","Je viens d Italie","On me mange avec les mains"],en:["I am food","I am usually round","I come from Italy","You eat me with your hands"],sv:["Jag är mat","Jag är rund","Jag kommer från Italien","Man äter mig med händerna"]}},
-  {fr:"avion",en:"airplane",sv:"flygplan",h:{fr:["Je peux voler","Je transporte des passagers","J ai des ailes","On me trouve dans les aeroports"],en:["I can fly","I carry passengers","I have wings","You find me at airports"],sv:["Jag kan flyga","Jag transporterar passagerare","Jag har vingar","Du hittar mig på flygplatser"]}},
-  {fr:"guitare",en:"guitar",sv:"gitarr",h:{fr:["Je suis un instrument de musique","J ai des cordes","On me gratte avec les doigts","Je suis populaire dans le rock"],en:["I am a musical instrument","I have strings","You strum me with fingers","I am popular in rock music"],sv:["Jag är ett musikinstrument","Jag har strängar","Man spelar mig med fingrarna","Jag är populär i rock"]}},
-  {fr:"livre",en:"book",sv:"bok",h:{fr:["Je ne suis pas vivant","J ai des pages","On me lit","Je contiens des histoires"],en:["I am not alive","I have pages","You read me","I contain stories"],sv:["Jag är inte levande","Jag har sidor","Man läser mig","Jag innehåller berättelser"]}},
-  {fr:"requin",en:"shark",sv:"haj",h:{fr:["Je suis un animal","Je vis dans l eau","J ai beaucoup de dents","Je suis dans les films d horreur"],en:["I am an animal","I live in water","I have many teeth","I appear in horror movies"],sv:["Jag är ett djur","Jag lever i vatten","Jag har många tänder","Jag är med i skräckfilmer"]}},
-  {fr:"lune",en:"moon",sv:"manen",h:{fr:["Je brille la nuit","Je tourne autour de la Terre","J ai ete visitee en 1969","Je n ai pas d atmosphere"],en:["I shine at night","I orbit around Earth","I was visited in 1969","I have no atmosphere"],sv:["Jag lyser på natten","Jag kretsar kring Jorden","Jag besöktes 1969","Jag har ingen atmosfär"]}}
-];
-var vingtQState=null;
-function detectVingtQ(n,lang){
-  if(lang==="fr")return n.indexOf("20 questions")!==-1||n.indexOf("vingt questions")!==-1||n.indexOf("pense a quelque chose")!==-1||n.indexOf("devine a quoi")!==-1;
-  if(lang==="sv")return n.indexOf("20 fragor")!==-1||n.indexOf("gissa vad jag")!==-1;
-  return n.indexOf("20 questions")!==-1||n.indexOf("twenty questions")!==-1||n.indexOf("think of something")!==-1;
-}
-function startVingtQ(lang){
-  var item=vingtQItems[Math.floor(Math.random()*vingtQItems.length)];
-  vingtQState={item:item,lang:lang,hintIdx:0,asked:0};
-  var hints=item.h[lang]||item.h.en;
-  return lang==="fr"?"&#129300; Je pense a quelque chose... Tu as 20 questions pour deviner en posant des questions Oui/Non. <strong>Indice 1 :</strong> "+hints[0]:
-         lang==="sv"?"&#129300; Jag tänker på något... Du har 20 frågor på dig. <strong>Ledtråd 1:</strong> "+hints[0]:
-         "&#129300; I am thinking of something... You have 20 questions (yes/no). <strong>Hint 1:</strong> "+hints[0];
-}
-function checkVingtQ(n,lang){
-  if(!vingtQState)return null;
-  var item=vingtQState.item;
-  var ans=item[lang]||item.en;
-  // Check guess
-  if(n.indexOf(ans.toLowerCase())!==-1||n.indexOf((item.fr||"").toLowerCase())!==-1||n.indexOf((item.en||"").toLowerCase())!==-1||n.indexOf((item.sv||"").toLowerCase())!==-1){
-    addScore(15);
-    var win=lang==="fr"?"&#127881; Bravo ! C etait <strong>"+ans+"</strong> ! +15 points !":lang==="sv"?"&#127881; Bra jobbat! Det var <strong>"+ans+"</strong>! +15 poäng!":"&#127881; Well done! It was <strong>"+ans+"</strong>! +15 points!";
-    vingtQState=null;return win;
-  }
-  vingtQState.asked++;
-  if(vingtQState.asked>=20){
-    var lose=lang==="fr"?"Dommage ! La reponse etait : <strong>"+ans+"</strong>":lang==="sv"?"Trakigt! Svaret var: <strong>"+ans+"</strong>":"Too bad! The answer was: <strong>"+ans+"</strong>";
-    vingtQState=null;return lose;
-  }
-  // Give next hint every 4 questions
-  var hints=item.h[lang]||item.h.en;
-  var hintMsg="";
-  if(vingtQState.asked%4===0&&vingtQState.hintIdx<hints.length-1){
-    vingtQState.hintIdx++;
-    var hl=lang==="fr"?"Indice "+(vingtQState.hintIdx+1)+" : ":lang==="sv"?"Ledtråd "+(vingtQState.hintIdx+1)+": ":"Hint "+(vingtQState.hintIdx+1)+": ";
-    hintMsg="<br><em>"+hl+hints[vingtQState.hintIdx]+"</em>";
-  }
-  // Figure out yes/no from hints
-  var allHints="";
-  for(var i=0;i<=vingtQState.hintIdx;i++)allHints+=normalize(hints[i]||"")+" ";
-  var qwords=n.split(" ").filter(function(w){return w.length>3;});
-  var isYes=qwords.some(function(w){return allHints.indexOf(w)!==-1;});
-  var remaining=20-vingtQState.asked;
-  var qa=(isYes?(lang==="fr"?"Oui !":lang==="sv"?"Ja!":"Yes!"):(lang==="fr"?"Non !":lang==="sv"?"Nej!":"No!"))+hintMsg+" <em style='font-size:.75rem;opacity:.6'>("+remaining+" "+(lang==="fr"?"restantes":lang==="sv"?"kvar":"left")+")</em>";
-  return qa;
-}
 // ── FEATURE 14 : HISTOIRE INTERACTIVE ──────────────
 var iStoryData={
   fr:{
@@ -3884,8 +3687,6 @@ function buildGamesMenu(lang){
     {icon:'❌',fr:'Morpion',sv:'Tre i rad',en:'Tic-Tac-Toe',cmd:lang==='fr'?'morpion':lang==='sv'?'tre i rad':'tic tac toe'},
     {icon:'🃏',fr:'Memory',sv:'Memory',en:'Memory',cmd:'memory'},
     {icon:'🐍',fr:'Snake',sv:'Snake',en:'Snake',cmd:'snake'},
-    {icon:'🕵️',fr:'20 Questions',sv:'20 frågor',en:'20 Questions',cmd:lang==='fr'?'20 questions':lang==='sv'?'20 fragor':'20 questions'},
-    {icon:'⭐',fr:'Mode Défi',sv:'Utmaning',en:'Challenge',cmd:lang==='fr'?'mode defi':lang==='sv'?'utmaning quiz':'quiz challenge'}
   ];
   g.forEach(function(gm){
     var name=lang==='fr'?gm.fr:lang==='sv'?gm.sv:gm.en;
@@ -4147,7 +3948,7 @@ function snakeOver(){
 // ══════════════════════════════════════════════════════════════════
 var xnBadges={};
 try{xnBadges=JSON.parse(localStorage.getItem("xn_badges")||"{}");}catch(e){xnBadges={};}
-var xnStats={quizCorrect:0,gamesPlayed:0,recipesViewed:0,defiDone:0,daysStreak:0,lastDay:"",langsUsed:[],messagesCount:0,morpionWins:0,memoryDone:0,snakeMaxScore:0,newsRead:0};
+var xnStats={gamesPlayed:0,recipesViewed:0,daysStreak:0,lastDay:"",langsUsed:[],messagesCount:0,morpionWins:0,memoryDone:0,snakeMaxScore:0,newsRead:0};
 try{var _xss=JSON.parse(localStorage.getItem("xn_stats")||"{}");Object.keys(_xss).forEach(function(k){xnStats[k]=_xss[k];});}catch(e){}
 function saveStats(){try{localStorage.setItem("xn_stats",JSON.stringify(xnStats));}catch(e){}}
 function trackLangUsed(l){
@@ -4165,12 +3966,6 @@ var badgeDefs={
   score_10000:{icon:"💰",sv:"Tiotusenaren",fr:"Dix Millième",en:"Ten Thousander",desc:{sv:"10 000 poäng uppnådda!",fr:"10 000 points atteints !",en:"10,000 points reached!"}},
   score_100000:{icon:"👑",sv:"Kung av Xearnes",fr:"Roi du Score",en:"Score King",desc:{sv:"100 000 poäng uppnådda!",fr:"100 000 points atteints !",en:"100,000 points reached!"}},
   score_1000000:{icon:"🌌",sv:"Guden av Xearnes",fr:"Dieu du Score",en:"Score God",desc:{sv:"1 000 000 poäng — du är en legend!",fr:"1 000 000 points — tu es une légende !",en:"1,000,000 points — you are a legend!"}},
-  // ── QUIZ ───────────────────────────────────────────────────────
-  quiz_first:{icon:"🎓",sv:"Quizmästaren",fr:"Maître Quiz",en:"Quiz Master",desc:{sv:"Första rätta quizsvaret!",fr:"1ère bonne réponse au quiz !",en:"First correct quiz answer!"}},
-  quiz_10:{icon:"🧠",sv:"Hjärnkraft",fr:"Cerveau d'or",en:"Big Brain",desc:{sv:"10 rätta quizsvar!",fr:"10 bonnes réponses au quiz !",en:"10 correct quiz answers!"}},
-  quiz_25:{icon:"📚",sv:"Encyklopedisten",fr:"Encyclopédiste",en:"Encyclopedia",desc:{sv:"25 rätta quizsvar!",fr:"25 bonnes réponses au quiz !",en:"25 correct quiz answers!"}},
-  quiz_50:{icon:"🔬",sv:"Vetenskapsmannen",fr:"Le Scientifique",en:"The Scientist",desc:{sv:"50 rätta quizsvar!",fr:"50 bonnes réponses au quiz !",en:"50 correct quiz answers!"}},
-  quiz_100:{icon:"🎖️",sv:"Professorn",fr:"Le Professeur",en:"The Professor",desc:{sv:"100 rätta quizsvar — du är ett geni!",fr:"100 bonnes réponses — tu es un génie !",en:"100 correct answers — you're a genius!"}},
   // ── JEUX ───────────────────────────────────────────────────────
   game_first:{icon:"🎮",sv:"Gamern",fr:"Le Gamer",en:"The Gamer",desc:{sv:"Spelade första mini-spelet!",fr:"Premier mini-jeu joué !",en:"Played first mini-game!"}},
   game_5:{icon:"🕹️",sv:"Game Master",fr:"Game Master",en:"Game Master",desc:{sv:"5 mini-spel spelade!",fr:"5 mini-jeux joués !",en:"5 mini-games played!"}},
@@ -4237,12 +4032,6 @@ function checkBadges(){
   if(score>=10000)earnBadge("score_10000");
   if(score>=100000)earnBadge("score_100000");
   if(score>=1000000)earnBadge("score_1000000");
-  // ── Quiz ───────────────────────────────────────────────────────
-  if((xnStats.quizCorrect||0)>=1)earnBadge("quiz_first");
-  if((xnStats.quizCorrect||0)>=10)earnBadge("quiz_10");
-  if((xnStats.quizCorrect||0)>=25)earnBadge("quiz_25");
-  if((xnStats.quizCorrect||0)>=50)earnBadge("quiz_50");
-  if((xnStats.quizCorrect||0)>=100)earnBadge("quiz_100");
   // ── Jeux ───────────────────────────────────────────────────────
   if((xnStats.gamesPlayed||0)>=1)earnBadge("game_first");
   if((xnStats.gamesPlayed||0)>=5)earnBadge("game_5");
@@ -4315,94 +4104,6 @@ function toggleBadgePanel(){
     renderBadgePanel();
   }
   var btn=document.getElementById("badgeBtn");if(btn)btn.classList.toggle("active",open);
-}
-// ══════════════════════════════════════════════════════════════════
-// DÉFI DU JOUR
-// ══════════════════════════════════════════════════════════════════
-var defiJourPool=[
-  {type:"math",sv:{q:"Vad är 7 × 8?",a:"56"},fr:{q:"Combien font 7 × 8 ?",a:"56"},en:{q:"What is 7 × 8?",a:"56"}},
-  {type:"math",sv:{q:"Vad är 144 ÷ 12?",a:"12"},fr:{q:"Combien font 144 ÷ 12 ?",a:"12"},en:{q:"What is 144 ÷ 12?",a:"12"}},
-  {type:"math",sv:{q:"Vad är 15 × 15?",a:"225"},fr:{q:"Combien font 15 × 15 ?",a:"225"},en:{q:"What is 15 × 15?",a:"225"}},
-  {type:"math",sv:{q:"Vad är 1000 – 437?",a:"563"},fr:{q:"Combien font 1000 – 437 ?",a:"563"},en:{q:"What is 1000 – 437?",a:"563"}},
-  {type:"math",sv:{q:"Vad är 8 × 9?",a:"72"},fr:{q:"Combien font 8 × 9 ?",a:"72"},en:{q:"What is 8 × 9?",a:"72"}},
-  {type:"math",sv:{q:"Vad är 13 × 7?",a:"91"},fr:{q:"Combien font 13 × 7 ?",a:"91"},en:{q:"What is 13 × 7?",a:"91"}},
-  {type:"vocab",sv:{q:"Hur säger man 'dog' på franska?",a:"chien"},fr:{q:"Comment dit-on 'chien' en anglais ?",a:"dog"},en:{q:"How do you say 'katt' in English?",a:"cat"}},
-  {type:"vocab",sv:{q:"Vad heter 'butterfly' på svenska?",a:"fjäril"},fr:{q:"Comment dit-on 'papillon' en anglais ?",a:"butterfly"},en:{q:"What is 'stjärna' in English?",a:"star"}},
-  {type:"vocab",sv:{q:"Hur säger man 'apple' på franska?",a:"pomme"},fr:{q:"Comment dit-on 'pomme' en anglais ?",a:"apple"},en:{q:"What is 'maison' in English?",a:"house"}},
-  {type:"vocab",sv:{q:"Vad heter 'moon' på svenska?",a:"måne"},fr:{q:"Comment dit-on 'lune' en espagnol ?",a:"luna"},en:{q:"What is 'Sonne' in English?",a:"sun"}},
-  {type:"trivia",sv:{q:"Vilken planet är närmast solen?",a:"merkurius"},fr:{q:"Quelle planète est la plus proche du soleil ?",a:"mercure"},en:{q:"Which planet is closest to the sun?",a:"mercury"}},
-  {type:"trivia",sv:{q:"Vad är vattnets kemiska formel?",a:"h2o"},fr:{q:"Quelle est la formule chimique de l'eau ?",a:"h2o"},en:{q:"What is the chemical formula of water?",a:"h2o"}},
-  {type:"trivia",sv:{q:"Hur många ben har en spindel?",a:"8"},fr:{q:"Combien de pattes a une araignée ?",a:"8"},en:{q:"How many legs does a spider have?",a:"8"}},
-  {type:"trivia",sv:{q:"Vilket är världens längsta flod?",a:"nilen"},fr:{q:"Quel est le plus long fleuve du monde ?",a:"nil"},en:{q:"What is the world's longest river?",a:"nile"}},
-  {type:"trivia",sv:{q:"Vad heter Frankrikes huvudstad?",a:"paris"},fr:{q:"Quelle est la capitale du Japon ?",a:"tokyo"},en:{q:"What is the capital of Australia?",a:"canberra"}},
-  {type:"trivia",sv:{q:"Vilket år uppfanns Minecraft?",a:"2011"},fr:{q:"En quelle année Minecraft a-t-il été créé ?",a:"2011"},en:{q:"In what year was Minecraft created?",a:"2011"}},
-  {type:"trivia",sv:{q:"Hur många färger finns det i en regnbåge?",a:"7"},fr:{q:"Combien de couleurs y a-t-il dans un arc-en-ciel ?",a:"7"},en:{q:"How many colors are in a rainbow?",a:"7"}},
-  {type:"trivia",sv:{q:"Vilket land uppfann dynamit?",a:"sverige"},fr:{q:"Quel pays a inventé la dynamite ?",a:"suede"},en:{q:"Which country invented dynamite?",a:"sweden"}},
-  {type:"trivia",sv:{q:"Hur långt är ett maraton?",a:"42"},fr:{q:"Quelle est la distance d'un marathon ?",a:"42"},en:{q:"How long is a marathon in km?",a:"42"}},
-  {type:"trivia",sv:{q:"Hur många planeter finns det i solsystemet?",a:"8"},fr:{q:"Combien de planètes y a-t-il dans le système solaire ?",a:"8"},en:{q:"How many planets are in the solar system?",a:"8"}},
-  {type:"trivia",sv:{q:"Vad heter Australiens huvudstad?",a:"canberra"},fr:{q:"Quelle est la capitale de la Suède ?",a:"stockholm"},en:{q:"What is the capital of Sweden?",a:"stockholm"}},
-  {type:"vocab",sv:{q:"Hur säger man 'water' på spanska?",a:"agua"},fr:{q:"Comment dit-on 'eau' en japonais ?",a:"mizu"},en:{q:"What is 'eau' in English?",a:"water"}},
-  {type:"math",sv:{q:"Vad är kvadratroten av 64?",a:"8"},fr:{q:"Quelle est la racine carrée de 64 ?",a:"8"},en:{q:"What is the square root of 64?",a:"8"}},
-  {type:"trivia",sv:{q:"Hur många sekunder är det på en minut?",a:"60"},fr:{q:"Combien de secondes dans une minute ?",a:"60"},en:{q:"How many seconds in a minute?",a:"60"}},
-  {type:"trivia",sv:{q:"Vad heter den snabbaste landlevande djuret?",a:"gepard"},fr:{q:"Quel est l'animal terrestre le plus rapide ?",a:"guepard"},en:{q:"What is the fastest land animal?",a:"cheetah"}},
-  {type:"vocab",sv:{q:"Vad heter 'hello' på japanska?",a:"konnichiwa"},fr:{q:"Comment dit-on 'bonjour' en japonais ?",a:"konnichiwa"},en:{q:"How do you say 'hello' in Japanese?",a:"konnichiwa"}},
-  {type:"trivia",sv:{q:"Hur många sidor har en hexagon?",a:"6"},fr:{q:"Combien de côtés a un hexagone ?",a:"6"},en:{q:"How many sides does a hexagon have?",a:"6"}},
-  {type:"math",sv:{q:"Vad är 25% av 200?",a:"50"},fr:{q:"Combien font 25% de 200 ?",a:"50"},en:{q:"What is 25% of 200?",a:"50"}},
-  {type:"trivia",sv:{q:"Vilket land har flest innevånare?",a:"kina"},fr:{q:"Quel pays a la plus grande population ?",a:"chine"},en:{q:"Which country has the largest population?",a:"china"}},
-  {type:"trivia",sv:{q:"Vad är summan av vinklarna i en triangel?",a:"180"},fr:{q:"Quelle est la somme des angles d'un triangle ?",a:"180"},en:{q:"What is the sum of angles in a triangle?",a:"180"}}
-];
-var defiJourState=null;
-function _todayKey(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
-function _defiIdx(){
-  var today=_todayKey();
-  var parts=today.split("-").map(Number);
-  return(parts[0]*366+parts[1]*31+parts[2])%defiJourPool.length;
-}
-function detectDefiJour(n,lang){
-  if(lang==="fr")return n.indexOf("defi du jour")!==-1||n.indexOf("challenge du jour")!==-1||n.indexOf("defi quotidien")!==-1;
-  if(lang==="sv")return n.indexOf("dagens utmaning")!==-1||n.indexOf("daglig utmaning")!==-1||n.indexOf("dagens uppdrag")!==-1||n.indexOf("dj")===0&&n.length<=4;
-  return n.indexOf("daily challenge")!==-1||n.indexOf("challenge of the day")!==-1||n.indexOf("defi du jour")!==-1;
-}
-function startDefiJour(lang){
-  var today=_todayKey();
-  var done=localStorage.getItem("xn_dj_done")===today;
-  if(done){
-    return lang==="fr"?"✅ Tu as déjà réussi le défi du jour ! Reviens demain pour un nouveau. 😊":
-           lang==="sv"?"✅ Du har redan klarat dagens utmaning! Kom tillbaka imorgon. 😊":
-           "✅ You already completed today's challenge! Come back tomorrow. 😊";
-  }
-  var defi=defiJourPool[_defiIdx()];
-  var qa=defi[lang]||defi.en;
-  var typeIcon={math:"🔢",vocab:"📖",trivia:"🌍"};
-  var typeLabel={sv:{math:"Matematik",vocab:"Vokabulär",trivia:"Frågesport"},fr:{math:"Maths",vocab:"Vocabulaire",trivia:"Culture générale"},en:{math:"Math",vocab:"Vocabulary",trivia:"Trivia"}};
-  var icon=typeIcon[defi.type]||"❓";
-  var lbl=(typeLabel[lang]||typeLabel.en)[defi.type]||"Trivia";
-  var title=lang==="fr"?"⚡ Défi du Jour":lang==="sv"?"⚡ Dagens Utmaning":"⚡ Daily Challenge";
-  var bonus=lang==="fr"?"+50 points si tu réponds juste !":lang==="sv"?"+50 poäng om du svarar rätt!":"+50 points if correct!";
-  var tip=lang==="fr"?"Réponds dans le chat 👇":lang==="sv"?"Svara i chatten nedan 👇":"Answer in the chat below 👇";
-  defiJourState={q:qa.q,a:normalize(qa.a),lang:lang,today:today};
-  return "<div class='defi-jour-card'>"+
-    "<div class='dj-header'><span class='dj-icon'>"+icon+"</span><div><div class='dj-title'>"+title+"</div><div class='dj-sub'>"+icon+" "+lbl+" &nbsp;·&nbsp; "+today+"</div></div></div>"+
-    "<div class='dj-question'>"+qa.q+"</div>"+
-    "<span class='dj-bonus'>"+bonus+"</span>"+
-    "<div class='dj-tip'>"+tip+"</div></div>";
-}
-function checkDefiJourAnswer(n,lang){
-  if(!defiJourState)return null;
-  var correct=n.indexOf(defiJourState.a)!==-1;
-  if(correct){
-    localStorage.setItem("xn_dj_done",defiJourState.today);
-    xnStats.defiDone=(xnStats.defiDone||0)+1;
-    saveStats();
-    addScore(50);
-    defiJourState=null;
-    var msg=lang==="fr"?"🎉 Bravo ! Bonne réponse ! <strong>+50 points !</strong> Reviens demain pour un nouveau défi !":
-            lang==="sv"?"🎉 Rätt svar! <strong>+50 poäng!</strong> Kom tillbaka imorgon för en ny utmaning!":
-            "🎉 Correct! <strong>+50 points!</strong> Come back tomorrow for a new challenge!";
-    return "<div class='dj-done'>"+msg+"</div>";
-  }
-  // Mauvaise réponse
-  return lang==="fr"?"❌ Pas tout à fait, essaie encore !":lang==="sv"?"❌ Inte riktigt! Försök igen!":"❌ Not quite! Try again!";
 }
 // ── RESTART JEUX ──
 function _gameMsg(btn){
