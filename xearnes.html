@@ -1764,7 +1764,7 @@ function callGemini(question,lang,cb,_attempt){
     body:JSON.stringify({
       system_instruction:{parts:[{text:sysPrompt}]},
       contents:(function(){var h=convHistory.slice(-14),c=[],lr=null;for(var i=0;i<h.length;i++){var r=h[i].role==="bot"?"model":"user";if(r===lr)continue;c.push({role:r,parts:[{text:h[i].text.replace(/<[^>]+>/g,"").slice(0,600)}]});lr=r;}while(c.length>0&&c[0].role!=="user")c.shift();return c.length>0?c:[{role:"user",parts:[{text:question}]}];}()),
-      generationConfig:{maxOutputTokens:2048,temperature:0.85}
+      generationConfig:{maxOutputTokens:4096,temperature:0.85}
     })
   })
   .then(function(r){
@@ -1804,7 +1804,7 @@ function callClaude(question,lang,cb,_attempt){
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       model:"claude-haiku-4-5-20251001",
-      max_tokens:2048,
+      max_tokens:4096,
       system:sysPrompt,
       messages:msgs
     })
