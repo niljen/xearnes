@@ -2589,8 +2589,6 @@ function sendMsg(){
             updateLastTopic(sub,lang);
             if(document.getElementById("autoVoice").checked){speakText(reply);}
             sendXeNotif(reply);
-            var xeQ=maybeXeQuestion(lang);
-            if(xeQ){setTimeout(function(){addMsg(xeQ,"bot");addToConvHistory("bot",xeQ);if(document.getElementById("autoVoice").checked)speakText(xeQ);},1200);}
           });
         }
       });
@@ -2603,15 +2601,6 @@ function sendMsg(){
       updateLastTopic(sub,lang);
       if(document.getElementById("autoVoice").checked){speakText(reply);}
       sendXeNotif(reply);
-      // Feature 15 : Xearnes pose une question de temps en temps
-      var xeQ=maybeXeQuestion(lang);
-      if(xeQ){
-        setTimeout(function(){
-          addMsg(xeQ,"bot");
-          addToConvHistory("bot",xeQ);
-          if(document.getElementById("autoVoice").checked)speakText(xeQ);
-        },1200);
-      }
     });
   },delay);
 }
