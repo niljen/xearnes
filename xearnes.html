@@ -3132,6 +3132,10 @@ function startAlwaysOn(){
   alwaysOnRec.lang=langs[currentLang].code;
   var btn=document.getElementById("micBtn");
   if(btn)btn.style.opacity="0.5";
+  alwaysOnRec.onstart=function(){
+    var inp=document.getElementById("userInput");
+    if(inp)inp.placeholder="🎙️ J'écoute... dis Xearnes !";
+  };
   alwaysOnRec.onresult=function(e){
     var t="";
     for(var i=0;i<e.results.length;i++){if(e.results[i].isFinal)t+=e.results[i][0].transcript;}
