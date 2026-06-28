@@ -3142,10 +3142,12 @@ function startAlwaysOn(){
     var t="";
     for(var i=0;i<e.results.length;i++){if(e.results[i].isFinal)t+=e.results[i][0].transcript;}
     t=t.toLowerCase().trim();
-    // Détection mot de réveil "hey"
-    if(t.indexOf("hey ")===0||t==="hey"){
+    addMsg("🎙️ <em style='opacity:.6;font-size:.8rem'>\""+t+"\"</em>","bot");
+    // Détection mot de réveil "hey" ou "hej"
+    var startsHey=(t.indexOf("hey ")===0||t.indexOf("hej ")===0);
+    if(startsHey){
       var words=t.split(" ");
-      // On saute "hey" + le mot suivant (qui est "xearnes" mal reconnu)
+      // On saute "hey/hej" + le mot suivant (qui est "xearnes" mal reconnu)
       var cmd=words.slice(2).join(" ").trim();
       if(cmd.length>1){
         _alwaysOnProcessing=true;
