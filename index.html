@@ -3131,7 +3131,7 @@ function startAlwaysOn(){
   alwaysOnRec=new SR();
   alwaysOnRec.continuous=false;
   alwaysOnRec.interimResults=false;
-  alwaysOnRec.lang="en-US";
+  alwaysOnRec.lang="sv-SE";
   var btn=document.getElementById("micBtn");
   if(btn)btn.style.opacity="0.5";
   alwaysOnRec.onstart=function(){
@@ -3143,7 +3143,7 @@ function startAlwaysOn(){
     for(var i=0;i<e.results.length;i++){if(e.results[i].isFinal)t+=e.results[i][0].transcript;}
     t=t.toLowerCase().trim();
     addMsg("🎙️ <em style='opacity:.6;font-size:.8rem'>Chrome a entendu : \""+t+"\"</em>","bot");
-    var wakeWords=["xearnes","shearnes","zearnes","earnes","yearns","xernes","sheerness","gearns","xerne","earns","zearn","chernes","shernes","x earns","x earnes","ksärnes","skärnes","xärnes","ksearnes","ksarnes","scarnes","skarnes","xarnes","zarnes","ksernes","kzarnes","sannes","sernes","sernes","näs","nass"];
+    var wakeWords=["skärmen","skärm","hej skärm","xearnes","shearnes","zearnes","earnes","xernes","gearns","xerne","earns","zearn","chernes","shernes","ksärnes","skärnes","xärnes","ksearnes","ksarnes","sernes","sannes","zarnes"];
     var wakeIdx=-1,wakeLen=7;
     for(var w=0;w<wakeWords.length;w++){
       var idx=t.indexOf(wakeWords[w]);
