@@ -3127,46 +3127,51 @@ function startAlwaysOn(){
   if(!SR||!alwaysOnMode||_alwaysOnProcessing)return;
   if(alwaysOnRec){try{alwaysOnRec.abort();}catch(e){}alwaysOnRec=null;}
   alwaysOnRec=new SR();
-  alwaysOnRec.continuous=true;
+  alwaysOnRec.continuous=false;
   alwaysOnRec.interimResults=false;
   alwaysOnRec.lang=langs[currentLang].code;
-  // Indicateur visuel — bouton micro clignote doucement
   var btn=document.getElementById("micBtn");
   if(btn)btn.style.opacity="0.5";
   alwaysOnRec.onresult=function(e){
-    for(var i=e.resultIndex;i<e.results.length;i++){
-      if(!e.results[i].isFinal)continue;
-      var t=e.results[i][0].transcript.toLowerCase().trim();
-      var wakeIdx=t.indexOf("xearnes");
-      if(wakeIdx!==-1){
-        var cmd=t.slice(wakeIdx+7).trim();
-        if(cmd.length>1){
-          _alwaysOnProcessing=true;
-          if(btn)btn.style.opacity="1";
-          var inp=document.getElementById("userInput");
-          if(inp){inp.value=cmd;autoResize&&autoResize(inp);}
-          sendMsg();
-          // Relancer l'écoute après la réponse + synthèse vocale
-          setTimeout(function(){
-            _alwaysOnProcessing=false;
-            if(alwaysOnMode)startAlwaysOn();
-          },6000);
-        }
+    var t="";
+    for(var i=0;i<e.results.length;i++){if(e.results[i].isFinal)t+=e.results[i][0].transcript;}
+    t=t.toLowerCase().trim();
+    // Variations possibles de "Xearnes" par la reconnaissance vocale
+    var wakeWords=["xearnes","shearnes","zearnes","earnes","yearns","xernes","sheerness","gearns","xerne","earns"];
+    var wakeIdx=-1,wakeLen=7;
+    for(var w=0;w<wakeWords.length;w++){
+      var idx=t.indexOf(wakeWords[w]);
+      if(idx!==-1){wakeIdx=idx;wakeLen=wakeWords[w].length;break;}
+    }
+    if(wakeIdx!==-1){
+      var cmd=t.slice(wakeIdx+wakeLen).trim();
+      if(cmd.length>1){
+        _alwaysOnProcessing=true;
+        if(btn)btn.style.opacity="1";
+        var inp=document.getElementById("userInput");
+        if(inp){inp.value=cmd;}
+        sendMsg();
+        setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},6000);
+        return;
       }
     }
   };
   alwaysOnRec.onend=function(){
     if(btn)btn.style.opacity="1";
-    if(alwaysOnMode&&!_alwaysOnProcessing){
-      setTimeout(function(){startAlwaysOn();},400);
-    }
+    if(alwaysOnMode&&!_alwaysOnProcessing)setTimeout(function(){startAlwaysOn();},300);
   };
-  alwaysOnRec.onerror=function(){
-    if(alwaysOnMode&&!_alwaysOnProcessing){
-      setTimeout(function(){startAlwaysOn();},1000);
+  alwaysOnRec.onerror=function(e){
+    if(e.error==="not-allowed"){
+      stopAlwaysOn();
+      var cb=document.getElementById("alwaysOnMode");if(cb)cb.checked=false;
+      addMsg("🎙️ Autorise le micro dans Chrome pour utiliser le Mode Concept !","bot");
+      return;
     }
+    if(alwaysOnMode&&!_alwaysOnProcessing)setTimeout(function(){startAlwaysOn();},1000);
   };
-  try{alwaysOnRec.start();}catch(e){}
+  try{alwaysOnRec.start();}catch(e){
+    if(alwaysOnMode&&!_alwaysOnProcessing)setTimeout(function(){startAlwaysOn();},500);
+  }
 }
 function stopAlwaysOn(){
   alwaysOnMode=false;
