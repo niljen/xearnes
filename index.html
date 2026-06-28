@@ -3143,20 +3143,41 @@ function startAlwaysOn(){
     var t="";
     for(var i=0;i<e.results.length;i++){if(e.results[i].isFinal)t+=e.results[i][0].transcript;}
     t=t.toLowerCase().trim();
-    addMsg("🎙️ <em style='opacity:.6;font-size:.8rem'>\""+t+"\"</em>","bot");
-    // Détection mot de réveil "hey" ou "hej"
-    var startsHey=(t.indexOf("hey ")===0||t.indexOf("hej ")===0);
-    if(startsHey){
+    // Détection mot de réveil "hey" ou "hej" (seul ou suivi d'autre chose)
+    var isWake=(t==="hej"||t==="hey"||t.indexOf("hej ")===0||t.indexOf("hey ")===0);
+    if(isWake){
+      // Essayer de prendre la question déjà dans la même phrase
       var words=t.split(" ");
-      // On saute "hey/hej" + le mot suivant (qui est "xearnes" mal reconnu)
-      var cmd=words.slice(2).join(" ").trim();
-      if(cmd.length>1){
+      var inlineCmd=words.slice(2).join(" ").trim();
+      if(inlineCmd.length>2){
+        // Question déjà présente (ex: "hej sannes vad heter du")
         _alwaysOnProcessing=true;
         if(btn)btn.style.opacity="1";
         var inp=document.getElementById("userInput");
-        if(inp){inp.value=cmd;}
+        if(inp){inp.value=inlineCmd;}
         sendMsg();
         setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},6000);
+      } else {
+        // Pas de question → relancer l'écoute pour la capter
+        _alwaysOnProcessing=true;
+        if(btn)btn.style.opacity="1";
+        var SR2=window.SpeechRecognition||window.webkitSpeechRecognition;
+        var rec2=new SR2();
+        rec2.lang=langs[currentLang].code;
+        rec2.continuous=false;
+        rec2.interimResults=false;
+        var inp2=document.getElementById("userInput");
+        if(inp2)inp2.placeholder="⭐ Pose ta question...";
+        rec2.onresult=function(e2){
+          var q="";
+          for(var j=0;j<e2.results.length;j++){if(e2.results[j].isFinal)q+=e2.results[j][0].transcript;}
+          q=q.trim();
+          if(q.length>1){if(inp2){inp2.value=q;}sendMsg();}
+          setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},6000);
+        };
+        rec2.onerror=function(){setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},500);};
+        rec2.onend=function(){if(_alwaysOnProcessing)setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},6500);};
+        try{rec2.start();}catch(e){}
       }
       return;
     }
