@@ -3136,8 +3136,10 @@ function startAlwaysOn(){
     var t="";
     for(var i=0;i<e.results.length;i++){if(e.results[i].isFinal)t+=e.results[i][0].transcript;}
     t=t.toLowerCase().trim();
+    // DEBUG — montre ce que Chrome a entendu
+    addMsg("🎙️ <em style='opacity:.6;font-size:.8rem'>Chrome a entendu : \""+t+"\"</em>","bot");
     // Variations possibles de "Xearnes" par la reconnaissance vocale
-    var wakeWords=["xearnes","shearnes","zearnes","earnes","yearns","xernes","sheerness","gearns","xerne","earns"];
+    var wakeWords=["xearnes","shearnes","zearnes","earnes","yearns","xernes","sheerness","gearns","xerne","earns","xerne","zearn","chernes","shernes"];
     var wakeIdx=-1,wakeLen=7;
     for(var w=0;w<wakeWords.length;w++){
       var idx=t.indexOf(wakeWords[w]);
