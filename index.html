@@ -1630,9 +1630,9 @@ function generatePersonalJoke(subject,lang){
 }
 // ── FILTRES DE SÉCURITÉ ──
 var harmfulWords={
-  fr:["tuer","assassiner","massacrer","torture","viol","bombe","explosif","fabriquer une arme","comment faire une bombe","attaque","terroriste","cocaine","heroine","drogue dure","dealer","pirater","hacker","voler","cambrioler","faire du mal","se suicider","suicide","automutilation","couper les veines","comment mourir","pornograph","contenu adulte"],
-  sv:["doda","morda","tortera","valdta","bomba","sprängämne","tillverka vapen","terrorist","kokain","heroin","harda droger","knark","hacka","stjala","skada sig","sjalvmord","pornografi"],
-  en:["kill","murder","massacre","torture","rape","bomb","explosive","make a weapon","how to make a bomb","attack","terrorist","cocaine","heroin","hard drug","dealer","hack","steal","burglary","harm","suicide","self harm","cut veins","how to die","pornograph","adult content","how to hurt"]
+  fr:["tuer quelqu un","assassiner","massacrer","torture","viol","fabriquer une bombe","comment faire une bombe","attentat terroriste","cocaine","heroine","drogue dure","se suicider","automutilation","couper les veines","comment mourir","pornograph","contenu adulte","comment tuer"],
+  sv:["morda","tortera","valdta","tillverka bomb","terrorist attack","kokain","heroin","harda droger","skada sig sjalv","sjalvmord","pornografi","hur man dodar"],
+  en:["how to kill","how to murder","torture","rape","how to make a bomb","terrorist attack","cocaine","heroin","how to make drugs","how to suicide","self harm","cut veins","how to die","pornograph","adult content","how to hurt someone"]
 };
 var harmfulReply={
   fr:["Désolé, je ne peux pas aider avec ça. Xearnes est fait pour apprendre et s amuser, pas pour faire du mal ! 🛡️","Je ne répondrai pas à cette question. Si tu as besoin d aide, parle à un adulte de confiance. 💙","Cette demande dépasse ce que je peux faire. Je suis là pour t aider positivement ! 😊"],
@@ -1837,7 +1837,8 @@ function callGemini(question,lang,cb,_attempt){
   if(!GEMINI_API_KEY||!_internalMode){cb(null);return;}
   _attempt=_attempt||1;
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
-  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu parles comme une vraie IA moderne, naturelle et intelligente. Tu ne mentionnes jamais que tu es Gemini ou une IA de Google. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef.";
+  var _now=new Date();var _mois=["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"][_now.getMonth()];var _dateStr=_now.getDate()+" "+_mois+" "+_now.getFullYear();
+  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Vi är den "+_dateStr+". Du vet alltid exakt vilket datum det är. Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu parles comme une vraie IA moderne, naturelle et intelligente. Tu ne mentionnes jamais que tu es Gemini ou une IA de Google. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef.";
   fetch(GEMINI_URL+"?key="+GEMINI_API_KEY,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -1867,7 +1868,8 @@ function callGemini(question,lang,cb,_attempt){
 function callClaude(question,lang,cb,_attempt){
   _attempt=_attempt||1;
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
-  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu ne mentionnes jamais que tu es Claude ou une IA d'Anthropic. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef.";
+  var _now=new Date();var _mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][_now.getMonth()];var _dateStr="le "+_now.getDate()+" "+_mois+" "+_now.getFullYear();
+  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Nous sommes "+_dateStr+". Tu connais toujours la date exacte. Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu ne mentionnes jamais que tu es Claude ou une IA d'Anthropic. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef.";
   var msgs=[];
   var hist=convHistory;
   var lastRole=null;
@@ -3129,7 +3131,7 @@ function startAlwaysOn(){
   alwaysOnRec=new SR();
   alwaysOnRec.continuous=false;
   alwaysOnRec.interimResults=false;
-  alwaysOnRec.lang=langs[currentLang].code;
+  alwaysOnRec.lang="en-US";
   var btn=document.getElementById("micBtn");
   if(btn)btn.style.opacity="0.5";
   alwaysOnRec.onstart=function(){
@@ -3140,10 +3142,8 @@ function startAlwaysOn(){
     var t="";
     for(var i=0;i<e.results.length;i++){if(e.results[i].isFinal)t+=e.results[i][0].transcript;}
     t=t.toLowerCase().trim();
-    // DEBUG — montre ce que Chrome a entendu
     addMsg("🎙️ <em style='opacity:.6;font-size:.8rem'>Chrome a entendu : \""+t+"\"</em>","bot");
-    // Variations possibles de "Xearnes" par la reconnaissance vocale
-    var wakeWords=["xearnes","shearnes","zearnes","earnes","yearns","xernes","sheerness","gearns","xerne","earns","xerne","zearn","chernes","shernes"];
+    var wakeWords=["xearnes","shearnes","zearnes","earnes","yearns","xernes","sheerness","gearns","xerne","earns","zearn","chernes","shernes","x earns","x earnes","ksärnes","skärnes","xärnes","ksearnes","ksarnes","scarnes","skarnes","xarnes","zarnes","ksernes","kzarnes","sannes","sernes","sernes","näs","nass"];
     var wakeIdx=-1,wakeLen=7;
     for(var w=0;w<wakeWords.length;w++){
       var idx=t.indexOf(wakeWords[w]);
@@ -3152,14 +3152,44 @@ function startAlwaysOn(){
     if(wakeIdx!==-1){
       var cmd=t.slice(wakeIdx+wakeLen).trim();
       if(cmd.length>1){
+        // Question dans la même phrase (ex: "ksärnes quelle heure est-il")
         _alwaysOnProcessing=true;
         if(btn)btn.style.opacity="1";
         var inp=document.getElementById("userInput");
         if(inp){inp.value=cmd;}
+        addMsg("🔎 <em style='opacity:.6;font-size:.8rem'>Envoi : \""+cmd+"\"</em>","bot");
         sendMsg();
         setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},6000);
-        return;
+      } else {
+        // Mot de réveil détecté seul → relancer l'écoute pour capter la question
+        _alwaysOnProcessing=true;
+        if(btn)btn.style.opacity="1";
+        var SR2=window.SpeechRecognition||window.webkitSpeechRecognition;
+        var rec2=new SR2();
+        rec2.lang=langs[currentLang].code;
+        rec2.continuous=false;
+        rec2.interimResults=false;
+        var inp2=document.getElementById("userInput");
+        if(inp2)inp2.placeholder="⭐ Pose ta question...";
+        rec2.onresult=function(e2){
+          var q="";
+          for(var j=0;j<e2.results.length;j++){if(e2.results[j].isFinal)q+=e2.results[j][0].transcript;}
+          q=q.trim();
+          if(q.length>1){
+            if(inp2){inp2.value=q;}
+            sendMsg();
+          }
+          setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},6000);
+        };
+        rec2.onerror=function(){
+          setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},500);
+        };
+        rec2.onend=function(){
+          if(_alwaysOnProcessing)setTimeout(function(){_alwaysOnProcessing=false;if(alwaysOnMode)startAlwaysOn();},6000);
+        };
+        try{rec2.start();}catch(e){}
       }
+      return;
     }
   };
   alwaysOnRec.onend=function(){
