@@ -348,6 +348,10 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <input type="checkbox" id="autoVoice">
       <label for="autoVoice">Voix automatique</label>
     </div>
+    <div class="vp-check-row" style="margin-top:6px">
+      <input type="checkbox" id="alwaysOnMode" onchange="toggleAlwaysOn()">
+      <label for="alwaysOnMode">⭐ Mode Concept (Hey Xearnes)</label>
+    </div>
   </div>
   <div class="conv-panel" id="convPanel">
     <div class="conv-ph">
@@ -3098,6 +3102,78 @@ function stopVoiceInput(){
   var inp=document.getElementById("userInput");
   if(inp)inp.placeholder=langs[currentLang].placeholder;
   if(recognition){try{recognition.stop();}catch(e){}}
+}
+// ── MODE CONCEPT : HEY XEARNES ──────────────────────
+var alwaysOnMode=false;
+var alwaysOnRec=null;
+var _alwaysOnProcessing=false;
+function toggleAlwaysOn(){
+  alwaysOnMode=document.getElementById("alwaysOnMode").checked;
+  if(alwaysOnMode){
+    var msg=currentLang==="fr"?"⭐ Mode Concept activé ! Dis <strong>Xearnes</strong> suivi de ta question.":
+            currentLang==="sv"?"⭐ Konceptläge aktiverat! Säg <strong>Xearnes</strong> följt av din fråga.":
+            "⭐ Concept Mode on! Say <strong>Xearnes</strong> followed by your question.";
+    addMsg(msg,"bot");
+    if(document.getElementById("autoVoice")&&document.getElementById("autoVoice").checked)speakText(msg.replace(/<[^>]+>/g,""));
+    startAlwaysOn();
+  }else{
+    stopAlwaysOn();
+    var off=currentLang==="fr"?"⭐ Mode Concept désactivé.":currentLang==="sv"?"⭐ Konceptläge avaktiverat.":"⭐ Concept Mode off.";
+    addMsg(off,"bot");
+  }
+}
+function startAlwaysOn(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR||!alwaysOnMode||_alwaysOnProcessing)return;
+  if(alwaysOnRec){try{alwaysOnRec.abort();}catch(e){}alwaysOnRec=null;}
+  alwaysOnRec=new SR();
+  alwaysOnRec.continuous=true;
+  alwaysOnRec.interimResults=false;
+  alwaysOnRec.lang=langs[currentLang].code;
+  // Indicateur visuel — bouton micro clignote doucement
+  var btn=document.getElementById("micBtn");
+  if(btn)btn.style.opacity="0.5";
+  alwaysOnRec.onresult=function(e){
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      if(!e.results[i].isFinal)continue;
+      var t=e.results[i][0].transcript.toLowerCase().trim();
+      var wakeIdx=t.indexOf("xearnes");
+      if(wakeIdx!==-1){
+        var cmd=t.slice(wakeIdx+7).trim();
+        if(cmd.length>1){
+          _alwaysOnProcessing=true;
+          if(btn)btn.style.opacity="1";
+          var inp=document.getElementById("userInput");
+          if(inp){inp.value=cmd;autoResize&&autoResize(inp);}
+          sendMsg();
+          // Relancer l'écoute après la réponse + synthèse vocale
+          setTimeout(function(){
+            _alwaysOnProcessing=false;
+            if(alwaysOnMode)startAlwaysOn();
+          },6000);
+        }
+      }
+    }
+  };
+  alwaysOnRec.onend=function(){
+    if(btn)btn.style.opacity="1";
+    if(alwaysOnMode&&!_alwaysOnProcessing){
+      setTimeout(function(){startAlwaysOn();},400);
+    }
+  };
+  alwaysOnRec.onerror=function(){
+    if(alwaysOnMode&&!_alwaysOnProcessing){
+      setTimeout(function(){startAlwaysOn();},1000);
+    }
+  };
+  try{alwaysOnRec.start();}catch(e){}
+}
+function stopAlwaysOn(){
+  alwaysOnMode=false;
+  _alwaysOnProcessing=false;
+  if(alwaysOnRec){try{alwaysOnRec.abort();}catch(e){}alwaysOnRec=null;}
+  var btn=document.getElementById("micBtn");
+  if(btn)btn.style.opacity="1";
 }
 function loadUserCount(){}
 function init(){
