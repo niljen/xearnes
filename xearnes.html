@@ -454,10 +454,7 @@ var langs={
   welcomeDesc:"Ställ mig en fråga på svenska, franska eller engelska!",
   chips:["Vem skapade dig?","Vad kan du göra?","Berätta ett skämt","Hur mår du?","Vad är AI?"],
   histTitle:"Historik",testPhrase:"Hej! Jag heter Xearnes och jag pratar svenska. Välkommen!",
-  defaults:["Hmm, det vet jag inte riktigt. Kan du fråga på ett annat sätt?",
-            "Intressant fråga! Tyvärr har jag inget bra svar just nu.",
-            "Det är svårt, men jag lär mig hela tiden!",
-            "Förlåt, jag förstår inte. Kan du förklara mer?"],
+  defaults:["⚠️ Anslutningsproblem! Försök igen 🔄","⚠️ Xearnes kunde inte svara den här gången. Ställ frågan igen!","⚠️ Något gick fel med anslutningen. Prova igen!"],
   thinking:"Tänker"},
  fr:{code:"fr-FR",send:"Envoyer",placeholder:"Ecris un message...",
   welcomeTitle:"Bonjour ! Je suis Xearnes",
@@ -1887,7 +1884,7 @@ function callClaude(question,lang,cb,_attempt){
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       model:"claude-haiku-4-5-20251001",
-      max_tokens:4096,
+      max_tokens:1500,
       system:sysPrompt,
       messages:msgs
     })
