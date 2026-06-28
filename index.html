@@ -2572,14 +2572,6 @@ function sendMsg(){
   var td=addTyping();var lang=currentLang;
   var delay=600+Math.floor(Math.random()*400);
   setTimeout(function(){
-    // 🛡️ XEARNES ULTRA SHIELD — Vérification sécurité
-    var secBlock=xnSec.check(txt,lang);
-    if(secBlock){
-      td.remove();addMsg(secBlock,"bot");saveMsg("bot",secBlock);
-      addToConvHistory("bot",secBlock);
-      if(document.getElementById("autoVoice").checked)speakText(secBlock);
-      return;
-    }
     // 🔬 Vérifier si c'est le code Internal mode
     if(!_internalMode&&FIREBASE_URL&&/^[A-Za-z0-9]{6,30}$/.test(txt)){
       verifyInternalCode(txt,function(valid){
