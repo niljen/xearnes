@@ -1828,7 +1828,7 @@ function sanitizeGemini(t){
     .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
     .replace(/^[ \t]*\*[ \t]+(.+)/gm,"&bull; $1")
     .replace(/^[-•][ \t]+(.+)/gm,"&bull; $1")
-    .replace(/#{1,3}[ \t]+(.+)/gm,"<strong>$1</strong>")
+    .replace(/^#{1,3}[ \t]+(.+)/gm,"<strong>$1</strong>")
     .replace(/\n/g,"<br>");
 }
 function callGemini(question,lang,cb,_attempt){
@@ -1960,7 +1960,7 @@ function detectCheat(input,lang){
       list+="<br>✨ <strong>Mes commandes :</strong><br>";
       Object.keys(_customCheats).forEach(function(k){list+="• <code>"+k+"</code> → "+(_customCheats[k].pts>=0?"+":"")+_customCheats[k].pts.toLocaleString()+" pts<br>";});
     }
-    list+="<br>💡 <em>crée commande [nom] [points]</em> pour créer les tiennes !<br>💡 <em>supprime commande [nom]</em> pour en supprimer une.";
+    list+="<br>💡 <em>crée commande [nom] [PIN 5 chiffres] [points]</em> pour créer les tiennes !<br>💡 <em>supprime commande [nom]</em> pour en supprimer une.";
     return list;
   }
   // Commandes intégrées
@@ -2241,32 +2241,6 @@ function _getReplyBody(input,lang,n,cb){
       cb(pick(cfg.defaults));
     }
   });
-  return;
-  // 8c. Sans Claude ni Gemini : Wikipedia + Reddit ELI5 + DDG en parallèle
-  if(queries.length>0){
-    var cached=lookupWikiCache(queries[0]);
-    if(cached)return cb(buildWikiHtml(cached));
-    var done=false;
-    var wikiResult=null,redditResult=null,ddgResult=null,pending=3;
-    function tryFinish(){
-      if(done)return;
-      pending--;
-      if(wikiResult){done=true;saveWikiCache(queries[0],wikiResult);return cb(buildWikiHtml(wikiResult));}
-      if(pending<=0){
-        done=true;
-        if(ddgResult){saveWikiCache(queries[0],ddgResult);return cb(buildDDGHtml(ddgResult,lang));}
-        if(redditResult)return cb(buildRedditHtml(redditResult,"eli5",lang));
-        if(km)return cb(pick(km.entry.r));
-        return cb(pick(cfg.defaults));
-      }
-    }
-    fetchWikiChain(queries,lang,function(res){wikiResult=res;tryFinish();});
-    fetchRedditELI5(queries[0],function(post){redditResult=post;tryFinish();});
-    fetchDDG(queries[0],function(d){ddgResult=d;tryFinish();});
-  }else{
-    if(km)return cb(pick(km.entry.r));
-    cb(pick(cfg.defaults));
-  }
 }
 function addMsg(text,role){
   var w=document.getElementById("welcome");
@@ -3102,9 +3076,9 @@ var _alwaysOnProcessing=false;
 function toggleAlwaysOn(){
   alwaysOnMode=document.getElementById("alwaysOnMode").checked;
   if(alwaysOnMode){
-    var msg=currentLang==="fr"?"⭐ Mode Concept activé ! Dis <strong>Xearnes</strong> suivi de ta question.":
-            currentLang==="sv"?"⭐ Konceptläge aktiverat! Säg <strong>Xearnes</strong> följt av din fråga.":
-            "⭐ Concept Mode on! Say <strong>Xearnes</strong> followed by your question.";
+    var msg=currentLang==="fr"?"⭐ Mode Concept activé ! Dis <strong>Hey</strong> suivi de ta question.":
+            currentLang==="sv"?"⭐ Konceptläge aktiverat! Säg <strong>Hej</strong> följt av din fråga.":
+            "⭐ Concept Mode on! Say <strong>Hey</strong> followed by your question.";
     addMsg(msg,"bot");
     if(document.getElementById("autoVoice")&&document.getElementById("autoVoice").checked)speakText(msg.replace(/<[^>]+>/g,""));
     startAlwaysOn();
@@ -3126,7 +3100,7 @@ function startAlwaysOn(){
   if(btn)btn.style.opacity="0.5";
   alwaysOnRec.onstart=function(){
     var inp=document.getElementById("userInput");
-    if(inp)inp.placeholder="🎙️ J'écoute... dis Xearnes !";
+    if(inp)inp.placeholder="🎙️ J'écoute... dis Hey !";
   };
   alwaysOnRec.onresult=function(e){
     var t="";
@@ -3137,7 +3111,7 @@ function startAlwaysOn(){
     if(isWake){
       // Essayer de prendre la question déjà dans la même phrase
       var words=t.split(" ");
-      var inlineCmd=words.slice(2).join(" ").trim();
+      var inlineCmd=words.slice(1).join(" ").trim();
       if(inlineCmd.length>2){
         // Question déjà présente (ex: "hej sannes vad heter du")
         _alwaysOnProcessing=true;
@@ -3329,7 +3303,8 @@ function sendMiniMsg(){
   setTimeout(function(){
     getReply(txt,lang,function(reply){
       td.remove();
-      addMiniMsg(reply,"bot");
+      var _disc=lang==="fr"?"<div class='xe-disc'>⚠️ Xearnes peut se tromper.</div>":lang==="sv"?"<div class='xe-disc'>⚠️ Xearnes kan ha fel.</div>":"<div class='xe-disc'>⚠️ Xearnes can make mistakes.</div>";
+      addMiniMsg(reply+_disc,"bot");
       if(!popupOpen){
         var badge=document.getElementById("popupBadge");
         if(badge)badge.classList.add("show");
