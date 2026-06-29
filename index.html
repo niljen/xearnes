@@ -1516,38 +1516,9 @@ function buildOpinionReply(topic,lang){
   var arr=lang==="fr"?fr:lang==="sv"?sv:en;
   return arr[Math.floor(Math.random()*arr.length)];
 }
-// ── CORRECTION INTELLIGENTE ──
-function detectCorrection(n,lang){
-  var cw={
-    fr:["c est faux","tu as tort","c est pas ca","pas correct","mauvaise reponse","ce n est pas ca","non c est","tu te trompes","faux"],
-    sv:["det stammer inte","du har fel","felaktigt","inte ratt","fel svar","nej det ar"],
-    en:["that is wrong","you are wrong","incorrect","wrong answer","not right","no that is","you are mistaken","false"]
-  };
-  var words=cw[lang]||cw.en;
-  for(var i=0;i<words.length;i++){if(n.indexOf(words[i])!==-1)return true;}
-  return false;
-}
-function handleCorrection(n,lang){
-  awaitingCorrection=true;
-  correctionContext=lastTopic[lang];
-  if(lang==="fr")return "Oups ! Desole pour l erreur. Quelle est la bonne reponse ? Je vais apprendre !";
-  if(lang==="sv")return "Oj, förlåt! Vad är rätt svar? Jag vill lära mig!";
-  return "Oops, sorry! What is the correct answer? I want to learn!";
-}
-function handleCorrectionAnswer(n,lang){
-  awaitingCorrection=false;
-  if(correctionContext){
-    saveFact(correctionContext,n);
-    correctionContext=null;
-    if(lang==="fr")return "Merci ! J ai retenu que \""+n+"\" est la bonne reponse. Je m en souviendrai !";
-    if(lang==="sv")return "Tack! Jag har lärt mig att \""+n+"\" är rätt. Jag kommer ihåg det!";
-    return "Thanks! I learned that \""+n+"\" is correct. I will remember that!";
-  }
-  awaitingCorrection=false;
-  if(lang==="fr")return "Merci pour la correction !";
-  if(lang==="sv")return "Tack for rattelsen!";
-  return "Thanks for the correction!";
-}
+function detectCorrection(){return false;}
+function handleCorrection(){return null;}
+function handleCorrectionAnswer(){awaitingCorrection=false;return null;}
 // ── MÉMOIRE D'APPRENTISSAGE ──
 function detectLearning(n,lang){
   var qw={sv:["vad ","hur ","vem ","var ","nar ","varfor "],fr:["c est quoi","qu est","comment","pourquoi","ou est","qui est","c est qui"],en:["what ","how ","who ","where ","when ","why "]};
@@ -1628,7 +1599,7 @@ function generatePersonalJoke(subject,lang){
 }
 // ── FILTRES DE SÉCURITÉ ──
 var harmfulWords={
-  fr:["tuer quelqu un","assassiner","massacrer","torture","viol","fabriquer une bombe","comment faire une bombe","attentat terroriste","cocaine","heroine","drogue dure","se suicider","automutilation","couper les veines","comment mourir","pornograph","contenu adulte","comment tuer"],
+  fr:["tuer quelqu un","assassiner","massacrer","torture","violer quelqu","fabriquer une bombe","comment faire une bombe","attentat terroriste","cocaine","heroine","drogue dure","se suicider","automutilation","couper les veines","comment mourir","pornograph","contenu adulte","comment tuer"],
   sv:["morda","tortera","valdta","tillverka bomb","terrorist attack","kokain","heroin","harda droger","skada sig sjalv","sjalvmord","pornografi","hur man dodar"],
   en:["how to kill","how to murder","torture","rape","how to make a bomb","terrorist attack","cocaine","heroin","how to make drugs","how to suicide","self harm","cut veins","how to die","pornograph","adult content","how to hurt someone"]
 };
@@ -1700,93 +1671,7 @@ function detectName(n){
   for(var i=0;i<pats.length;i++){var m=n.match(pats[i]);if(m&&m[1]&&m[1].length>1)return m[1][0].toUpperCase()+m[1].slice(1);}
   return null;
 }
-// 🛡️ XEARNES ULTRA SHIELD — Système de sécurité complet
-var xnSec=(function(){
-  // Normalisation du texte (accents, leet speak, espaces)
-  function norm(t){
-    t=t.toLowerCase();
-    t=t.normalize("NFD").replace(/[̀-ͯ]/g,"");
-    var leet={"0":"o","1":"i","3":"e","4":"a","5":"s","7":"t","@":"a","$":"s","!":"i"};
-    for(var k in leet)t=t.split(k).join(leet[k]);
-    t=t.replace(/(?<=[a-z]) (?=[a-z])/g,"");
-    t=t.replace(/[*_\-\.]+/g," ");
-    return t;
-  }
-  // Listes de mots interdits par catégorie
-  var F={
-    violence:["tuer","meurtre","assassin","poignarder","frapper","brutaliser","torturer","tabasser","etrangler","decapiter","mutiler","massacrer","egorger","bombe","exploser","dynamite","pistolet","fusil","mitrailleuse","grenade","bazooka","sniper","carnage","genocide","kidnapper","sequestration","kill","murder","stab","shoot","bomb","explode","weapon","massacre","hostage","torture","bloodbath","döda","mörda","bomba","skjuta"],
-    racisme:["raciste","racisme","nazi","nazisme","neonazi","haine raciale","antisemite","islamophobe","supremaciste","apartheid","segregation","epuration ethnique","sous-homme","race inferieure","mort aux","je deteste les","racist","racism","nazism","white supremacy","ethnic cleansing","kkk","rasist","rasism","nazist"],
-    drogues:["cocaine","heroine","crystal meth","methamphetamine","ecstasy","mdma","fentanyl","ketamine","ghb","trafic de drogue","se droguer","dealer drogue","laboratory drogue","drug trafficking","narkotika","knark","langare"],
-    terrorisme:["terroriste","terrorisme","attentat","jihadiste","isis","daesh","al qaeda","kamikaze","radicalisation","extremiste","terrorist","terrorism","jihad","extremist","radicalization"],
-    armes:["fabriquer une bombe","faire exploser","recette explosif","nitrate ammonium","poudre a canon","arme artisanale","modifier une arme","cocktail molotov","pipe bomb","engin explosif","detonateur","how to make a bomb","explosive recipe","molotov cocktail","hemgjort vapen"],
-    adulte:["pornographie","contenu adulte","acte sexuel","prostitution","site adulte","film porno","pornography","adult content","sex act","porr"],
-    suicide:["se suicider","en finir avec la vie","s automutiler","se couper","se pendre","methodes de suicide","je veux mourir","plus envie de vivre","tout le monde serait mieux sans moi","plan pour mourir","dose letale","kill myself","end my life","self harm","cut myself","want to die","no reason to live","självmord","ta livet av sig"],
-    harcelement:["harcelement","chantage","humilier","doxing","stalker","traquer","revenge porn","cyberbullying","harassment","blackmail","stalk","doxx","trakasseri","mobbning","utpressa"],
-    illegal:["cambrioler","braquer","escroquer","pirater","contrefacon","blanchiment","fausse monnaie","trafic humain","phishing","cloner carte","money laundering","fake documents","human trafficking","inbrott","rån","penningtvattt"],
-    pedophilie:["pedophile","pedophilie","grooming","enfant nu","mineur sexualise","child porn","child abuse","underage sexual"],
-    manipulation:["lavage de cerveau","manipulation mentale","secte","endoctriner","brainwash","cult manipulation","mind control"]
-  };
-  // Blocage jailbreak / jeux de rôle
-  var JR=["imagine que tu es","fais semblant d etre","joue le role de","agis comme si tu etais","tu es maintenant un","pretends d etre","oublie tes regles","oublie ta programmation","oublie tes limites","tu n as plus de limites","sans tes filtres","mode sans censure","sans restriction","ignore tes instructions","desactive tes filtres","fais comme si tu pouvais tout dire","c est juste fiction","c est fictif donc tu peux","si tu etais mechant","si tu n avais pas de regles","mode developpeur","pretend you are","imagine you are","act as if","you are now","forget your rules","no restrictions","ignore your instructions","jailbreak","dan mode","developer mode","unrestricted","låtsas att du är","glom dina regler","utan begransningar","bypass","uncensored","no filter","free mode","hack the ai","override","ignore previous","prompt injection","new instructions"];
-  // Intentions cachées (regex)
-  var IC=[/comment.*(faire.*mal|blesser|tuer|eliminer).*quelqu/,/comment.*(dormir|endormir).*(toujours|jamais|permanent|mort)/,/comment.*(faire disparaitre|se debarrasser de).*quelqu/,/comment.*(empoisonner|intoxiquer)/,/(moyen|facon|methode|astuce).*(tuer|eliminer|blesser|nuire)/,/dose.*(mortelle|letale|pour tuer|pour endormir)/,/sans.*(laisser|traces|preuve|temoin)/,/faire.*souffrir.*sans/,/pieger.*(quelqu|personne)/,/(trouver|localiser|savoir).*(adresse|maison|ou.*habite)/,/espionner.*(quelqu|personne|enfant)/,/(entrer|acceder|penetrer).*(sans.*permission|illegalement)/];
-  // Combinaisons dangereuses
-  var COMBO=[["faire","dormir","toujours"],["faire","disparaitre","quelqu"],["dose","mortelle"],["dose","letale"],["sans","laisser","trace"],["debarrasser","quelqu"],["empoisonner","eau"],["empoisonner","nourriture"],["pieger","quelqu"],["acceder","compte","quelqu"],["mot de passe","quelqu","trouver"],["voler","sans","trace"]];
-  // Anti-spam
-  var _stamps=[];
-  function antiSpam(){
-    var now=Date.now();
-    _stamps=_stamps.filter(function(t){return now-t<60000;});
-    _stamps.push(now);
-    return _stamps.length>15;
-  }
-  // Réputation utilisateur (localStorage)
-  function getRep(){try{return parseInt(localStorage.getItem("xn_rep")||"100");}catch(e){return 100;}}
-  function reduireRep(n){try{var r=Math.max(0,getRep()-n);localStorage.setItem("xn_rep",r);return r;}catch(e){return 100;}}
-  function estBloque(){return getRep()<=30;}
-  // Messages de blocage
-  var MSG={
-    fr:{violence:"⚠️ Je ne parle pas de violence.",racisme:"🚫 Le racisme est inacceptable. Je refuse.",drogues:"⚠️ Aucune information sur les drogues.",terrorisme:"🚫 Je ne parle jamais de terrorisme.",armes:"🚫 Je ne donne pas d'infos sur les armes.",adulte:"🔞 Contenu non approprié.",suicide:"💙 Si tu vas pas bien, parle à un adulte de confiance. Tu n'es pas seul(e). ❤️",harcelement:"🚫 Le harcèlement est inacceptable.",illegal:"⚠️ Je n'aide pas avec des activités illégales.",pedophilie:"🚨 CONTENU STRICTEMENT INTERDIT ET ILLÉGAL.",manipulation:"⚠️ Je n'aide pas à manipuler les autres.",jailbreak:"🎭 Les tentatives de contournement ne fonctionnent pas !",intention:"🧠 Intention suspecte détectée. Je ne réponds pas.",combo:"🔀 Combinaison dangereuse détectée.",spam:"⏱️ Trop de messages ! Attends un peu.",bloque:"🚫 Accès refusé. Trop de tentatives suspectes.",code:"🔐 Message codé détecté."},
-    sv:{violence:"⚠️ Jag pratar inte om våld.",racisme:"🚫 Rasism är oacceptabelt. Jag vägrar.",drogues:"⚠️ Ingen information om droger.",terrorisme:"🚫 Jag pratar aldrig om terrorism.",armes:"🚫 Ingen info om vapen.",adulte:"🔞 Olämpligt innehåll.",suicide:"💙 Om du mår dåligt, prata med en vuxen du litar på. ❤️",harcelement:"🚫 Mobbning är oacceptabelt.",illegal:"⚠️ Jag hjälper inte med olagliga aktiviteter.",pedophilie:"🚨 STRIKT FÖRBJUDET OCH OLAGLIGT.",manipulation:"⚠️ Jag hjälper inte att manipulera andra.",jailbreak:"🎭 Försök att kringgå reglerna fungerar inte!",intention:"🧠 Misstänkt avsikt upptäckt.",combo:"🔀 Farlig kombination upptäckt.",spam:"⏱️ För många meddelanden! Vänta lite.",bloque:"🚫 Åtkomst nekad.",code:"🔐 Kodat meddelande upptäckt."},
-    en:{violence:"⚠️ I don't talk about violence.",racisme:"🚫 Racism is unacceptable. I refuse.",drogues:"⚠️ No information about drugs.",terrorisme:"🚫 I never talk about terrorism.",armes:"🚫 No info about weapons.",adulte:"🔞 Inappropriate content.",suicide:"💙 If you're not doing well, talk to a trusted adult. ❤️",harcelement:"🚫 Harassment is unacceptable.",illegal:"⚠️ I don't help with illegal activities.",pedophilie:"🚨 STRICTLY FORBIDDEN AND ILLEGAL.",manipulation:"⚠️ I don't help manipulate others.",jailbreak:"🎭 Attempts to bypass rules don't work!",intention:"🧠 Suspicious intent detected.",combo:"🔀 Dangerous combination detected.",spam:"⏱️ Too many messages! Wait a bit.",bloque:"🚫 Access denied.",code:"🔐 Encoded message detected."}
-  };
-  function getMsg(cat,lang){return(MSG[lang]||MSG.fr)[cat]||MSG.fr[cat];}
-  // Décodage base64/rot13
-  function checkCoded(t){
-    var r=t.split("").reverse().join("");
-    if(checkWords(r))return true;
-    var rot=t.replace(/[a-zA-Z]/g,function(c){return String.fromCharCode((c<="Z"?90:122)>=(c.charCodeAt(0)+13)?c.charCodeAt(0)+13:c.charCodeAt(0)-13);});
-    if(checkWords(norm(rot)))return true;
-    try{var d=atob(t);if(d&&checkWords(norm(d)))return true;}catch(e){}
-    return false;
-  }
-  function checkWords(nt){
-    for(var cat in F){var arr=F[cat];for(var i=0;i<arr.length;i++){if(nt.indexOf(norm(arr[i]))>-1)return cat;}}
-    return false;
-  }
-  // Fonction principale
-  function check(txt,lang){
-    lang=lang||"fr";
-    var nt=norm(txt);
-    // 1. Utilisateur bloqué
-    if(estBloque())return getMsg("bloque",lang);
-    // 2. Anti-spam
-    if(antiSpam())return getMsg("spam",lang);
-    // 3. Mots interdits directs
-    var cat=checkWords(nt);
-    if(cat){reduireRep(20);return getMsg(cat,lang);}
-    // 4. Jailbreak / jeu de rôle
-    for(var j=0;j<JR.length;j++){if(nt.indexOf(norm(JR[j]))>-1){reduireRep(25);return getMsg("jailbreak",lang);}}
-    // 5. Intentions cachées
-    for(var i=0;i<IC.length;i++){if(IC[i].test&&IC[i].test(nt)){reduireRep(20);return getMsg("intention",lang);}}
-    // 6. Combinaisons dangereuses
-    for(var c=0;c<COMBO.length;c++){var combo=COMBO[c];var ok=true;for(var k=0;k<combo.length;k++){if(nt.indexOf(norm(combo[k]))<0){ok=false;break;}}if(ok){reduireRep(15);return getMsg("combo",lang);}}
-    // 7. Messages codés
-    if(txt.length>10&&checkCoded(txt)){reduireRep(20);return getMsg("code",lang);}
-    return null; // ✅ Tout va bien
-  }
-  return{check:check,getRep:getRep,norm:norm};
-})();
+
 // 🤖 GEMINI 2.5 FLASH
 var GEMINI_API_KEY="";
 var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
@@ -3664,21 +3549,7 @@ function advanceIStory(nodeKey){
   var chat=document.getElementById("chat");
   if(chat)chat.scrollTop=chat.scrollHeight;
 }
-// ── FEATURE 15 : XEARNES POSE DES QUESTIONS ─────────
-var xeQuestions={
-  fr:["Et toi, tu as une matiere preferee a l ecole ?","Si tu pouvais avoir un super-pouvoir, ce serait lequel ?","Tu preferes l ete ou l hiver ?","Quel animal tu voudrais avoir comme animal de compagnie ?","C est quoi ton jeu video prefere en ce moment ?","Si tu pouvais voyager n importe ou, tu irais ou ?","Tu as une chanson preferee en ce moment ?"],
-  sv:["Vad ar ditt amnesfavorit i skolan?","Om du kunde ha en superkraft, vilken skulle det vara?","Foredrar du sommar eller vinter?","Vilket djur vill du ha som husdjur?","Vilket ar ditt favoritspel just nu?","Om du kunde resa vart som helst, vart aker du?"],
-  en:["What is your favourite subject at school?","If you could have a superpower, what would it be?","Do you prefer summer or winter?","What animal would you love as a pet?","What is your favourite video game right now?","If you could travel anywhere, where would you go?","Do you have a favourite song right now?"]
-};
-var xeMsgCount=0;
-function maybeXeQuestion(lang){
-  xeMsgCount++;
-  if(xeMsgCount>=4&&xeMsgCount%5===0&&Math.random()<0.65){
-    var qs=xeQuestions[lang]||xeQuestions.en;
-    return "&#128161; "+pick(qs);
-  }
-  return null;
-}
+
 // ── FEATURE 2 : DETECTION D HUMEUR ──────────────────
 var moodWords={
   sad:{fr:["triste","pleure","malheureux","mal","deprime","seul","ennui","peur","anxieux","mauvaise journee","ca va pas","nul"],en:["sad","crying","unhappy","bad","depressed","alone","bored","scared","anxious","bad day","terrible","awful"],sv:["ledsen","grater","olycklig","daligt","ensam","trakig","radd","orolig"]},
