@@ -2275,7 +2275,17 @@ function addMsg(text,role){
   var div=document.createElement("div");
   div.className="msg "+role;
   if(role==="bot"){
-    var clean=text.replace(/&amp;bullet;/g,"•").replace(/&amp;middot;/g,"·").replace(/&amp;bull;/g,"•").replace(/&amp;lt;/g,"<").replace(/&amp;gt;/g,">").replace(/&amp;amp;/g,"&").replace(/&bullet;/g,"•").replace(/&bull;/g,"•");
+    var clean=text
+      .replace(/&amp;bullet;/g,"•").replace(/&amp;middot;/g,"·").replace(/&amp;bull;/g,"•")
+      .replace(/&amp;lt;/g,"<").replace(/&amp;gt;/g,">").replace(/&amp;amp;/g,"&")
+      .replace(/&bullet;/g,"•").replace(/&bull;/g,"•")
+      .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+      .replace(/\n[-*]\s+/g,"<br>• ")
+      .replace(/^[-*]\s+/,"• ")
+      .replace(/\n#{1,3}\s+(.+)/g,"<br><strong>$1</strong>")
+      .replace(/^#{1,3}\s+(.+)/g,"<strong>$1</strong>")
+      .replace(/\n\n/g,"<br><br>")
+      .replace(/\n/g,"<br>");
     div.innerHTML=clean;
     playBeep();
     addShareBtn(div,text);
