@@ -1714,7 +1714,7 @@ function sanitizeGemini(t){
     .replace(/^[ \t]*\*[ \t]+(.+)/gm,"&bull; $1")
     .replace(/^[-•][ \t]+(.+)/gm,"&bull; $1")
     .replace(/^#{1,3}[ \t]+(.+)/gm,"<strong>$1</strong>")
-    .replace(/\n/g,"<br>");
+    .replace(/([^\n])\n([^\n])/g,"$1<br>$2");
 }
 function callGemini(question,lang,cb,_attempt){
   if(!GEMINI_API_KEY||!_internalMode){cb(null);return;}
