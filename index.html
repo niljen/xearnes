@@ -1672,10 +1672,7 @@ function detectName(n){
   return null;
 }
 
-// 🤖 GEMINI 2.5 FLASH
-var GEMINI_API_KEY="";
 var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
-var GEMINI_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 // 🔬 INTERNAL MODE
 var _internalMode=false;
 try{_internalMode=localStorage.getItem("xn_internal")==="1";}catch(e){}
@@ -1686,26 +1683,16 @@ function verifyInternalCode(code,cb){
     .then(function(d){cb(d===true);})
     .catch(function(){cb(false);});
 }
-function fetchGeminiKey(cb){
-  if(!FIREBASE_URL)return cb(null);
-  fetch(FIREBASE_URL+"/xearnes/internal/gemini_key.json")
-    .then(function(r){return r.json();})
-    .then(function(k){if(k&&typeof k==="string"){GEMINI_API_KEY=k;}cb(k||null);})
-    .catch(function(){cb(null);});
-}
 function activateInternalMode(lang,cb){
   _internalMode=true;
   localStorage.setItem("xn_internal","1");
   var ind=document.getElementById("internalInd");
   if(ind)ind.style.display="inline-flex";
-  fetchGeminiKey(function(){
-    cb(lang==="fr"?"🔬 <strong>Mode Interne activé !</strong> Gemini Flash 2.0 est maintenant disponible. Bienvenue !":
-       lang==="sv"?"🔬 <strong>Internt läge aktiverat!</strong> Gemini Flash 2.0 är nu tillgänglig. Välkommen!":
-       "🔬 <strong>Internal mode activated!</strong> Gemini Flash 2.0 is now available. Welcome!");
-  });
+  cb(lang==="fr"?"🔬 <strong>Mode Interne activé !</strong> Bienvenue !":
+     lang==="sv"?"🔬 <strong>Internt läge aktiverat!</strong> Välkommen!":
+     "🔬 <strong>Internal mode activated!</strong> Welcome!");
 }
-if(_internalMode){setTimeout(function(){fetchGeminiKey(function(){});},2000);}
-function sanitizeGemini(t){
+function sanitizeAI(t){
   return t
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
@@ -1715,38 +1702,6 @@ function sanitizeGemini(t){
     .replace(/^[-•][ \t]+(.+)/gm,"&bull; $1")
     .replace(/^#{1,3}[ \t]+(.+)/gm,"<strong>$1</strong>")
     .replace(/([^\n])\n([^\n])/g,"$1<br>$2");
-}
-function callGemini(question,lang,cb,_attempt){
-  if(!GEMINI_API_KEY||!_internalMode){cb(null);return;}
-  _attempt=_attempt||1;
-  var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
-  var _now=new Date();var _mois=["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"][_now.getMonth()];var _dateStr=_now.getDate()+" "+_mois+" "+_now.getFullYear();
-  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Vi är den "+_dateStr+". Du vet alltid exakt vilket datum det är. Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Tu écris TOUJOURS en paragraphes courts séparés par une ligne vide — JAMAIS un seul grand bloc de texte. Chaque paragraphe = 2-3 phrases maximum. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections courtes, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu parles comme une vraie IA moderne, naturelle et intelligente. Tu ne mentionnes jamais que tu es Gemini ou une IA de Google. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef.";
-  fetch(GEMINI_URL+"?key="+GEMINI_API_KEY,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      system_instruction:{parts:[{text:sysPrompt}]},
-      contents:(function(){var h=convHistory,c=[],lr=null;for(var i=0;i<h.length;i++){var r=h[i].role==="bot"?"model":"user";if(r===lr)continue;c.push({role:r,parts:[{text:h[i].text.replace(/<[^>]+>/g,"").slice(0,600)}]});lr=r;}while(c.length>0&&c[0].role!=="user")c.shift();return c.length>0?c:[{role:"user",parts:[{text:question}]}];}()),
-      generationConfig:{maxOutputTokens:4096,temperature:0.85}
-    })
-  })
-  .then(function(r){
-    if((r.status===503||r.status===429||r.status===500)&&_attempt<3){
-      setTimeout(function(){callGemini(question,lang,cb,_attempt+1);},1500*_attempt);
-      return null;
-    }
-    return r.json();
-  })
-  .then(function(d){
-    if(d===null)return;
-    var t=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text;
-    if(t)cb(sanitizeGemini(t.trim()));else cb(null);
-  })
-  .catch(function(){
-    if(_attempt<3){setTimeout(function(){callGemini(question,lang,cb,_attempt+1);},1500*_attempt);}
-    else{cb(null);}
-  });
 }
 function callClaude(question,lang,cb,_attempt){
   _attempt=_attempt||1;
@@ -1790,7 +1745,7 @@ function callClaude(question,lang,cb,_attempt){
       cb(null);return;
     }
     var t=d&&d.content&&d.content[0]&&d.content[0].text;
-    if(t)cb(sanitizeGemini(t.trim()));
+    if(t)cb(sanitizeAI(t.trim()));
     else{console.error("[Xearnes Claude] Réponse inattendue:",d);cb(null);}
   })
   .catch(function(e){
@@ -1927,19 +1882,13 @@ function _getReplyBody(input,lang,n,cb){
     var moreTopic=lastTopic[lang]||getLastBotTopic(lang);
     if(moreTopic){
       var moreIntro=lang==="fr"?"Bien sûr, voici plus sur <strong>"+moreTopic+"</strong> :":lang==="sv"?"Självklart, mer om <strong>"+moreTopic+"</strong>:":"Of course, here's more about <strong>"+moreTopic+"</strong>:";
-      if(GEMINI_API_KEY){
-        callGemini((lang==="fr"?"Explique-moi plus en détail : ":lang==="sv"?"Berätta mer detaljerat om: ":"Tell me more in detail about: ")+moreTopic,lang,function(r){
-          if(r)return cb(moreIntro+"<br>"+r);
-          fetchWikiChain([moreTopic],lang,function(w){
-            if(w)return cb(moreIntro+"<br>"+buildWikiHtml(w));
-            return cb(lang==="fr"?"Hmm, je n ai pas plus d infos là-dessus...":lang==="sv"?"Hmm, jag har inte mer info om det...":"Hmm, I don't have more info on that...");
-          });
-        });return;
-      }
-      return fetchWikiChain([moreTopic],lang,function(w){
-        if(w)return cb(moreIntro+"<br>"+buildWikiHtml(w));
-        return cb(lang==="fr"?"Hmm, je n ai pas plus d infos sur ça pour l instant... Tu veux chercher autre chose ?":lang==="sv"?"Hmm, jag har inte mer info om det just nu... Vill du söka något annat?":"Hmm, I don't have more info on that right now... Want to search something else?");
-      });
+      callClaude((lang==="fr"?"Explique-moi plus en détail : ":lang==="sv"?"Berätta mer detaljerat om: ":"Tell me more in detail about: ")+moreTopic,lang,function(r){
+        if(r)return cb(moreIntro+"<br>"+r);
+        fetchWikiChain([moreTopic],lang,function(w){
+          if(w)return cb(moreIntro+"<br>"+buildWikiHtml(w));
+          return cb(lang==="fr"?"Hmm, je n ai pas plus d infos là-dessus...":lang==="sv"?"Hmm, jag har inte mer info om det...":"Hmm, I don't have more info on that...");
+        });
+      });return;
     }
   }
   // 0. Code secret → déverrouille le mode apprentissage
@@ -1984,13 +1933,10 @@ function _getReplyBody(input,lang,n,cb){
   // 4. Image IA
   var imgP=detectImageRequest(n,lang);
   if(imgP){
-    if(_internalMode){
-      callGemini((lang==="fr"?"Décris de façon créative et vivante pour un jeune : ":lang==="sv"?"Beskriv kreativt för en ung person: ":"Describe creatively and vividly: ")+imgP,lang,function(r){
-        if(r)return cb("🎨 <em>"+imgP+"</em><br><br>"+r);
-        return cb(lang==="fr"?"🎨 Impossible de générer une image pour l instant.":lang==="sv"?"🎨 Det gick inte att skapa bilden.":"🎨 Could not generate image right now.");
-      });return;
-    }
-    return cb(lang==="fr"?"🎨 La génération d images n est pas disponible en mode standard.":lang==="sv"?"🎨 Bildgenerering är inte tillgänglig i standardläge.":"🎨 Image generation is not available in standard mode.");
+    callClaude((lang==="fr"?"Décris de façon créative et vivante pour un jeune : ":lang==="sv"?"Beskriv kreativt för en ung person: ":"Describe creatively and vividly: ")+imgP,lang,function(r){
+      if(r)return cb("🎨 <em>"+imgP+"</em><br><br>"+r);
+      return cb(lang==="fr"?"🎨 Impossible de générer une image pour l instant.":lang==="sv"?"🎨 Det gick inte att skapa bilden.":"🎨 Could not generate image right now.");
+    });return;
   }
   // 5. Histoire
   var stP=detectStory(n,lang);if(stP)return cb(generateStory(stP,lang));
@@ -2089,29 +2035,7 @@ function _getReplyBody(input,lang,n,cb){
   if(subject&&subject.length>1)queries.push(subject);
   var wq=getWikiQuery(n,lang);
   if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
-  // 8. Gemini (si clé dispo) → Claude fallback → Wikipedia/DDG fallback
-  if(GEMINI_API_KEY){
-    callGemini(input.trim(),lang,function(r){
-      if(r)return cb(r);
-      // Gemini a échoué (429/503) → essayer Claude en fallback
-      callClaude(input.trim(),lang,function(rc){
-        if(rc)return cb(rc);
-        // Fallback Wikipedia si Claude aussi échoue
-        if(queries.length>0){
-          fetchWikiChain(queries,lang,function(res){
-            if(res)return cb(buildWikiHtml(res));
-            if(km)return cb(pick(km.entry.r));
-            cb(pick(cfg.defaults));
-          });
-        }else{
-          if(km)return cb(pick(km.entry.r));
-          cb(pick(cfg.defaults));
-        }
-      });
-    });
-    return;
-  }
-  // 8b. Sans Gemini : essayer Claude d'abord
+  // 8. Claude → Wikipedia/DDG fallback
   callClaude(input.trim(),lang,function(r){
     if(r)return cb(r);
     // Fallback Wikipedia si Claude échoue
