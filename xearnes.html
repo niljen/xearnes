@@ -995,6 +995,13 @@ function detectInputLang(text){
   if(/[一-鿿]/.test(text))return "zh";
   if(/[؀-ۿ]/.test(text))return "ar";
   if(/[Ѐ-ӿ]/.test(text))return "ru";
+  // Mots seuls sans ambiguite (ex: "bonjour", "merci") — un seul mot suffit pour detecter la langue
+  var _oneWord=text.trim().toLowerCase().replace(/[^a-zàâçéèêëîïôûùüÿñœæ]/g,"");
+  var _wordLang={bonjour:"fr",bonsoir:"fr",salut:"fr",coucou:"fr",merci:"fr",oui:"fr",non:"fr",
+   hej:"sv",hejsan:"sv",tack:"sv",tja:"sv",
+   hello:"en",hey:"en",thanks:"en",
+   hola:"es",gracias:"es",hallo:"de",danke:"de",ciao:"it",grazie:"it",obrigado:"pt"};
+  if(_wordLang[_oneWord])return _wordLang[_oneWord];
   var t=(" "+text.toLowerCase()+" ");
   var sv=0,fr=0,en=0,es=0,de=0,it=0,pt=0;
   // Suédois
@@ -2349,11 +2356,9 @@ function sendMsg(){
   var inp=document.getElementById("userInput");
   var txt=inp.value.trim();if(!txt)return;
   inp.value="";inp.style.height="auto";
-  // Détection automatique de la langue (si texte assez long)
-  if(txt.split(" ").length>=2){
-    var detLang=detectInputLang(txt);
-    if(detLang&&detLang!==currentLang)setLang(detLang);
-  }
+  // Détection automatique de la langue (marche même avec un seul mot comme "bonjour")
+  var detLang=detectInputLang(txt);
+  if(detLang&&detLang!==currentLang)setLang(detLang);
   addToConvHistory("user",txt);
   addMsg(txt,"user");saveMsg("user",txt);
   xnStats.messagesCount=(xnStats.messagesCount||0)+1;
