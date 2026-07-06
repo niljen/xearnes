@@ -1716,12 +1716,14 @@ function structureText(t){
 }
 function sanitizeAI(t){
   return structureText(t)
+    // Normaliser toute puce écrite en code HTML (par le modèle) -> vrai caractère •
+    .replace(/&amp;bull;|&amp;bullet;|&bull;|&bullet;|&#8226;?/g,"•")
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
     .replace(/>/g,"&gt;")
     .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
-    .replace(/^[ \t]*\*[ \t]+(.+)/gm,"&bull; $1")
-    .replace(/^[-•][ \t]+(.+)/gm,"&bull; $1")
+    .replace(/^[ \t]*\*[ \t]+(.+)/gm,"• $1")
+    .replace(/^[-•][ \t]+(.+)/gm,"• $1")
     .replace(/^#{1,3}[ \t]+(.+)/gm,"<strong>$1</strong>")
     .replace(/([^\n])\n([^\n])/g,"$1<br>$2");
 }
@@ -3109,7 +3111,7 @@ function addMiniMsg(text,role){
   if(!chat)return;
   var div=document.createElement("div");
   div.className="mp-msg "+role;
-  if(role==="bot"){div.innerHTML=text;}else{div.textContent=text;}
+  if(role==="bot"){div.innerHTML=text.replace(/&amp;bull;|&amp;bullet;|&bull;|&bullet;/g,"•");}else{div.textContent=text;}
   chat.appendChild(div);
   chat.scrollTop=chat.scrollHeight;
 }
