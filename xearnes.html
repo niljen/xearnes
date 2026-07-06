@@ -1726,6 +1726,14 @@ function _cleanForModel(t){
     .replace(/&(?:amp;)+/g,"&")
     .replace(/&lt;/g,"<").replace(/&gt;/g,">");
 }
+// Coupe le texte à `max` caractères SANS jamais couper un emoji en deux.
+// Un emoji coupé laisse une "moitié de paire" (surrogate solitaire) qui casse le JSON
+// envoyé à Claude -> erreur 400 "no low surrogate in string". On enlève ces moitiés.
+function _safeContent(s,max){
+  return String(s).slice(0,max)
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g,"")
+    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g,"$1");
+}
 function sanitizeAI(t){
   return structureText(t)
     // Normaliser toute puce écrite en code HTML (par le modèle), à n'importe quel niveau d'échappement -> vrai caractère •
@@ -1750,11 +1758,11 @@ function callClaude(question,lang,cb,_attempt){
   for(var i=0;i<hist.length;i++){
     var r=hist[i].role==="bot"?"assistant":"user";
     if(r===lastRole)continue;
-    msgs.push({role:r,content:_cleanForModel(hist[i].text).slice(0,600)});
+    msgs.push({role:r,content:_safeContent(_cleanForModel(hist[i].text),600)});
     lastRole=r;
   }
   while(msgs.length>0&&msgs[0].role!=="user")msgs.shift();
-  if(msgs.length===0)msgs=[{role:"user",content:question}];
+  if(msgs.length===0)msgs=[{role:"user",content:_safeContent(question,4000)}];
   fetch(CLAUDE_WORKER_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -4262,6 +4270,6 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-6</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-7</div>
 </body>
 </html>
