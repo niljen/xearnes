@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -1736,30 +1736,57 @@ function _safeContent(s,max){
     .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g,"$1");
 }
 function sanitizeAI(t){
-  return structureText(t)
+  // On met les blocs de code ```...``` de côté AVANT le nettoyage (sinon les sauts de ligne du code seraient cassés)
+  var _codes=[];
+  t=String(t).replace(/```[a-zA-Z0-9+#-]*\n?([\s\S]*?)```/g,function(m,c){
+    _codes.push(c.replace(/\s+$/,""));
+    return "\n\nCODE"+(_codes.length-1)+"\n\n";
+  });
+  var out=structureText(t)
     // Normaliser toute puce écrite en code HTML (par le modèle), à n'importe quel niveau d'échappement -> vrai caractère •
     .replace(/&(?:amp;)*bull(?:et)?;|&#8226;?/g,"•")
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
     .replace(/>/g,"&gt;")
+    .replace(/`([^`\n]+)`/g,'<code style="background:rgba(255,255,255,0.12);padding:1px 5px;border-radius:4px;font-family:Consolas,monospace;font-size:0.92em">$1</code>')
     .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
     .replace(/^[ \t]*\*[ \t]+(.+)/gm,"• $1")
     .replace(/^[-•][ \t]+(.+)/gm,"• $1")
     .replace(/^#{1,3}[ \t]+(.+)/gm,"<strong>$1</strong>")
     .replace(/([^\n])\n([^\n])/g,"$1<br>$2");
+  // On remet les blocs de code, échappés et stylés comme un éditeur
+  return out.replace(/CODE(\d+)/g,function(m,i){
+    var c=_codes[+i].replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return '<pre style="background:#0d1117;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:12px;overflow-x:auto;font-family:Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre;margin:8px 0;color:#e6edf3">'+c+'</pre>';
+  });
+}
+// Détecte si la question parle de programmation -> on utilise Sonnet 4.6 (meilleur en code).
+// Sinon on garde Haiku (moins cher) pour toutes les questions normales.
+function isCodeQuestion(t){
+  t=" "+String(t).toLowerCase()+" ";
+  if(/```|<\/[a-z]+>|console\.log|function\s*\(|def [a-z_]+\(/.test(t))return true;
+  var kw=["code","coder","codage","coding","kod","koda","programme ","programmer","programmera","programmation","programmering",
+    "javascript","python","html","css","php","sql","java","typescript","c++","script",
+    "site web","webbsida","website","une app","une application","en app","jeu vidéo","spel att koda",
+    "fonction ","funktion att","boucle ","variable","algorithme","algoritm","debug","débug","déboguer",
+    "api ","json","github","serveur","server att"];
+  for(var i=0;i<kw.length;i++){if(t.indexOf(kw[i])!==-1)return true;}
+  return false;
 }
 function callClaude(question,lang,cb,_attempt){
   _attempt=_attempt||1;
+  var codeMode=isCodeQuestion(question);
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
   var _now=new Date();var _mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][_now.getMonth()];var _dateStr="le "+_now.getDate()+" "+_mois+" "+_now.getFullYear();
   var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Nous sommes "+_dateStr+". Tu connais toujours la date exacte. Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Tu écris TOUJOURS en paragraphes courts séparés par une ligne vide — JAMAIS un seul grand bloc de texte. Chaque paragraphe = 2-3 phrases maximum. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections courtes, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu n'utilises JAMAIS de balises HTML brutes comme &lt;br&gt;, &lt;div&gt;, &lt;p&gt; dans tes réponses — utilise uniquement des sauts de ligne normaux et du markdown. Tu termines TOUJOURS tes phrases complètement, sans jamais couper au milieu. Tes réponses sont toujours cohérentes et ont du sens. Tu n'écris JAMAIS de longs blocs de texte — tu divises TOUJOURS en petits paragraphes courts de 1-3 phrases maximum, avec des listes à puces dès que possible. Maximum 3 phrases par paragraphe. Tu ne mentionnes jamais que tu es Claude ou une IA d'Anthropic. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef. Quand on te compare à d'autres IA ou outils, tu réponds TOUJOURS avec confiance et précision en tant que Xearnes — tu expliques ce que TU fais et en quoi tu es différent, sans jamais mentionner Claude ou Anthropic. Par exemple si on te compare à DeepSpeech (un simple outil de reconnaissance vocale), tu expliques fièrement que Xearnes est un assistant IA complet qui comprend, raisonne et répond à tout, pas juste un outil de transcription. Ne sois jamais vague ou évasif quand on parle de tes capacités. Tu es confiant et ne t'excuses pas excessivement — si quelqu'un dit 'non' ou 'pas vraiment', réponds naturellement sans paniquer ni demander 'quel est le bon réponse ?'. Tu es Xearnes, tu as de la personnalité et de l'assurance.";
+  if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris toujours le code dans des blocs markdown avec trois accents graves (```). Explique le code simplement, ligne par ligne si besoin, pour qu'un débutant comprenne. Donne du code complet qui marche, pas des morceaux incomplets.";
   var msgs=[];
   var hist=convHistory;
   var lastRole=null;
   for(var i=0;i<hist.length;i++){
     var r=hist[i].role==="bot"?"assistant":"user";
     if(r===lastRole)continue;
-    msgs.push({role:r,content:_safeContent(_cleanForModel(hist[i].text),600)});
+    msgs.push({role:r,content:_safeContent(_cleanForModel(hist[i].text),codeMode?3000:600)});
     lastRole=r;
   }
   while(msgs.length>0&&msgs[0].role!=="user")msgs.shift();
@@ -1768,8 +1795,8 @@ function callClaude(question,lang,cb,_attempt){
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
-      model:"claude-haiku-4-5-20251001",
-      max_tokens:2500,
+      model:codeMode?"claude-sonnet-4-6":"claude-haiku-4-5-20251001",
+      max_tokens:codeMode?4000:2500,
       system:sysPrompt,
       messages:msgs
     })
@@ -2099,6 +2126,12 @@ function _getReplyBody(input,lang,n,cb){
 // Transforme le texte d'un message bot en HTML propre (nettoyage puces/entités + paragraphes).
 // Utilisé PARTOUT (nouveaux messages ET anciennes conversations restaurées) pour un rendu identique.
 function botToHTML(text){
+  // Mettre les blocs de code <pre> de côté pour ne pas casser leurs sauts de ligne
+  var _pres=[];
+  text=String(text).replace(/<pre[^>]*>[\s\S]*?<\/pre>/g,function(m){
+    _pres.push(m);
+    return "XPREBLOC"+(_pres.length-1)+"X";
+  });
   var clean=text
     .replace(/&(?:amp;)*bull(?:et)?;/g,"•").replace(/&(?:amp;)*middot;/g,"·")
     .replace(/&(?:amp;){2,}/g,"&amp;")
@@ -2108,7 +2141,8 @@ function botToHTML(text){
     .replace(/^[-*]\s+/,"• ")
     .replace(/\n#{1,3}\s+(.+)/g,"<br><strong>$1</strong>")
     .replace(/^#{1,3}\s+(.+)/g,"<strong>$1</strong>");
-  return clean.split(/\n\n+/).map(function(p){return '<p style="margin:0 0 10px">'+p.replace(/\n/g,'<br>')+'</p>';}).join('');
+  return clean.split(/\n\n+/).map(function(p){return '<p style="margin:0 0 10px">'+p.replace(/\n/g,'<br>')+'</p>';}).join('')
+    .replace(/XPREBLOC(\d+)X/g,function(m,i){return _pres[+i];});
 }
 function addMsg(text,role){
   var w=document.getElementById("welcome");
@@ -4271,6 +4305,6 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-8</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-9</div>
 </body>
 </html>
