@@ -1002,7 +1002,8 @@ function detectInputLang(text){
    hello:"en",hey:"en",thanks:"en",
    hola:"es",gracias:"es",hallo:"de",danke:"de",ciao:"it",grazie:"it",obrigado:"pt"};
   if(_wordLang[_oneWord])return _wordLang[_oneWord];
-  var t=(" "+text.toLowerCase()+" ");
+  // Remplacer les apostrophes par des espaces pour détecter "c'est", "qu'est-ce", "j'ai"... comme du français
+  var t=(" "+text.toLowerCase().replace(/['’]/g," ")+" ");
   var sv=0,fr=0,en=0,es=0,de=0,it=0,pt=0;
   // Suédois
   if(/[åäö]/.test(t))sv+=5;
@@ -4270,6 +4271,6 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-7</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-8</div>
 </body>
 </html>
