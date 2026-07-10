@@ -89,6 +89,7 @@ footer{text-align:center;font-size:.65rem;color:rgba(255,255,255,0.2);padding:14
       <button class="quick-btn" onclick="askQuick('analyse tesla')">Analyse Tesla</button>
       <button class="quick-btn" onclick="askQuick('analyse nvidia')">Analyse Nvidia</button>
       <button class="quick-btn" onclick="askQuick('c est quoi une action')">C'est quoi une action ?</button>
+      <button class="quick-btn" onclick="askQuick('teste xearnes')">🧪 Teste Xearnes en bourse</button>
     </div>
     <div class="chat-box" id="chatBox"></div>
     <div class="chat-input-row">
@@ -267,8 +268,54 @@ function callStockAI(question,cb){
   })
   .catch(function(){cb(null);});
 }
+// ── Suivi des prédictions : pour mesurer honnêtement si Xearnes est bon en bourse ──
+function _stockPredictions(){
+  var p;try{p=JSON.parse(localStorage.getItem("xn_stock_predictions")||"[]");}catch(e){p=[];}
+  return p;
+}
+function _saveStockPredictions(p){try{localStorage.setItem("xn_stock_predictions",JSON.stringify(p));}catch(e){}}
+function detectSentiment(text){
+  var t=text.toLowerCase();
+  var pos=(t.match(/hausse|monte|positif|opportunité|croissance|solide|encourageant|bon signe|optimis/g)||[]).length;
+  var neg=(t.match(/baisse|risque|prudence|attention|chute|inquiét|négatif|fragile|méfiance|volatil/g)||[]).length;
+  if(pos>neg)return"up";
+  if(neg>pos)return"down";
+  return"neutral";
+}
+function logStockPrediction(name,ticker,price,sentiment){
+  var preds=_stockPredictions();
+  preds.push({name:name,ticker:ticker,priceAtAnalysis:price,sentiment:sentiment,date:Date.now()});
+  if(preds.length>50)preds=preds.slice(-50);
+  _saveStockPredictions(preds);
+}
+function doStockTest(cb){
+  var preds=_stockPredictions();
+  if(preds.length===0)return cb("📋 Xearnes n a encore fait aucune analyse à tester. Demande d abord <em>analyse apple</em>, puis reviens dans quelques jours avec <em>teste xearnes</em>.");
+  var remaining=preds.length,correct=0,scored=0,rows=[];
+  preds.forEach(function(pr){
+    fetchStockPrice(pr.ticker,function(res){
+      remaining--;
+      if(res){
+        var moved=res.price>pr.priceAtAnalysis?"up":res.price<pr.priceAtAnalysis?"down":"neutral";
+        var ok=pr.sentiment==="neutral"||moved==="neutral"?null:(pr.sentiment===moved);
+        if(ok!==null){scored++;if(ok)correct++;}
+        var pct=((res.price-pr.priceAtAnalysis)/pr.priceAtAnalysis*100).toFixed(1);
+        var days=Math.max(1,Math.round((Date.now()-pr.date)/86400000));
+        var icon=ok===null?"➖":ok?"✅":"❌";
+        rows.push(icon+" <strong>"+pr.name+"</strong> — avis "+(pr.sentiment==="up"?"positif 📈":pr.sentiment==="down"?"prudent 📉":"neutre")+", il y a "+days+"j : "+(pct>=0?"+":"")+pct+"%");
+      }
+      if(remaining===0){
+        var head=scored>0?
+          ("🧪 <strong>Score de Xearnes en bourse :</strong> "+correct+"/"+scored+" avis corrects ("+Math.round(correct/scored*100)+"%)"):
+          "🧪 Pas encore assez de résultats mesurables (les prix n ont pas assez bougé).";
+        cb(head+"<br><br>"+rows.join("<br>")+"<br><br>⚠️ Rappel : même un bon score ne garantit rien pour l avenir — la bourse reste imprévisible.");
+      }
+    });
+  });
+}
 function processStockQuestion(q,cb){
   var n=q.toLowerCase();
+  if(/teste xearnes|test xearnes|xearnes est.il bon|score.*bourse|score.*xearnes/.test(n))return doStockTest(cb);
   var mAn=n.match(/(?:analyse|conseil sur)\s+([a-zéèàâê& -]+)/);
   var mPrice=n.match(/(?:prix|cours)\s+(?:de\s+)?([a-zéèàâê& -]+)/);
   if(mAn){
@@ -278,7 +325,8 @@ function processStockQuestion(q,cb){
         if(!res)return cb("⚠️ Impossible de récupérer le prix en ce moment.");
         var trend=res.price>res.open?"en hausse aujourd'hui":"en baisse aujourd'hui";
         callStockAI("Analyse l'action "+t.name+". Prix actuel : "+res.price.toFixed(2)+"€, "+trend+" (ouverture "+res.open.toFixed(2)+"€, haut "+res.high.toFixed(2)+"€, bas "+res.low.toFixed(2)+"€).",function(r){
-          cb(r?("🔍 <strong>"+t.name+"</strong> ("+res.price.toFixed(2)+"€)<br><br>"+r):"⚠️ Impossible d analyser pour l instant.");
+          if(r){logStockPrediction(t.name,t.ticker,res.price,detectSentiment(r));return cb("🔍 <strong>"+t.name+"</strong> ("+res.price.toFixed(2)+"€)<br><br>"+r);}
+          cb("⚠️ Impossible d analyser pour l instant.");
         });
       });
       return;

@@ -1326,6 +1326,9 @@ function fetchStockPrice(ticker,cb){
 }
 function detectStockCommand(n,lang){
   n=n.toLowerCase();
+  if(/teste xearnes|test xearnes|xearnes est.il bon|score.*bourse|score.*xearnes/.test(n)){
+    return{type:"test"};
+  }
   if(/bourse|portefeuille|simulateur|mina aktier|mitt konto/.test(n)&&!/(achete|achète|vends|vend|prix|analyse|köp|sälj|pris|analysera)/.test(n)){
     return{type:"portfolio"};
   }
@@ -1408,6 +1411,53 @@ function doStockPrice(name,lang,cb){
     cb("📊 <strong>"+t.name+"</strong> — "+res.price.toFixed(2)+"€ (haut: "+res.high.toFixed(2)+"€, bas: "+res.low.toFixed(2)+"€)");
   });
 }
+// ── Suivi des prédictions de Xearnes : pour mesurer honnêtement s'il est bon en bourse.
+// On enregistre chaque analyse (avis positif/prudent/négatif + prix du moment), puis
+// on compare plus tard avec le vrai prix pour voir si l'avis était juste.
+function _stockPredictions(){
+  var p;try{p=JSON.parse(localStorage.getItem("xn_stock_predictions")||"[]");}catch(e){p=[];}
+  return p;
+}
+function _saveStockPredictions(p){try{localStorage.setItem("xn_stock_predictions",JSON.stringify(p));}catch(e){}}
+function detectSentiment(text){
+  var t=text.toLowerCase();
+  var pos=(t.match(/hausse|monte|positif|opportunité|croissance|solide|encourageant|bon signe|optimis/g)||[]).length;
+  var neg=(t.match(/baisse|risque|prudence|attention|chute|inquiét|négatif|fragile|méfiance|volatil/g)||[]).length;
+  if(pos>neg)return"up";
+  if(neg>pos)return"down";
+  return"neutral";
+}
+function logStockPrediction(name,ticker,price,sentiment){
+  var preds=_stockPredictions();
+  preds.push({name:name,ticker:ticker,priceAtAnalysis:price,sentiment:sentiment,date:Date.now()});
+  if(preds.length>50)preds=preds.slice(-50);
+  _saveStockPredictions(preds);
+}
+function doStockTest(lang,cb){
+  var preds=_stockPredictions();
+  if(preds.length===0)return cb(lang==="fr"?"📋 Xearnes n a encore fait aucune analyse à tester. Demande d abord : <em>analyse apple</em>, puis reviens dans quelques jours avec : <em>teste xearnes</em>":"📋 Xearnes hasn't made any analysis to test yet. Ask first: <em>analyze apple</em>, then come back in a few days with: <em>test xearnes</em>");
+  var remaining=preds.length,correct=0,scored=0,rows=[];
+  preds.forEach(function(pr){
+    fetchStockPrice(pr.ticker,function(res){
+      remaining--;
+      if(res){
+        var moved=res.price>pr.priceAtAnalysis?"up":res.price<pr.priceAtAnalysis?"down":"neutral";
+        var ok=pr.sentiment==="neutral"||moved==="neutral"?null:(pr.sentiment===moved);
+        if(ok!==null){scored++;if(ok)correct++;}
+        var pct=((res.price-pr.priceAtAnalysis)/pr.priceAtAnalysis*100).toFixed(1);
+        var days=Math.max(1,Math.round((Date.now()-pr.date)/86400000));
+        var icon=ok===null?"➖":ok?"✅":"❌";
+        rows.push(icon+" <strong>"+pr.name+"</strong> — avis "+(pr.sentiment==="up"?"positif 📈":pr.sentiment==="down"?"prudent 📉":"neutre")+", il y a "+days+"j : "+(pct>=0?"+":"")+pct+"%");
+      }
+      if(remaining===0){
+        var head=scored>0?
+          (lang==="fr"?"🧪 <strong>Score de Xearnes en bourse :</strong> "+correct+"/"+scored+" avis corrects ("+Math.round(correct/scored*100)+"%)":"🧪 <strong>Xearnes' stock score:</strong> "+correct+"/"+scored+" correct ("+Math.round(correct/scored*100)+"%)"):
+          (lang==="fr"?"🧪 Pas encore assez de résultats mesurables (les prix n ont pas assez bougé).":"🧪 Not enough measurable results yet (prices haven't moved enough).");
+        cb(head+"<br><br>"+rows.join("<br>")+"<br><br>"+(lang==="fr"?"⚠️ Rappel : même un bon score ne garantit rien pour l avenir — la bourse reste imprévisible.":"⚠️ Reminder: even a good score guarantees nothing for the future — the market stays unpredictable."));
+      }
+    });
+  });
+}
 function doStockAnalyze(name,lang,cb){
   var t=findTicker(name);
   if(!t)return cb(lang==="fr"?"❓ Je ne connais pas cette action.":"❓ I don't know that stock.");
@@ -1418,7 +1468,10 @@ function doStockAnalyze(name,lang,cb){
       "Analyse l'action "+t.name+" pour un débutant qui s'entraîne avec de l'argent FICTIF dans un simulateur. Prix actuel : "+res.price.toFixed(2)+"€, "+trend+" (ouverture "+res.open.toFixed(2)+"€, haut "+res.high.toFixed(2)+"€, bas "+res.low.toFixed(2)+"€). Donne un avis honnête et prudent (tendance récente, points d'attention), SANS jamais dire 'achète maintenant' avec certitude — rappelle toujours que personne ne peut prédire la bourse avec certitude. Reste simple, 4-5 phrases max.":
       "Analyze the stock "+t.name+" for a beginner training with FAKE money in a simulator. Current price: "+res.price.toFixed(2)+"€, "+trend+". Give an honest, cautious opinion — NEVER say 'buy now' with certainty, always remind that nobody can predict the market for sure. Keep it simple, 4-5 sentences max.");
     callClaude(prompt,lang,function(r){
-      if(r)return cb("🔍 <strong>"+t.name+"</strong> ("+res.price.toFixed(2)+"€)<br><br>"+r);
+      if(r){
+        logStockPrediction(t.name,t.ticker,res.price,detectSentiment(r));
+        return cb("🔍 <strong>"+t.name+"</strong> ("+res.price.toFixed(2)+"€)<br><br>"+r);
+      }
       cb(lang==="fr"?"⚠️ Impossible d analyser pour l instant.":"⚠️ Could not analyze right now.");
     });
   });
@@ -2158,7 +2211,8 @@ function _getReplyBody(input,lang,n,cb){
   // 3b. Simulateur de bourse (argent fictif)
   var stockCmd=detectStockCommand(n,lang);
   if(stockCmd){
-    if(stockCmd.type==="portfolio")doPortfolioSummary(lang,cb);
+    if(stockCmd.type==="test")doStockTest(lang,cb);
+    else if(stockCmd.type==="portfolio")doPortfolioSummary(lang,cb);
     else if(stockCmd.type==="buy")doStockBuy(stockCmd.name,stockCmd.qty,lang,cb);
     else if(stockCmd.type==="sell")doStockSell(stockCmd.name,stockCmd.qty,lang,cb);
     else if(stockCmd.type==="price")doStockPrice(stockCmd.name,lang,cb);
@@ -4468,6 +4522,6 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-12</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-13</div>
 </body>
 </html>
