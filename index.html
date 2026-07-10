@@ -1289,18 +1289,36 @@ function findTicker(word){
   for(var k in STOCK_TICKERS){if(tokens.indexOf(k)!==-1)return{name:k,ticker:STOCK_TICKERS[k]};}
   return null;
 }
-// Prix en direct via Stooq (gratuit, sans clé API)
+// Prix en direct via Stooq (gratuit, sans clé API). Stooq ne renvoie pas les
+// en-têtes CORS pour les requêtes navigateur -> on passe par des proxys CORS
+// (même technique que fetchRSS), avec plusieurs de secours en cas d'échec.
+function _parseStooqCSV(txt){
+  if(txt&&txt[0]==='{'){try{txt=JSON.parse(txt).contents||txt;}catch(e){}}
+  var lines=String(txt).trim().split("\n");
+  if(lines.length<2)return null;
+  var cols=lines[1].split(",");
+  var price=parseFloat(cols[6]);
+  if(!price||isNaN(price))return null;
+  return{price:price,open:parseFloat(cols[3]),high:parseFloat(cols[4]),low:parseFloat(cols[5])};
+}
 function fetchStockPrice(ticker,cb){
-  fetch("https://stooq.com/q/l/?s="+encodeURIComponent(ticker.toLowerCase())+"&f=sd2t2ohlcv&h&e=csv")
-    .then(function(r){return r.text();})
-    .then(function(txt){
-      var lines=txt.trim().split("\n");
-      if(lines.length<2)return cb(null);
-      var cols=lines[1].split(",");
-      var price=parseFloat(cols[6]);
-      if(!price||isNaN(price))return cb(null);
-      cb({price:price,open:parseFloat(cols[3]),high:parseFloat(cols[4]),low:parseFloat(cols[5])});
-    }).catch(function(){cb(null);});
+  var stooqUrl="https://stooq.com/q/l/?s="+encodeURIComponent(ticker.toLowerCase())+"&f=sd2t2ohlcv&h&e=csv";
+  var proxies=[
+    function(u){return u;},
+    function(u){return "https://corsproxy.io/?url="+encodeURIComponent(u);},
+    function(u){return "https://api.allorigins.win/get?url="+encodeURIComponent(u);}
+  ];
+  function tryNext(idx){
+    if(idx>=proxies.length)return cb(null);
+    fetch(proxies[idx](stooqUrl))
+      .then(function(r){return r.text();})
+      .then(function(txt){
+        var res=_parseStooqCSV(txt);
+        if(res)cb(res);else tryNext(idx+1);
+      })
+      .catch(function(){tryNext(idx+1);});
+  }
+  tryNext(0);
 }
 function detectStockCommand(n,lang){
   n=n.toLowerCase();
@@ -4446,6 +4464,6 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-10</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-11</div>
 </body>
 </html>
