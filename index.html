@@ -1270,6 +1270,137 @@ function buildWeatherHtml(w,lang){
   var wl=lang==="fr"?"Vent":lang==="sv"?"Vind":"Wind";
   return "<div class='weather-card'><div class='wt-city'>"+w.city+", "+w.country+"</div><div class='wt-desc'>"+w.desc+"</div><div class='wt-stats'><span>🌡️ "+w.temp+"°C</span><span>💨 "+w.wind+" km/h</span></div></div>";
 }
+// ── SIMULATEUR DE BOURSE (argent fictif, pour s'entraîner sans risque) ──
+var STOCK_TICKERS={
+  apple:"AAPL.US",tesla:"TSLA.US",amazon:"AMZN.US",google:"GOOGL.US",microsoft:"MSFT.US",
+  nvidia:"NVDA.US",meta:"META.US",netflix:"NFLX.US",disney:"DIS.US",coca:"KO.US","coca cola":"KO.US",
+  spotify:"SPOT.US",samsung:"005930.KS",nike:"NKE.US","volvo":"VOLV-B.ST","h&m":"HM-B.ST","ikea":"IKEA.PA"
+};
+function _stockPortfolio(){
+  var p;try{p=JSON.parse(localStorage.getItem("xn_stock_portfolio")||"null");}catch(e){p=null;}
+  if(!p)p={cash:1000,holdings:{}};
+  return p;
+}
+function _saveStockPortfolio(p){try{localStorage.setItem("xn_stock_portfolio",JSON.stringify(p));}catch(e){}}
+function findTicker(word){
+  word=word.toLowerCase().trim();
+  if(STOCK_TICKERS[word])return{name:word,ticker:STOCK_TICKERS[word]};
+  var tokens=word.split(/[^a-zé&]+/).filter(Boolean);
+  for(var k in STOCK_TICKERS){if(tokens.indexOf(k)!==-1)return{name:k,ticker:STOCK_TICKERS[k]};}
+  return null;
+}
+// Prix en direct via Stooq (gratuit, sans clé API)
+function fetchStockPrice(ticker,cb){
+  fetch("https://stooq.com/q/l/?s="+encodeURIComponent(ticker.toLowerCase())+"&f=sd2t2ohlcv&h&e=csv")
+    .then(function(r){return r.text();})
+    .then(function(txt){
+      var lines=txt.trim().split("\n");
+      if(lines.length<2)return cb(null);
+      var cols=lines[1].split(",");
+      var price=parseFloat(cols[6]);
+      if(!price||isNaN(price))return cb(null);
+      cb({price:price,open:parseFloat(cols[3]),high:parseFloat(cols[4]),low:parseFloat(cols[5])});
+    }).catch(function(){cb(null);});
+}
+function detectStockCommand(n,lang){
+  n=n.toLowerCase();
+  if(/bourse|portefeuille|simulateur|mina aktier|mitt konto/.test(n)&&!/(achete|achète|vends|vend|prix|analyse|köp|sälj|pris|analysera)/.test(n)){
+    return{type:"portfolio"};
+  }
+  var mBuy=n.match(/(?:achete|achète|acheter|köp)\s+(?:(\d+)\s+)?(?:actions?\s+(?:de\s+|d')?)?([a-zéèàâê& -]+?)(?:\s+pour|\s*\?|$)/);
+  if(mBuy)return{type:"buy",qty:parseInt(mBuy[1])||1,name:mBuy[2].trim()};
+  var mSell=n.match(/(?:vends|vend|vendre|sälj)\s+(?:(\d+)\s+)?(?:actions?\s+(?:de\s+|d')?)?([a-zéèàâê& -]+?)(?:\s*\?|$)/);
+  if(mSell)return{type:"sell",qty:parseInt(mSell[1])||1,name:mSell[2].trim()};
+  var mPrice=n.match(/(?:prix|cours|pris)\s+(?:de\s+|d'|du\s+)?([a-zéèàâê& -]+?)(?:\s*\?|$)/);
+  if(mPrice)return{type:"price",name:mPrice[1].trim()};
+  var mAn=n.match(/(?:analyse|analysera|conseil)\s+(?:sur\s+|för\s+)?([a-zéèàâê& -]+?)(?:\s*\?|$)/);
+  if(mAn)return{type:"analyze",name:mAn[1].trim()};
+  return null;
+}
+function doPortfolioSummary(lang,cb){
+  var p=_stockPortfolio();
+  var names=Object.keys(p.holdings);
+  var head=(lang==="fr"?"💰 <strong>Argent disponible :</strong> ":lang==="sv"?"💰 <strong>Tillgängliga pengar:</strong> ":"💰 <strong>Available cash:</strong> ")+p.cash.toFixed(2)+"€";
+  if(names.length===0){
+    cb(head+"<br><br>"+(lang==="fr"?"📊 Tu n as encore aucune action. Essaie : <em>achete 5 apple</em>":lang==="sv"?"📊 Du äger inga aktier än. Prova: <em>köp 5 apple</em>":"📊 You don't own any stocks yet. Try: <em>buy 5 apple</em>"));
+    return;
+  }
+  var out=[head,"",lang==="fr"?"📊 <strong>Tes actions :</strong>":lang==="sv"?"📊 <strong>Dina aktier:</strong>":"📊 <strong>Your stocks:</strong>"];
+  var remaining=names.length,totalValue=0;
+  names.forEach(function(name){
+    var h=p.holdings[name];
+    fetchStockPrice(h.ticker,function(res){
+      remaining--;
+      var price=res?res.price:h.avgPrice;
+      var value=price*h.qty;
+      totalValue+=value;
+      var pct=((price-h.avgPrice)/h.avgPrice*100).toFixed(1);
+      var sign=pct>=0?"📈 +":"📉 ";
+      out.push(name+" — "+h.qty+" x "+price.toFixed(2)+"€ = "+value.toFixed(2)+"€ ("+sign+pct+"%)");
+      if(remaining===0){
+        out.push("");
+        out.push((lang==="fr"?"💼 Valeur totale (actions + argent) : ":lang==="sv"?"💼 Totalt värde (aktier + pengar): ":"💼 Total value (stocks + cash): ")+"<strong>"+(totalValue+p.cash).toFixed(2)+"€</strong>");
+        cb(out.join("<br>"));
+      }
+    });
+  });
+}
+function doStockBuy(name,qty,lang,cb){
+  var t=findTicker(name);
+  if(!t)return cb(lang==="fr"?"❓ Je ne connais pas cette action. Essaie : apple, tesla, amazon, google, microsoft, nvidia...":lang==="sv"?"❓ Jag känner inte till den aktien. Prova: apple, tesla, amazon...":"❓ I don't know that stock. Try: apple, tesla, amazon...");
+  fetchStockPrice(t.ticker,function(res){
+    if(!res)return cb(lang==="fr"?"⚠️ Impossible de récupérer le prix en ce moment.":lang==="sv"?"⚠️ Kunde inte hämta priset just nu.":"⚠️ Could not fetch the price right now.");
+    var cost=res.price*qty;
+    var p=_stockPortfolio();
+    if(cost>p.cash)return cb((lang==="fr"?"❌ Pas assez d argent fictif ! Il faut ":lang==="sv"?"❌ Inte tillräckligt med pengar! Det krävs ":"❌ Not enough fake cash! You need ")+cost.toFixed(2)+"€, tu as "+p.cash.toFixed(2)+"€.");
+    var h=p.holdings[t.name];
+    if(h){h.avgPrice=((h.avgPrice*h.qty)+cost)/(h.qty+qty);h.qty+=qty;}
+    else p.holdings[t.name]={ticker:t.ticker,qty:qty,avgPrice:res.price};
+    p.cash-=cost;
+    _saveStockPortfolio(p);
+    cb((lang==="fr"?"✅ Acheté ":lang==="sv"?"✅ Köpte ":"✅ Bought ")+qty+" "+t.name+" à "+res.price.toFixed(2)+"€ ("+cost.toFixed(2)+"€ au total). Argent restant : "+p.cash.toFixed(2)+"€ 📈");
+  });
+}
+function doStockSell(name,qty,lang,cb){
+  var t=findTicker(name);
+  if(!t)return cb(lang==="fr"?"❓ Je ne connais pas cette action.":"❓ I don't know that stock.");
+  var p=_stockPortfolio();
+  var h=p.holdings[t.name];
+  if(!h||h.qty<qty)return cb((lang==="fr"?"❌ Tu n as pas assez d actions "+t.name+" à vendre.":"❌ You don't have enough "+t.name+" shares to sell."));
+  fetchStockPrice(t.ticker,function(res){
+    if(!res)return cb(lang==="fr"?"⚠️ Impossible de récupérer le prix en ce moment.":"⚠️ Could not fetch the price right now.");
+    var gain=res.price*qty;
+    h.qty-=qty;
+    if(h.qty===0)delete p.holdings[t.name];
+    p.cash+=gain;
+    _saveStockPortfolio(p);
+    var pct=((res.price-h.avgPrice)/h.avgPrice*100).toFixed(1);
+    cb((lang==="fr"?"✅ Vendu ":"✅ Sold ")+qty+" "+t.name+" à "+res.price.toFixed(2)+"€ ("+gain.toFixed(2)+"€ au total, "+(pct>=0?"+":"")+pct+"%). Argent : "+p.cash.toFixed(2)+"€");
+  });
+}
+function doStockPrice(name,lang,cb){
+  var t=findTicker(name);
+  if(!t)return cb(lang==="fr"?"❓ Je ne connais pas cette action. Essaie : apple, tesla, amazon, google...":"❓ I don't know that stock.");
+  fetchStockPrice(t.ticker,function(res){
+    if(!res)return cb(lang==="fr"?"⚠️ Impossible de récupérer le prix en ce moment.":"⚠️ Could not fetch the price right now.");
+    cb("📊 <strong>"+t.name+"</strong> — "+res.price.toFixed(2)+"€ (haut: "+res.high.toFixed(2)+"€, bas: "+res.low.toFixed(2)+"€)");
+  });
+}
+function doStockAnalyze(name,lang,cb){
+  var t=findTicker(name);
+  if(!t)return cb(lang==="fr"?"❓ Je ne connais pas cette action.":"❓ I don't know that stock.");
+  fetchStockPrice(t.ticker,function(res){
+    if(!res)return cb(lang==="fr"?"⚠️ Impossible de récupérer le prix en ce moment.":"⚠️ Could not fetch the price right now.");
+    var trend=res.price>res.open?"en hausse aujourd'hui":"en baisse aujourd'hui";
+    var prompt=(lang==="fr"?
+      "Analyse l'action "+t.name+" pour un débutant qui s'entraîne avec de l'argent FICTIF dans un simulateur. Prix actuel : "+res.price.toFixed(2)+"€, "+trend+" (ouverture "+res.open.toFixed(2)+"€, haut "+res.high.toFixed(2)+"€, bas "+res.low.toFixed(2)+"€). Donne un avis honnête et prudent (tendance récente, points d'attention), SANS jamais dire 'achète maintenant' avec certitude — rappelle toujours que personne ne peut prédire la bourse avec certitude. Reste simple, 4-5 phrases max.":
+      "Analyze the stock "+t.name+" for a beginner training with FAKE money in a simulator. Current price: "+res.price.toFixed(2)+"€, "+trend+". Give an honest, cautious opinion — NEVER say 'buy now' with certainty, always remind that nobody can predict the market for sure. Keep it simple, 4-5 sentences max.");
+    callClaude(prompt,lang,function(r){
+      if(r)return cb("🔍 <strong>"+t.name+"</strong> ("+res.price.toFixed(2)+"€)<br><br>"+r);
+      cb(lang==="fr"?"⚠️ Impossible d analyser pour l instant.":"⚠️ Could not analyze right now.");
+    });
+  });
+}
 // ── PRONONCIATION ──
 var pronDB={
   bonjour:{en:"bohn-ZHOOR",sv:"bon-SHUR",de:"bon-SCHUUR",es:"bon-HUR",ja:"ボンジュール (bon-jyu-ru)",zh:"蹦朱 (bèng-zhū)",ar:"بونجور (bun-jur)",ru:"бонжур (bon-zhur)",it:"bon-ZHUR"},
@@ -2000,6 +2131,16 @@ function _getReplyBody(input,lang,n,cb){
   if(detectRecette(n,lang)){
     xnStats.recipesViewed=(xnStats.recipesViewed||0)+1;saveStats();checkBadges();
     callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(pick(cfg.defaults));});
+    return;
+  }
+  // 3b. Simulateur de bourse (argent fictif)
+  var stockCmd=detectStockCommand(n,lang);
+  if(stockCmd){
+    if(stockCmd.type==="portfolio")doPortfolioSummary(lang,cb);
+    else if(stockCmd.type==="buy")doStockBuy(stockCmd.name,stockCmd.qty,lang,cb);
+    else if(stockCmd.type==="sell")doStockSell(stockCmd.name,stockCmd.qty,lang,cb);
+    else if(stockCmd.type==="price")doStockPrice(stockCmd.name,lang,cb);
+    else if(stockCmd.type==="analyze")doStockAnalyze(stockCmd.name,lang,cb);
     return;
   }
   // 4. Image IA
@@ -4305,6 +4446,6 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-9</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-10</div>
 </body>
 </html>
