@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bourse Xearnes — Simulateur</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<meta name="theme-color" content="#DAA520">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0f2c;--card:#0d1235;--border:#2a2f6c;--accent:#DAA520;--accent2:#E8C547;--text:#e0e0ff;--text2:#aaaacc;--danger:#f85149;--good:#3fb950;--radius:12px}
+body{background:var(--bg);color:var(--text);font-family:Segoe UI,system-ui,sans-serif;min-height:100dvh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px}
+.logo{font-size:1.3rem;font-weight:800;letter-spacing:2px;color:var(--accent);text-shadow:0 0 12px rgba(218,165,32,.6)}
+.logo small{display:block;font-size:.6rem;color:var(--text2);letter-spacing:1px;font-weight:400}
+a.back{margin-left:auto;color:var(--text2);text-decoration:none;font-size:.8rem;border:1px solid var(--border);padding:6px 12px;border-radius:20px}
+a.back:hover{background:var(--border)}
+.wrap{max-width:900px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.card h2{font-size:.95rem;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.cash-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.cash-val{font-size:1.6rem;font-weight:800;color:var(--accent2)}
+.cash-label{font-size:.75rem;color:var(--text2)}
+.holdings{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.holding{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.85rem}
+.holding-name{font-weight:700;text-transform:capitalize}
+.holding-qty{color:var(--text2);font-size:.75rem}
+.pct{font-weight:700}
+.pct.up{color:var(--good)}
+.pct.down{color:var(--danger)}
+.empty-msg{color:var(--text2);font-size:.82rem;padding:8px 0}
+.trade-form{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+select,input[type=number]{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:.85rem}
+select{flex:2;min-width:140px}
+input[type=number]{flex:1;min-width:70px}
+.btn{border:none;border-radius:8px;padding:9px 16px;font-weight:700;font-size:.85rem;cursor:pointer;transition:.15s}
+.btn-buy{background:var(--good);color:#031b08}
+.btn-sell{background:var(--danger);color:#2b0505}
+.btn:hover{filter:brightness(1.1)}
+.status-msg{margin-top:10px;font-size:.82rem;padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:none}
+.status-msg.show{display:block}
+.chat-box{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto;margin-bottom:12px;padding-right:4px}
+.chat-msg{padding:10px 14px;border-radius:10px;font-size:.85rem;line-height:1.5;max-width:90%}
+.chat-msg.user{background:var(--accent);color:#0a0f2c;font-weight:500;align-self:flex-end;border-radius:10px 10px 3px 10px}
+.chat-msg.bot{background:var(--bg);border:1px solid var(--border);align-self:flex-start;border-radius:10px 10px 10px 3px}
+.chat-msg.bot p{margin:0 0 8px}
+.chat-msg.bot p:last-child{margin-bottom:0}
+.chat-input-row{display:flex;gap:8px}
+.chat-input-row input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:20px;padding:10px 16px;font-size:.85rem}
+.chat-input-row input:focus{outline:none;border-color:var(--accent)}
+.chat-send{background:var(--accent);color:#0a0f2c;border:none;border-radius:20px;padding:10px 18px;font-weight:700;cursor:pointer}
+.disclaimer{font-size:.7rem;color:var(--text2);margin-top:8px;line-height:1.4}
+.quick-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.quick-btn{background:var(--bg);border:1px solid var(--border);color:var(--text2);padding:5px 11px;border-radius:14px;font-size:.72rem;cursor:pointer}
+.quick-btn:hover{background:var(--border);color:var(--text)}
+.typing{color:var(--text2);font-style:italic;font-size:.8rem}
+footer{text-align:center;font-size:.65rem;color:rgba(255,255,255,0.2);padding:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">📈 BOURSE<small>par Xearnes</small></div>
+  <a class="back" href="xearnes.html">← Retour à Xearnes</a>
+</header>
+<div class="wrap">
+
+  <div class="card">
+    <h2>💰 Mon portefeuille</h2>
+    <div class="cash-row">
+      <div><div class="cash-val" id="cashVal">—</div><div class="cash-label">Argent disponible (fictif)</div></div>
+      <div style="text-align:right"><div class="cash-val" id="totalVal">—</div><div class="cash-label">Valeur totale</div></div>
+    </div>
+    <div class="holdings" id="holdingsList"><div class="empty-msg">Chargement…</div></div>
+
+    <div class="trade-form">
+      <select id="tickerSelect"></select>
+      <input type="number" id="qtyInput" value="1" min="1">
+      <button class="btn btn-buy" onclick="doTrade('buy')">Acheter</button>
+      <button class="btn btn-sell" onclick="doTrade('sell')">Vendre</button>
+    </div>
+    <div class="status-msg" id="tradeStatus"></div>
+    <div class="disclaimer">⚠️ Argent 100% fictif, pour s'entraîner sans risque. Les prix viennent du vrai marché.</div>
+  </div>
+
+  <div class="card">
+    <h2>🤖 Demande conseil à Xearnes</h2>
+    <div class="quick-btns">
+      <button class="quick-btn" onclick="askQuick('analyse apple')">Analyse Apple</button>
+      <button class="quick-btn" onclick="askQuick('analyse tesla')">Analyse Tesla</button>
+      <button class="quick-btn" onclick="askQuick('analyse nvidia')">Analyse Nvidia</button>
+      <button class="quick-btn" onclick="askQuick('c est quoi une action')">C'est quoi une action ?</button>
+    </div>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Ex: analyse microsoft, ou pose une question sur la bourse…">
+      <button class="chat-send" onclick="sendChat()">Envoyer</button>
+    </div>
+  </div>
+
+</div>
+<footer>Powered by Claude AI · Anthropic · Simulateur Bourse Xearnes</footer>
+
+<script>
+var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
+var STOCK_TICKERS={
+  apple:"AAPL.US",tesla:"TSLA.US",amazon:"AMZN.US",google:"GOOGL.US",microsoft:"MSFT.US",
+  nvidia:"NVDA.US",meta:"META.US",netflix:"NFLX.US",disney:"DIS.US",coca:"KO.US","coca cola":"KO.US",
+  spotify:"SPOT.US",samsung:"005930.KS",nike:"NKE.US",volvo:"VOLV-B.ST","h&m":"HM-B.ST",ikea:"IKEA.PA"
+};
+
+function _stockPortfolio(){
+  var p;try{p=JSON.parse(localStorage.getItem("xn_stock_portfolio")||"null");}catch(e){p=null;}
+  if(!p)p={cash:1000,holdings:{}};
+  return p;
+}
+function _saveStockPortfolio(p){try{localStorage.setItem("xn_stock_portfolio",JSON.stringify(p));}catch(e){}}
+function findTicker(word){
+  word=word.toLowerCase().trim();
+  if(STOCK_TICKERS[word])return{name:word,ticker:STOCK_TICKERS[word]};
+  var tokens=word.split(/[^a-zé&]+/).filter(Boolean);
+  for(var k in STOCK_TICKERS){if(tokens.indexOf(k)!==-1)return{name:k,ticker:STOCK_TICKERS[k]};}
+  return null;
+}
+function _parseStooqCSV(txt){
+  if(txt&&txt[0]==='{'){try{txt=JSON.parse(txt).contents||txt;}catch(e){}}
+  var lines=String(txt).trim().split("\n");
+  if(lines.length<2)return null;
+  var cols=lines[1].split(",");
+  var price=parseFloat(cols[6]);
+  if(!price||isNaN(price))return null;
+  return{price:price,open:parseFloat(cols[3]),high:parseFloat(cols[4]),low:parseFloat(cols[5])};
+}
+function fetchStockPrice(ticker,cb){
+  var stooqUrl="https://stooq.com/q/l/?s="+encodeURIComponent(ticker.toLowerCase())+"&f=sd2t2ohlcv&h&e=csv";
+  var proxies=[
+    function(u){return u;},
+    function(u){return "https://corsproxy.io/?url="+encodeURIComponent(u);},
+    function(u){return "https://api.allorigins.win/get?url="+encodeURIComponent(u);}
+  ];
+  function tryNext(idx){
+    if(idx>=proxies.length)return cb(null);
+    fetch(proxies[idx](stooqUrl))
+      .then(function(r){return r.text();})
+      .then(function(txt){
+        var res=_parseStooqCSV(txt);
+        if(res)cb(res);else tryNext(idx+1);
+      })
+      .catch(function(){tryNext(idx+1);});
+  }
+  tryNext(0);
+}
+
+// ── Interface portefeuille ──
+function fillTickerSelect(){
+  var sel=document.getElementById("tickerSelect");
+  var names=Object.keys(STOCK_TICKERS).sort();
+  sel.innerHTML=names.map(function(n){return '<option value="'+n+'">'+n.charAt(0).toUpperCase()+n.slice(1)+'</option>';}).join('');
+}
+function renderPortfolio(){
+  var p=_stockPortfolio();
+  document.getElementById("cashVal").textContent=p.cash.toFixed(2)+"€";
+  var names=Object.keys(p.holdings);
+  var list=document.getElementById("holdingsList");
+  if(names.length===0){
+    list.innerHTML='<div class="empty-msg">Tu n as encore aucune action. Achète ta première action ci-dessous !</div>';
+    document.getElementById("totalVal").textContent=p.cash.toFixed(2)+"€";
+    return;
+  }
+  list.innerHTML='<div class="empty-msg">Chargement des prix…</div>';
+  var remaining=names.length,totalValue=0,html="";
+  names.forEach(function(name){
+    var h=p.holdings[name];
+    fetchStockPrice(h.ticker,function(res){
+      remaining--;
+      var price=res?res.price:h.avgPrice;
+      var value=price*h.qty;
+      totalValue+=value;
+      var pct=((price-h.avgPrice)/h.avgPrice*100).toFixed(1);
+      var cls=pct>=0?"up":"down";
+      var arrow=pct>=0?"📈 +":"📉 ";
+      html+='<div class="holding"><div><div class="holding-name">'+name+'</div><div class="holding-qty">'+h.qty+' x '+price.toFixed(2)+'€</div></div><div style="text-align:right"><div>'+value.toFixed(2)+'€</div><div class="pct '+cls+'">'+arrow+pct+'%</div></div></div>';
+      if(remaining===0){
+        list.innerHTML=html;
+        document.getElementById("totalVal").textContent=(totalValue+p.cash).toFixed(2)+"€";
+      }
+    });
+  });
+}
+function showStatus(msg,isErr){
+  var el=document.getElementById("tradeStatus");
+  el.textContent=msg;
+  el.style.color=isErr?"var(--danger)":"var(--good)";
+  el.className="status-msg show";
+  setTimeout(function(){el.className="status-msg";},4000);
+}
+function doTrade(action){
+  var name=document.getElementById("tickerSelect").value;
+  var qty=parseInt(document.getElementById("qtyInput").value)||1;
+  var t=findTicker(name);
+  if(!t)return showStatus("Action inconnue.",true);
+  fetchStockPrice(t.ticker,function(res){
+    if(!res)return showStatus("Impossible de récupérer le prix en ce moment.",true);
+    var p=_stockPortfolio();
+    if(action==="buy"){
+      var cost=res.price*qty;
+      if(cost>p.cash)return showStatus("Pas assez d argent fictif ! Il faut "+cost.toFixed(2)+"€, tu as "+p.cash.toFixed(2)+"€.",true);
+      var h=p.holdings[t.name];
+      if(h){h.avgPrice=((h.avgPrice*h.qty)+cost)/(h.qty+qty);h.qty+=qty;}
+      else p.holdings[t.name]={ticker:t.ticker,qty:qty,avgPrice:res.price};
+      p.cash-=cost;
+      _saveStockPortfolio(p);
+      showStatus("Acheté "+qty+" "+t.name+" à "+res.price.toFixed(2)+"€ !",false);
+    }else{
+      var h2=p.holdings[t.name];
+      if(!h2||h2.qty<qty)return showStatus("Tu n as pas assez de "+t.name+" à vendre.",true);
+      var gain=res.price*qty;
+      h2.qty-=qty;
+      if(h2.qty===0)delete p.holdings[t.name];
+      p.cash+=gain;
+      _saveStockPortfolio(p);
+      showStatus("Vendu "+qty+" "+t.name+" à "+res.price.toFixed(2)+"€ !",false);
+    }
+    renderPortfolio();
+  });
+}
+
+// ── Chat Xearnes intégré (analyse bourse) ──
+function _safeContent(s,max){
+  return String(s).slice(0,max)
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g,"")
+    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g,"$1");
+}
+var stockChatHistory=[];
+function botToHtmlSimple(text){
+  var clean=String(text)
+    .replace(/&(?:amp;)*bull(?:et)?;/g,"•").replace(/&(?:amp;){2,}/g,"&amp;")
+    .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\n[-*]\s+/g,"<br>• ").replace(/^[-*]\s+/,"• ");
+  return clean.split(/\n\n+/).map(function(p){return "<p>"+p.replace(/\n/g,"<br>")+"</p>";}).join("");
+}
+function addChatMsg(text,role){
+  var box=document.getElementById("chatBox");
+  var div=document.createElement("div");
+  div.className="chat-msg "+role;
+  div.innerHTML=role==="bot"?botToHtmlSimple(text):text.replace(/</g,"&lt;");
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+  return div;
+}
+function callStockAI(question,cb){
+  var sysPrompt="Tu es l'assistant bourse de Xearnes, intégré dans un simulateur d'entraînement (argent 100% fictif). Réponds TOUJOURS en français, de façon simple pour un jeune de 11 ans. Structure en petits paragraphes courts avec des emojis. Donne des avis honnêtes et prudents sur les actions (tendances, résultats d'entreprise) mais NE DIS JAMAIS 'achète maintenant' avec certitude — rappelle toujours que personne ne peut prédire la bourse avec certitude. Tu peux aussi expliquer des concepts financiers simples (action, dividende, tendance...).";
+  var msgs=stockChatHistory.slice(-6).map(function(m){return{role:m.role,content:_safeContent(m.text,800)};});
+  msgs.push({role:"user",content:_safeContent(question,2000)});
+  fetch(CLAUDE_WORKER_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1200,system:sysPrompt,messages:msgs})
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var t=d&&d.content&&d.content[0]&&d.content[0].text;
+    cb(t?t.trim():null);
+  })
+  .catch(function(){cb(null);});
+}
+function processStockQuestion(q,cb){
+  var n=q.toLowerCase();
+  var mAn=n.match(/(?:analyse|conseil sur)\s+([a-zéèàâê& -]+)/);
+  var mPrice=n.match(/(?:prix|cours)\s+(?:de\s+)?([a-zéèàâê& -]+)/);
+  if(mAn){
+    var t=findTicker(mAn[1]);
+    if(t){
+      fetchStockPrice(t.ticker,function(res){
+        if(!res)return cb("⚠️ Impossible de récupérer le prix en ce moment.");
+        var trend=res.price>res.open?"en hausse aujourd'hui":"en baisse aujourd'hui";
+        callStockAI("Analyse l'action "+t.name+". Prix actuel : "+res.price.toFixed(2)+"€, "+trend+" (ouverture "+res.open.toFixed(2)+"€, haut "+res.high.toFixed(2)+"€, bas "+res.low.toFixed(2)+"€).",function(r){
+          cb(r?("🔍 <strong>"+t.name+"</strong> ("+res.price.toFixed(2)+"€)<br><br>"+r):"⚠️ Impossible d analyser pour l instant.");
+        });
+      });
+      return;
+    }
+  }
+  if(mPrice){
+    var t2=findTicker(mPrice[1]);
+    if(t2){
+      fetchStockPrice(t2.ticker,function(res){
+        if(!res)return cb("⚠️ Impossible de récupérer le prix en ce moment.");
+        cb("📊 <strong>"+t2.name+"</strong> — "+res.price.toFixed(2)+"€ (haut: "+res.high.toFixed(2)+"€, bas: "+res.low.toFixed(2)+"€)");
+      });
+      return;
+    }
+  }
+  callStockAI(q,function(r){cb(r||"⚠️ Impossible de répondre pour l instant.");});
+}
+function sendChat(){
+  var input=document.getElementById("chatInput");
+  var q=input.value.trim();
+  if(!q)return;
+  input.value="";
+  addChatMsg(q,"user");
+  stockChatHistory.push({role:"user",text:q});
+  var typing=addChatMsg("Xearnes réfléchit…","bot");
+  typing.classList.add("typing");
+  processStockQuestion(q,function(answer){
+    typing.remove();
+    addChatMsg(answer,"bot");
+    stockChatHistory.push({role:"assistant",text:answer});
+  });
+}
+function askQuick(q){
+  document.getElementById("chatInput").value=q;
+  sendChat();
+}
+document.getElementById("chatInput").addEventListener("keydown",function(e){if(e.key==="Enter")sendChat();});
+
+fillTickerSelect();
+renderPortfolio();
+addChatMsg("Salut ! Je suis Xearnes 🤖 Demande-moi une analyse d'action (ex: <em>analyse apple</em>) ou pose-moi une question sur la bourse. N oublie pas : c est de l entraînement avec de l argent fictif, personne ne peut prédire la bourse avec certitude ! 📊","bot");
+</script>
+</body>
+</html>
