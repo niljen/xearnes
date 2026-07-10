@@ -1272,9 +1272,9 @@ function buildWeatherHtml(w,lang){
 }
 // ── SIMULATEUR DE BOURSE (argent fictif, pour s'entraîner sans risque) ──
 var STOCK_TICKERS={
-  apple:"AAPL.US",tesla:"TSLA.US",amazon:"AMZN.US",google:"GOOGL.US",microsoft:"MSFT.US",
-  nvidia:"NVDA.US",meta:"META.US",netflix:"NFLX.US",disney:"DIS.US",coca:"KO.US","coca cola":"KO.US",
-  spotify:"SPOT.US",samsung:"005930.KS",nike:"NKE.US","volvo":"VOLV-B.ST","h&m":"HM-B.ST","ikea":"IKEA.PA"
+  apple:"AAPL",tesla:"TSLA",amazon:"AMZN",google:"GOOGL",microsoft:"MSFT",
+  nvidia:"NVDA",meta:"META",netflix:"NFLX",disney:"DIS",coca:"KO","coca cola":"KO",
+  spotify:"SPOT",samsung:"005930.KS",nike:"NKE","volvo":"VOLV-B.ST","h&m":"HM-B.ST"
 };
 function _stockPortfolio(){
   var p;try{p=JSON.parse(localStorage.getItem("xn_stock_portfolio")||"null");}catch(e){p=null;}
@@ -1289,20 +1289,24 @@ function findTicker(word){
   for(var k in STOCK_TICKERS){if(tokens.indexOf(k)!==-1)return{name:k,ticker:STOCK_TICKERS[k]};}
   return null;
 }
-// Prix en direct via Stooq (gratuit, sans clé API). Stooq ne renvoie pas les
-// en-têtes CORS pour les requêtes navigateur -> on passe par des proxys CORS
-// (même technique que fetchRSS), avec plusieurs de secours en cas d'échec.
-function _parseStooqCSV(txt){
-  if(txt&&txt[0]==='{'){try{txt=JSON.parse(txt).contents||txt;}catch(e){}}
-  var lines=String(txt).trim().split("\n");
-  if(lines.length<2)return null;
-  var cols=lines[1].split(",");
-  var price=parseFloat(cols[6]);
-  if(!price||isNaN(price))return null;
-  return{price:price,open:parseFloat(cols[3]),high:parseFloat(cols[4]),low:parseFloat(cols[5])};
+// Prix en direct via l'API graphique de Yahoo Finance (gratuite, sans clé).
+// Yahoo ne renvoie pas non plus les en-têtes CORS pour les requêtes navigateur
+// -> on passe par des proxys CORS (même technique que fetchRSS), avec plusieurs de secours.
+function _parseYahooJSON(raw){
+  var obj;try{obj=JSON.parse(raw);}catch(e){return null;}
+  if(obj&&typeof obj.contents==="string"){try{obj=JSON.parse(obj.contents);}catch(e){return null;}}
+  var res=obj&&obj.chart&&obj.chart.result&&obj.chart.result[0];
+  var meta=res&&res.meta;
+  if(!meta||typeof meta.regularMarketPrice!=="number")return null;
+  return{
+    price:meta.regularMarketPrice,
+    open:meta.regularMarketOpen||meta.previousClose||meta.regularMarketPrice,
+    high:meta.regularMarketDayHigh||meta.regularMarketPrice,
+    low:meta.regularMarketDayLow||meta.regularMarketPrice
+  };
 }
 function fetchStockPrice(ticker,cb){
-  var stooqUrl="https://stooq.com/q/l/?s="+encodeURIComponent(ticker.toLowerCase())+"&f=sd2t2ohlcv&h&e=csv";
+  var yahooUrl="https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(ticker);
   var proxies=[
     function(u){return u;},
     function(u){return "https://corsproxy.io/?url="+encodeURIComponent(u);},
@@ -1310,10 +1314,10 @@ function fetchStockPrice(ticker,cb){
   ];
   function tryNext(idx){
     if(idx>=proxies.length)return cb(null);
-    fetch(proxies[idx](stooqUrl))
+    fetch(proxies[idx](yahooUrl))
       .then(function(r){return r.text();})
       .then(function(txt){
-        var res=_parseStooqCSV(txt);
+        var res=_parseYahooJSON(txt);
         if(res)cb(res);else tryNext(idx+1);
       })
       .catch(function(){tryNext(idx+1);});
@@ -4464,6 +4468,6 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-11</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-12</div>
 </body>
 </html>
