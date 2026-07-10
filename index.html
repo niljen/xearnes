@@ -312,6 +312,8 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <button class="icon-btn" id="badgeBtn" onclick="toggleBadgePanel()" title="Badges">&#127942;</button>
     <button class="icon-btn" id="convBtn" onclick="toggleConvPanel()" title="Conversations">&#128172;</button>
     <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()" title="Historique">&#128214;</button>
+    <button onclick="openUpgradeModal()" style="background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border:none;border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;cursor:pointer" title="Abonnements">🚀 Upgrade</button>
+    <span id="tierBadge" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border-radius:20px;padding:2px 10px;font-weight:700;cursor:pointer" onclick="openUpgradeModal()" title="Ton abonnement"></span>
     <span id="internalInd" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:#1a3a2a;color:#4ade80;border:1px solid #4ade80;border-radius:20px;padding:2px 8px;font-weight:700">🔬 Internal</span>
     <button class="icon-btn" id="fullBtn" onclick="toggleFullscreen()" title="Plein ecran">&#9974;</button>
     <button class="user-btn" id="userBtn" onclick="openLoginModal()">&#128100; Connexion</button>
@@ -1887,6 +1889,70 @@ function detectName(n){
 }
 
 var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
+
+// ── ABONNEMENT ──
+var _xnTier="free"; // free / pro / ultra / legend
+var _xnEmail=null;
+try{_xnEmail=localStorage.getItem("xn_email")||null;}catch(e){}
+try{var _cached=JSON.parse(localStorage.getItem("xn_sub_cache")||"null");if(_cached&&_cached.expires>Date.now()){_xnTier=_cached.tier;}}catch(e){}
+
+function _tierModel(){
+  if(_xnTier==="legend")return"claude-fable-5";
+  if(_xnTier==="ultra")return"claude-opus-4-8";
+  if(_xnTier==="pro")return"claude-sonnet-4-6";
+  return null; // free → logique normale haiku/sonnet
+}
+function _tierLabel(){
+  if(_xnTier==="legend")return"👑 Legend";
+  if(_xnTier==="ultra")return"⚡ Ultra";
+  if(_xnTier==="pro")return"🔷 Pro";
+  return null;
+}
+function _updateTierBadge(){
+  var el=document.getElementById("tierBadge");
+  if(!el)return;
+  var lbl=_tierLabel();
+  if(lbl){el.textContent=lbl;el.style.display="inline-flex";}
+  else{el.style.display="none";}
+}
+function checkSubscription(email,cb){
+  fetch(CLAUDE_WORKER_URL+"/check-sub?email="+encodeURIComponent(email))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      _xnTier=d.tier||"free";
+      try{localStorage.setItem("xn_sub_cache",JSON.stringify({tier:_xnTier,expires:Date.now()+3600000}));}catch(e){}
+      _updateTierBadge();
+      if(cb)cb(_xnTier);
+    })
+    .catch(function(){if(cb)cb(_xnTier);});
+}
+function openUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="flex";}
+function closeUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="none";}
+function openEmailModal(){
+  var m=document.getElementById("emailModal");
+  if(m)m.style.display="flex";
+}
+function closeEmailModal(){
+  var m=document.getElementById("emailModal");
+  if(m)m.style.display="none";
+}
+function submitEmail(){
+  var inp=document.getElementById("emailInput");
+  var email=(inp?inp.value:"").trim().toLowerCase();
+  if(!email||email.indexOf("@")<0){
+    var err=document.getElementById("emailErr");
+    if(err)err.textContent="Entre une adresse email valide.";
+    return;
+  }
+  _xnEmail=email;
+  try{localStorage.setItem("xn_email",email);}catch(e){}
+  closeEmailModal();
+  checkSubscription(email,function(tier){
+    var lang=currentLang||"fr";
+    var msgs={legend:"👑 Bienvenue Legend ! Tu utilises Fable 5, le modèle le plus puissant.",ultra:"⚡ Bienvenue Ultra ! Tu utilises Opus 4.8.",pro:"🔷 Bienvenue Pro ! Tu utilises Sonnet 4.6.",free:"✅ Email enregistré ! Tu utilises Xearnes gratuitement."};
+    addMessage("bot",msgs[tier]||msgs.free,"Xearnes");
+  });
+}
 // 🔬 INTERNAL MODE
 var _internalMode=false;
 try{_internalMode=localStorage.getItem("xn_internal")==="1";}catch(e){}
@@ -2001,8 +2067,8 @@ function callClaude(question,lang,cb,_attempt){
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
-      model:codeMode?"claude-sonnet-4-6":"claude-haiku-4-5-20251001",
-      max_tokens:codeMode?4000:2500,
+      model:_tierModel()||(codeMode?"claude-sonnet-4-6":"claude-haiku-4-5-20251001"),
+      max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:codeMode?4000:2500,
       system:sysPrompt,
       messages:msgs
     })
@@ -3277,6 +3343,9 @@ function stopAlwaysOn(){
 }
 function loadUserCount(){}
 function init(){
+  _updateTierBadge();
+  if(!_xnEmail){setTimeout(openEmailModal,1500);}
+  else{checkSubscription(_xnEmail,null);}
   loadUserCount();
   // Restaurer la dernière conversation
   var lastId=localStorage.getItem("xn_last_conv_id");
@@ -4522,6 +4591,50 @@ function renderLeaderboard(scores){
 }
 window.addEventListener("load",init);
 </script>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-13</div>
+<!-- Modal email -->
+<div id="emailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#0d1235;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:360px;width:90%;text-align:center">
+    <div style="font-size:2rem;margin-bottom:8px">✉️</div>
+    <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:8px">Connecte-toi à Xearnes</h2>
+    <p style="color:#aaaacc;font-size:.85rem;margin-bottom:18px">Entre ton email pour accéder à ton abonnement et garder ton profil.</p>
+    <input id="emailInput" type="email" placeholder="ton@email.com" style="width:100%;background:#0a0f2c;border:1px solid #2a2f6c;color:#e0e0ff;border-radius:8px;padding:9px 12px;font-size:.9rem;margin-bottom:8px;outline:none">
+    <div id="emailErr" style="color:#f85149;font-size:.78rem;min-height:18px;margin-bottom:8px"></div>
+    <button onclick="submitEmail()" style="width:100%;background:#DAA520;color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:8px">Continuer</button>
+    <button onclick="closeEmailModal()" style="background:none;border:none;color:#aaaacc;font-size:.8rem;cursor:pointer">Continuer sans compte</button>
+  </div>
+</div>
+<!-- Modal upgrade -->
+<div id="upgradeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#0d1235;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:400px;width:90%;text-align:center">
+    <div style="font-size:2rem;margin-bottom:8px">🚀</div>
+    <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:16px">Passe à un abonnement Xearnes</h2>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+      <div style="background:#0a0f2c;border:1px solid #DAA520;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="text-align:left">
+          <div style="font-weight:700;color:#DAA520">👑 Legend — 1000 kr/mois</div>
+          <div style="font-size:.78rem;color:#aaaacc">Fable 5 · le plus puissant · 6000 tokens</div>
+        </div>
+        <a href="STRIPE_LEGEND_LINK" target="_blank" style="background:#DAA520;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+      </div>
+      <div style="background:#0a0f2c;border:1px solid #8888ff;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="text-align:left">
+          <div style="font-weight:700;color:#8888ff">⚡ Ultra — 500 kr/mois</div>
+          <div style="font-size:.78rem;color:#aaaacc">Opus 4.8 · très puissant · 6000 tokens</div>
+        </div>
+        <a href="STRIPE_ULTRA_LINK" target="_blank" style="background:#8888ff;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+      </div>
+      <div style="background:#0a0f2c;border:1px solid #4ea8de;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="text-align:left">
+          <div style="font-weight:700;color:#4ea8de">🔷 Pro — 200 kr/mois</div>
+          <div style="font-size:.78rem;color:#aaaacc">Sonnet 4.6 · rapide et intelligent · 4000 tokens</div>
+        </div>
+        <a href="STRIPE_PRO_LINK" target="_blank" style="background:#4ea8de;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+      </div>
+    </div>
+    <p style="color:#aaaacc;font-size:.75rem;margin-bottom:14px">Après le paiement, reviens ici et entre ton email pour activer ton accès.</p>
+    <button onclick="closeUpgradeModal()" style="background:none;border:1px solid #2a2f6c;color:#aaaacc;border-radius:8px;padding:8px 24px;font-weight:700;cursor:pointer;font-size:.85rem">Fermer</button>
+  </div>
+</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-14</div>
 </body>
 </html>
