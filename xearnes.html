@@ -325,6 +325,8 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <button class="icon-btn" id="badgeBtn" onclick="toggleBadgePanel()" title="Badges">&#127942;</button>
     <button class="icon-btn" id="convBtn" onclick="toggleConvPanel()" title="Conversations">&#128172;</button>
     <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()" title="Historique">&#128214;</button>
+    <span id="streakBadge" style="display:none;align-items:center;font-size:.75rem;background:#1a1a3a;color:#ff6b35;border:1px solid #ff6b35;border-radius:20px;padding:3px 10px;font-weight:700" title="Jours consécutifs"></span>
+    <button onclick="shareXearnes()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;cursor:pointer" title="Partager Xearnes">🔗 Share</button>
     <button onclick="openUpgradeModal()" style="background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border:none;border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;cursor:pointer" title="Abonnements">🚀 Upgrade</button>
     <span id="tierBadge" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border-radius:20px;padding:2px 10px;font-weight:700;cursor:pointer" onclick="openUpgradeModal()" title="Ton abonnement"></span>
     <span id="internalInd" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:#1a3a2a;color:#4ade80;border:1px solid #4ade80;border-radius:20px;padding:2px 8px;font-weight:700">🔬 Internal</span>
@@ -2005,6 +2007,25 @@ function checkSubscription(email,cb){
 }
 function openUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="flex";}
 function closeUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="none";}
+function shareXearnes(){
+  var url="https://niljen.github.io/xearnes/";
+  var lang=currentLang||"fr";
+  var text=lang==="fr"?"Découvre Xearnes, une IA créée par un jeune de 11 ans ! 🤖⚡":
+           lang==="sv"?"Kolla in Xearnes, en AI skapad av en 11-åring! 🤖⚡":
+           "Check out Xearnes, an AI created by an 11-year-old! 🤖⚡";
+  xnStats.sharesCount=(xnStats.sharesCount||0)+1;
+  saveStats();checkBadges();
+  var el=document.getElementById("streakBadge");
+  var shares=xnStats.sharesCount;
+  if(navigator.share){
+    navigator.share({title:"Xearnes AI",text:text,url:url}).catch(function(){});
+  } else {
+    navigator.clipboard&&navigator.clipboard.writeText(url);
+  }
+  var msg=lang==="fr"?"🔗 Lien copié ! <strong>"+shares+"/20 partages</strong>"+(shares>=20?" 🌍 Badge Ambassadeur débloqué !":"")+" — Merci de partager Xearnes !":
+          "🔗 Link copied! <strong>"+shares+"/20 shares</strong>"+(shares>=20?" 🌍 Ambassador badge unlocked!":"")+" — Thanks for sharing Xearnes!";
+  addMessage("bot",msg,"Xearnes");
+}
 function openEmailModal(){
   var m=document.getElementById("emailModal");
   if(m)m.style.display="flex";
@@ -3517,6 +3538,19 @@ function init(){
   _updateTierBadge();
   if(!_xnEmail){setTimeout(openEmailModal,1500);}
   else{checkSubscription(_xnEmail,null);}
+  // Streak
+  (function(){
+    var today=new Date().toISOString().slice(0,10);
+    var last=xnStats.lastDay||"";
+    var yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+    if(last===today){}
+    else if(last===yesterday){xnStats.daysStreak=(xnStats.daysStreak||1)+1;}
+    else{xnStats.daysStreak=1;}
+    xnStats.lastDay=today;
+    saveStats();checkBadges();
+    var el=document.getElementById("streakBadge");
+    if(el){el.textContent="🔥 "+(xnStats.daysStreak||1);el.style.display="inline-flex";}
+  })();
   loadUserCount();
   // Restaurer la dernière conversation
   var lastId=localStorage.getItem("xn_last_conv_id");
@@ -4387,6 +4421,10 @@ var badgeDefs={
   recipe_5:{icon:"🍽️",sv:"Gourmanden",fr:"Gourmand",en:"Foodie",desc:{sv:"Hittade 5 recept!",fr:"5 recettes trouvées !",en:"Found 5 recipes!"}},
   recipe_10:{icon:"🍴",sv:"Stjärnkocken",fr:"Chef étoilé",en:"Star Chef",desc:{sv:"Hittade 10 recept!",fr:"10 recettes trouvées !",en:"Found 10 recipes!"}},
   // ── DÉFI DU JOUR ───────────────────────────────────────────────
+  streak_7:{icon:"🔥",sv:"7 dagars streak",fr:"7 jours de suite",en:"7-Day Streak",desc:{sv:"7 dagar i rad på Xearnes!",fr:"7 jours consécutifs sur Xearnes !",en:"7 days in a row on Xearnes!"}},
+  streak_30:{icon:"🌋",sv:"30 dagars streak",fr:"30 jours de suite",en:"30-Day Streak",desc:{sv:"30 dagar i rad — episkt!",fr:"30 jours consécutifs — épique !",en:"30 days in a row — epic!"}},
+  streak_100:{icon:"⚡",sv:"100 dagars streak",fr:"100 jours de suite",en:"100-Day Streak",desc:{sv:"100 dagar i rad — du är en legend!",fr:"100 jours consécutifs — tu es une légende !",en:"100 days in a row — you're a legend!"}},
+  sharer_20:{icon:"🌍",sv:"Ambassadören",fr:"L'Ambassadeur",en:"The Ambassador",desc:{sv:"Delade Xearnes med 20 personer!",fr:"Tu as partagé Xearnes avec 20 personnes !",en:"Shared Xearnes with 20 people!"}},
   member_pro:{icon:"🔷",sv:"Pro-medlem",fr:"Membre Pro",en:"Pro Member",desc:{sv:"Pro-prenumeration aktiverad!",fr:"Abonnement Pro activé !",en:"Pro subscription activated!"}},
   member_ultra:{icon:"⚡",sv:"Ultra-medlem",fr:"Membre Ultra",en:"Ultra Member",desc:{sv:"Ultra-prenumeration aktiverad!",fr:"Abonnement Ultra activé !",en:"Ultra subscription activated!"}},
   member_legend:{icon:"👑",sv:"Legend",fr:"Légende",en:"Legend",desc:{sv:"Legend-prenumeration aktiverad — du är en legend!",fr:"Abonnement Legend activé — tu es une légende !",en:"Legend subscription activated — you are a legend!"}},
@@ -4471,6 +4509,12 @@ function checkBadges(){
   if((xnStats.messagesCount||0)>=50)earnBadge("chat_50");
   if((xnStats.messagesCount||0)>=200)earnBadge("chat_200");
   if((xnStats.messagesCount||0)>=500)earnBadge("chat_500");
+  // ── Streak ─────────────────────────────────────────────────────
+  if((xnStats.daysStreak||0)>=7)earnBadge("streak_7");
+  if((xnStats.daysStreak||0)>=30)earnBadge("streak_30");
+  if((xnStats.daysStreak||0)>=100)earnBadge("streak_100");
+  // ── Partage ────────────────────────────────────────────────────
+  if((xnStats.sharesCount||0)>=20)earnBadge("sharer_20");
   // ── Spéciaux & Secrets ─────────────────────────────────────────
   if(h>=22||h<4)earnBadge("night_owl");
   if(h<7)earnBadge("early_bird");
@@ -4858,6 +4902,6 @@ window.addEventListener("load",init);
     </div>
   </div>
 </div>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-16</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-17</div>
 </body>
 </html>
