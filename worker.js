@@ -2,15 +2,47 @@
 // KV binding requis : SUBSCRIPTIONS (dans Cloudflare dashboard → Workers → KV)
 // Variables d'environnement : CLAUDE_API_KEY, STRIPE_WEBHOOK_SECRET
 
+const ALLOWED_ORIGINS = [
+  "https://niljen.github.io",
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+// Rate limiting simple par IP (requêtes par minute)
+const _rateLimitMap = new Map();
+function isRateLimited(ip) {
+  const now = Date.now();
+  const key = ip;
+  const entry = _rateLimitMap.get(key) || { count: 0, reset: now + 60000 };
+  if (now > entry.reset) { entry.count = 0; entry.reset = now + 60000; }
+  entry.count++;
+  _rateLimitMap.set(key, entry);
+  return entry.count > 30; // max 30 requêtes/minute
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+
+    // Vérification d'origine
+    const origin = request.headers.get("Origin") || "";
+    if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+      return new Response("Accès refusé", { status: 403 });
+    }
+
+    // Rate limiting
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    if (isRateLimited(ip)) {
+      return new Response(JSON.stringify({ error: { message: "Trop de requêtes. Attends une minute." } }), {
+        status: 429, headers: { ...CORS, "Content-Type": "application/json" }
+      });
+    }
 
     const url = new URL(request.url);
 
