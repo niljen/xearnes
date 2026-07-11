@@ -388,9 +388,15 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       </div>
     </div>
     <div class="input-bar">
+      <input type="file" id="fileInput" accept="image/*,.txt,.pdf" style="display:none" onchange="handleFileUpload(this)">
+      <div id="filePreview" style="display:none;position:absolute;bottom:60px;left:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:.8rem;display:none;align-items:center;gap:8px;max-width:280px">
+        <span id="filePreviewLabel" style="color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
+        <button onclick="clearFile()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1rem;padding:0;flex-shrink:0">✕</button>
+      </div>
       <textarea id="userInput" rows="1"
         onkeydown="if(event.key===&quot;Enter&quot;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg()}"
         oninput="autoResize(this)" placeholder="Skriv ett meddelande..."></textarea>
+      <button class="mic-btn" onclick="document.getElementById('fileInput').click()" title="Envoyer une photo ou un fichier" style="font-size:.85rem">📎</button>
       <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Parler">&#127908;</button>
       <button class="send-btn" id="sendBtn" onclick="sendMsg()">Skicka</button>
     </div>
@@ -2007,6 +2013,40 @@ function checkSubscription(email,cb){
 }
 function openUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="flex";}
 function closeUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="none";}
+
+// ── FICHIERS & PHOTOS ──
+var _pendingFile=null;
+function handleFileUpload(input){
+  var file=input.files&&input.files[0];
+  if(!file)return;
+  var isImage=/^image\//.test(file.type);
+  var isText=/text\/plain/.test(file.type);
+  if(!isImage&&!isText){
+    var lang=currentLang||"fr";
+    addMessage("bot",lang==="fr"?"⚠️ Format non supporté. Envoie une photo (JPG, PNG) ou un fichier texte (.txt) !":"⚠️ Format not supported. Send a photo (JPG, PNG) or a text file (.txt)!","Xearnes");
+    input.value="";return;
+  }
+  var reader=new FileReader();
+  reader.onload=function(e){
+    if(isImage){
+      _pendingFile={type:"image",mediaType:file.type,data:e.target.result.split(",")[1],name:file.name};
+    } else {
+      _pendingFile={type:"text",content:e.target.result,name:file.name};
+    }
+    var prev=document.getElementById("filePreview");
+    var lbl=document.getElementById("filePreviewLabel");
+    if(prev){prev.style.display="flex";}
+    if(lbl)lbl.textContent=(isImage?"🖼️ ":"📄 ")+file.name;
+  };
+  if(isImage)reader.readAsDataURL(file);
+  else reader.readAsText(file);
+  input.value="";
+}
+function clearFile(){
+  _pendingFile=null;
+  var prev=document.getElementById("filePreview");
+  if(prev)prev.style.display="none";
+}
 function shareXearnes(){
   var url="https://niljen.github.io/xearnes/";
   var lang=currentLang||"fr";
@@ -2162,6 +2202,23 @@ function callClaude(question,lang,cb,_attempt){
   }
   while(msgs.length>0&&msgs[0].role!=="user")msgs.shift();
   if(msgs.length===0)msgs=[{role:"user",content:_safeContent(question,4000)}];
+  // Ajouter fichier/photo au dernier message utilisateur
+  if(_pendingFile){
+    var lastMsg=msgs[msgs.length-1];
+    if(lastMsg&&lastMsg.role==="user"){
+      var textContent=typeof lastMsg.content==="string"?lastMsg.content:question;
+      if(_pendingFile.type==="image"){
+        lastMsg.content=[
+          {type:"image",source:{type:"base64",media_type:_pendingFile.mediaType,data:_pendingFile.data}},
+          {type:"text",text:textContent||(currentLang==="fr"?"Décris cette image en détail.":currentLang==="sv"?"Beskriv den här bilden i detalj.":"Describe this image in detail.")}
+        ];
+      } else {
+        lastMsg.content=textContent+"\n\n[Fichier : "+_pendingFile.name+"]\n"+_pendingFile.content.slice(0,8000);
+      }
+    }
+    _pendingFile=null;
+    clearFile();
+  }
   fetch(CLAUDE_WORKER_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -4951,6 +5008,6 @@ window.addEventListener("load",init);
     </div>
   </div>
 </div>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-18</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-19</div>
 </body>
 </html>
