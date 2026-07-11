@@ -2677,6 +2677,139 @@ function _getReplyBody(input,lang,n,cb){
   }
   // Réponse défi secret en cours ?
   if(_currentSecretChallenge){var sa=checkSecretAnswer(n,lang);if(sa)return cb(sa);}
+  // ── Entretien d'embauche ──
+  if(lang==="fr"?/entretien.*embauche|préparer.*entretien|simulation.*entretien|s.entraîner.*entretien|questions.*entretien/i.test(n):
+     lang==="sv"?/jobbintervju|förbereda.*intervju|öva.*intervju/i.test(n):
+     /job interview|practice interview|interview prep|interview questions/i.test(n)){
+    var interviewPrompt=lang==="fr"?
+      "Tu es un coach RH expert. L'utilisateur veut s'entraîner pour un entretien d'embauche. Commence par lui poser 5 questions d'entretien classiques (présentation, motivation, défauts, situation difficile, salaire). Après chaque réponse, donne un feedback constructif et des améliorations. Utilise des emojis 💼🎯✅.\n\nDemande : "+input:
+      "You are an expert HR coach. Start by asking 5 classic job interview questions. After each answer give constructive feedback. Use emojis 💼🎯✅.\n\nRequest: "+input;
+    return callClaude(interviewPrompt,lang,cb);
+  }
+  // ── Négocier une augmentation ──
+  if(lang==="fr"?/négoci.*augmentation|demander.*augmentation|augmentation.*salaire.*comment|hausse.*salaire/i.test(n):
+     lang==="sv"?/förhandla.*lön|be om.*löneökning/i.test(n):
+     /negotiate.*raise|ask for.*raise|salary negotiation/i.test(n)){
+    var raisePrompt=lang==="fr"?
+      "Tu es un expert en négociation salariale. Donne une stratégie complète pour demander une augmentation : quand le faire, comment préparer ses arguments (valeur ajoutée, marché), quoi dire exactement, comment répondre aux refus. Inclus des phrases concrètes à utiliser. Emojis 💰🎯💪.\n\nDemande : "+input:
+      "You are a salary negotiation expert. Give a complete strategy: when to ask, how to prepare arguments, what to say, how to handle refusals. Include exact phrases to use. Emojis 💰🎯💪.\n\nRequest: "+input;
+    return callClaude(raisePrompt,lang,cb);
+  }
+  // ── Email difficile / professionnel ──
+  if(lang==="fr"?/reformule|réécris|améliore.*cet email|email.*difficile|email.*patron|mail.*boss|email.*professionnel.*aide|tournure.*email/i.test(n):
+     lang==="sv"?/omformulera.*mail|svår.*email|professionell.*mail/i.test(n):
+     /rephrase.*email|rewrite.*email|difficult email|email.*boss|professional email.*help/i.test(n)){
+    var emailPrompt=lang==="fr"?
+      "Tu es expert en communication professionnelle. Aide à rédiger ou reformuler cet email de façon professionnelle, claire et diplomatique. Propose 2-3 versions selon le ton souhaité (formel, neutre, amical). Explique pourquoi chaque formulation est efficace. Emojis 📧✍️💼.\n\nDemande : "+input:
+      "You are a professional communication expert. Help write or rephrase this email professionally and diplomatically. Offer 2-3 versions by tone. Explain why each phrasing works. Emojis 📧✍️💼.\n\nRequest: "+input;
+    return callClaude(emailPrompt,lang,cb);
+  }
+  // ── LinkedIn ──
+  if(/linkedin/i.test(n)){
+    var linkedinPrompt=lang==="fr"?
+      "Tu es expert LinkedIn et personal branding. Aide à créer ou améliorer un profil LinkedIn attractif. Donne des conseils pour : titre accrocheur, résumé percutant, mots-clés importants, comment mettre en valeur ses expériences. Inclus des exemples concrets. Emojis 💼🌟🔗.\n\nDemande : "+input:
+      "You are a LinkedIn and personal branding expert. Help create or improve an attractive LinkedIn profile. Give advice on: catchy headline, impactful summary, keywords, showcasing experience. Include concrete examples. Emojis 💼🌟🔗.\n\nRequest: "+input;
+    return callClaude(linkedinPrompt,lang,cb);
+  }
+  // ── Recette frigo / ce que j'ai ──
+  if(lang==="fr"?/(?:recette|quoi faire|que.*cuisiner|repas).*(?:frigo|réfrigérateur|ce que j.ai|ingrédients que j.ai|avec ce que)/i.test(n):
+     lang==="sv"?/(?:recept|laga).*(?:kylskåp|det jag har|ingredienser jag har)/i.test(n):
+     /(?:recipe|cook|meal).*(?:fridge|what i have|ingredients i have|with what)/i.test(n)){
+    var fridgePrompt=lang==="fr"?
+      "Tu es un chef cuisinier créatif. L'utilisateur te donne ce qu'il a dans son frigo. Propose 2-3 recettes complètes et savoureuses avec exactement ces ingrédients. Pour chaque recette : nom, temps de préparation, ingrédients utilisés, étapes simples. Emojis 🍳🥘🌿.\n\nDemande : "+input:
+      "You are a creative chef. The user tells you what's in their fridge. Suggest 2-3 complete and tasty recipes with exactly these ingredients. For each: name, prep time, ingredients, simple steps. Emojis 🍳🥘🌿.\n\nRequest: "+input;
+    return callClaude(fridgePrompt,lang,cb);
+  }
+  // ── Plan de repas semaine + liste de courses ──
+  if(lang==="fr"?/plan.*repas.*semaine|menu.*semaine|repas.*7.*jours|liste.*courses|meal prep/i.test(n):
+     lang==="sv"?/måltidsplan.*vecka|inköpslista|veckomeny/i.test(n):
+     /meal plan.*week|weekly menu|grocery list|meal prep.*week/i.test(n)){
+    var mealPlanPrompt=lang==="fr"?
+      "Tu es nutritionniste et chef cuisinier. Crée un plan de repas complet pour 7 jours (petit-déjeuner, déjeuner, dîner) équilibré et varié. Inclus la liste de courses complète organisée par rayon. Prends en compte les préférences mentionnées. Emojis 📅🥗🛒.\n\nDemande : "+input:
+      "You are a nutritionist and chef. Create a complete 7-day meal plan (breakfast, lunch, dinner) balanced and varied. Include full grocery list organized by section. Emojis 📅🥗🛒.\n\nRequest: "+input;
+    return callClaude(mealPlanPrompt,lang,cb);
+  }
+  // ── Calories / nutrition ──
+  if(lang==="fr"?/calories|macros|valeur.*nutritive|combien.*calories|nutrition.*repas|régime.*calories/i.test(n):
+     lang==="sv"?/kalorier|näringsvärde|makros/i.test(n):
+     /calories|macros|nutritional value|how many calories|nutrition.*meal/i.test(n)){
+    var caloriesPrompt=lang==="fr"?
+      "Tu es nutritionniste expert. Calcule ou estime les calories et macronutriments (protéines, glucides, lipides) pour ce que l'utilisateur décrit. Donne des conseils pratiques sur l'équilibre nutritionnel. Utilise des tableaux ou listes claires. Emojis 🥗📊💪.\n\nDemande : "+input:
+      "You are a nutrition expert. Calculate or estimate calories and macronutrients (protein, carbs, fat) for what the user describes. Give practical advice on nutritional balance. Use clear tables or lists. Emojis 🥗📊💪.\n\nRequest: "+input;
+    return callClaude(caloriesPrompt,lang,cb);
+  }
+  // ── Santé / ordonnance / médical ──
+  if(lang==="fr"?/(?:ordonnance|médicament|diagnostic|résultat.*analyse|examen.*médical|comprendre.*médical|que veut dire.*médical|symptôme|maladie.*comprendre)/i.test(n):
+     lang==="sv"?/(?:recept.*medicin|diagnos|analysresultat|medicinsk)/i.test(n):
+     /(?:prescription|medication.*understand|diagnosis.*explain|medical results|blood test results|symptoms.*explain)/i.test(n)){
+    var medPrompt=lang==="fr"?
+      "Tu es un médecin pédagogue. Explique de façon claire et simple (sans jargon) ce que l'utilisateur te décrit : ordonnance, diagnostic, résultats d'analyses. Donne des explications compréhensibles, des questions à poser au médecin, et rappelle toujours de consulter un professionnel de santé. Emojis 🏥💊📋.\n\nIMPORTANT : Ajoute toujours : ⚠️ Ces informations ne remplacent pas l'avis de ton médecin.\n\nDemande : "+input:
+      "You are an educational doctor. Explain clearly and simply what the user describes: prescription, diagnosis, test results. Give understandable explanations, questions to ask the doctor. Always remind to consult a health professional. Emojis 🏥💊📋. IMPORTANT: Always add ⚠️ This information does not replace your doctor's advice.\n\nRequest: "+input;
+    return callClaude(medPrompt,lang,cb);
+  }
+  // ── Premiers secours ──
+  if(lang==="fr"?/premiers? secours|urgence.*quoi faire|que faire si.*(?:brûlure|coupure|chute|étouffement|inconscient|saignement|fracture)/i.test(n):
+     lang==="sv"?/första hjälpen|nödläge|vad göra om.*(?:brännskada|skärsår|medvetslös)/i.test(n):
+     /first aid|emergency.*what to do|what to do if.*(?:burn|cut|choking|unconscious|bleeding|fracture)/i.test(n)){
+    var firstAidPrompt=lang==="fr"?
+      "Tu es formateur en premiers secours. Donne des instructions claires, étape par étape, pour cette situation d'urgence. Structure : 1) Sécuriser la scène 2) Évaluer la victime 3) Appeler les secours (numéros utiles) 4) Gestes à faire / à ne pas faire. Sois précis et calme. Emojis 🚨🏥❤️.\n\nSituation : "+input:
+      "You are a first aid trainer. Give clear step-by-step instructions for this emergency. Structure: 1) Secure scene 2) Assess victim 3) Call emergency services 4) What to do / not do. Be precise and calm. Emojis 🚨🏥❤️.\n\nSituation: "+input;
+    return callClaude(firstAidPrompt,lang,cb);
+  }
+  // ── Contrat de location / légal ──
+  if(lang==="fr"?/contrat.*location|bail.*appartement|rédige.*contrat|lettre.*réclamation|résiliation.*contrat|droits.*locataire|droits.*propriétaire/i.test(n):
+     lang==="sv"?/hyreskontrakt|hyresavtal|uppsägning.*kontrakt/i.test(n):
+     /rental contract|lease agreement|draft.*contract|complaint letter|tenant rights|landlord rights/i.test(n)){
+    var legalPrompt=lang==="fr"?
+      "Tu es conseiller juridique pratique. Aide avec cette demande légale/administrative. Fournis un modèle de document, explique les points importants, les droits et obligations de chaque partie, les délais légaux. Rappelle de faire valider par un professionnel pour les cas importants. Emojis 📜⚖️🏠.\n\nDemande : "+input:
+      "You are a practical legal advisor. Help with this legal/administrative request. Provide a document template, explain key points, rights and obligations, legal deadlines. Remind to validate with a professional for important cases. Emojis 📜⚖️🏠.\n\nRequest: "+input;
+    return callClaude(legalPrompt,lang,cb);
+  }
+  // ── Impôts / crédit immobilier ──
+  if(lang==="fr"?/déclaration.*impôts|impôts.*comment|crédit.*immobilier|calculer.*prêt|taux.*intérêt.*prêt|mensualité.*crédit/i.test(n):
+     lang==="sv"?/skattedeklaration|bolån|beräkna.*lån/i.test(n):
+     /tax return|income tax|mortgage.*calculate|loan.*payment|interest rate.*mortgage/i.test(n)){
+    var taxLoanPrompt=lang==="fr"?
+      "Tu es expert comptable et conseiller financier. Explique clairement et aide avec cette demande fiscale ou de crédit. Pour les impôts : étapes simples, cases importantes, déductions possibles. Pour un crédit : calcul des mensualités, taux, coût total. Utilise des exemples chiffrés. Emojis 💰🏠📊.\n\nDemande : "+input:
+      "You are an expert accountant and financial advisor. Explain clearly and help with this tax or loan question. For taxes: simple steps, important boxes, possible deductions. For a loan: monthly payment calculation, rate, total cost. Use numbered examples. Emojis 💰🏠📊.\n\nRequest: "+input;
+    return callClaude(taxLoanPrompt,lang,cb);
+  }
+  // ── Apprendre une langue (simulation conversation) ──
+  if(lang==="fr"?/apprendre.*(?:anglais|espagnol|italien|allemand|japonais|chinois|arabe|portugais)|s.entraîner.*parler|conversation.*pratique.*langue/i.test(n):
+     lang==="sv"?/lära.*(?:engelska|spanska|italienska|tyska|japanska|franska)/i.test(n):
+     /learn.*(?:french|spanish|italian|german|japanese|chinese|arabic|portuguese|swedish)|practice.*conversation.*language/i.test(n)){
+    var langLearnPrompt=lang==="fr"?
+      "Tu es professeur de langues expert et patient. L'utilisateur veut s'entraîner ou apprendre une langue. Commence par évaluer son niveau avec 3 questions simples dans cette langue. Propose ensuite des exercices adaptés : vocabulaire, phrases utiles, conversation simulée. Corrige gentiment les erreurs. Emojis 🌍📚💬.\n\nDemande : "+input:
+      "You are an expert and patient language teacher. Evaluate the user's level with 3 simple questions. Then offer adapted exercises: vocabulary, useful phrases, simulated conversation. Gently correct errors. Emojis 🌍📚💬.\n\nRequest: "+input;
+    return callClaude(langLearnPrompt,lang,cb);
+  }
+  // ── Coach confiance en soi / décision ──
+  if(lang==="fr"?/confiance.*soi|prise.*décision|choix.*difficile|je n arrive pas à décider|dois-je|hésit|doute.*moi|estime.*soi|développement.*perso/i.test(n):
+     lang==="sv"?/självförtroende|svårt beslut|tveksam|personlig utveckling/i.test(n):
+     /self.confidence|difficult decision|can.t decide|should i|hesitat|self.esteem|personal development/i.test(n)){
+    var coachPrompt=lang==="fr"?
+      "Tu es coach de développement personnel bienveillant. Aide l'utilisateur avec sa demande sur la confiance en soi ou la prise de décision. Techniques concrètes : matrice pros/cons, méthode 10/10/10, ancrage positif, reformulation cognitive. Sois encourageant et concret. Emojis 🌟💡🎯.\n\nDemande : "+input:
+      "You are a kind personal development coach. Help with self-confidence or decision-making. Concrete techniques: pros/cons matrix, 10/10/10 method, positive anchoring. Be encouraging and concrete. Emojis 🌟💡🎯.\n\nRequest: "+input;
+    return callClaude(coachPrompt,lang,cb);
+  }
+  // ── Discours mariage / anniversaire / cérémonie ──
+  if(lang==="fr"?/discours.*(mariage|anniversaire|retraite|cérémonie|fête)|rédige.*discours|texte.*cérémonie|témoignage.*mariage/i.test(n):
+     lang==="sv"?/tal.*(bröllop|födelsedag|ceremoni)|skriv.*tal/i.test(n):
+     /speech.*(wedding|birthday|retirement|ceremony)|write.*speech|wedding toast/i.test(n)){
+    var speechPrompt=lang==="fr"?
+      "Tu es expert en discours et prise de parole. Écris un discours touchant, drôle et mémorable pour l'occasion décrite. Structure : accroche, anecdote personnelle, message du cœur, toast final. Adapte la longueur (3-5 minutes idéal). Emojis 🥂💍🎂✨.\n\nDemande : "+input:
+      "You are a speech writing expert. Write a touching, funny and memorable speech for the occasion. Structure: hook, personal anecdote, heartfelt message, final toast. Ideal length 3-5 minutes. Emojis 🥂💍🎂✨.\n\nRequest: "+input;
+    return callClaude(speechPrompt,lang,cb);
+  }
+  // ── Idée cadeau personnalisé ──
+  if(lang==="fr"?/(?:idée|cadeau).*(?:pour|offrir|anniversaire|noël|fête)|trouver.*cadeau|quel.*cadeau|cadeau.*idée/i.test(n):
+     lang==="sv"?/present.*idé|vad ge.*present|hitta.*present/i.test(n):
+     /gift idea|what to give|present for|birthday gift|christmas gift|find.*gift/i.test(n)){
+    var giftPrompt=lang==="fr"?
+      "Tu es expert en cadeaux personnalisés. Propose 5-7 idées de cadeaux vraiment adaptées à la personne décrite (âge, personnalité, budget, occasion). Pour chaque idée : nom, pourquoi c'est parfait, fourchette de prix, où trouver. Organise par budget. Emojis 🎁✨🎉.\n\nDemande : "+input:
+      "You are a personalized gift expert. Suggest 5-7 gift ideas tailored to the person described (age, personality, budget, occasion). For each: name, why it's perfect, price range, where to find. Organize by budget. Emojis 🎁✨🎉.\n\nRequest: "+input;
+    return callClaude(giftPrompt,lang,cb);
+  }
   // Pendu en cours ?
   if(penduState)return cb(buildPenduHtml());
   // Pendu commande
