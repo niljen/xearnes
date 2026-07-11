@@ -2431,6 +2431,47 @@ function _getReplyBody(input,lang,n,cb){
   var owq=detectOpenWeb(n,lang);
   if(owq){var owl=findWebLink(owq);if(owl)return cb(doOpenWeb(owl,lang));}
   // ── NOUVELLES FONCTIONNALITES ──
+  // ── Correction de texte ──
+  var correctMatch=lang==="fr"?/corrige|corriger|fautes?|orthographe|grammaire|améliore|rédaction/i.test(n):
+                   lang==="sv"?/rätta|korrigera|stavning|grammatik|förbättra/i.test(n):
+                   /correct|fix.*text|grammar|spelling|proofread|improve.*text/i.test(n);
+  if(correctMatch){
+    var toCorrect=n.replace(/corrige|corriger|les fautes de|l'orthographe de|la grammaire de|améliore|correct|fix|grammar|spelling|proofread|improve/gi,"").trim();
+    if(toCorrect.length<10){
+      return cb(lang==="fr"?"📝 Colle le texte que tu veux que je corrige !":lang==="sv"?"📝 Klistra in texten du vill att jag rättar!":"📝 Paste the text you want me to correct!");
+    }
+    var correctPrompt=lang==="fr"?
+      "Corrige ce texte en français. Indique les fautes trouvées avec ✏️ et donne le texte corrigé en entier. Explique brièvement les corrections importantes.\n\nTexte à corriger :\n"+toCorrect:
+      lang==="sv"?
+      "Rätta denna text på svenska. Markera felen med ✏️ och ge den korrigerade texten i sin helhet. Förklara kort de viktiga korrigeringarna.\n\nText att rätta:\n"+toCorrect:
+      "Proofread and correct this text. Mark errors with ✏️ and provide the fully corrected text. Briefly explain the important corrections.\n\nText to correct:\n"+toCorrect;
+    return callClaude(correctPrompt,lang,cb);
+  }
+  // ── Aide maths pas à pas ──
+  var mathMatch=lang==="fr"?/(?:résous?|calcule?|explique?|aide.*(maths?|calcul)|(?:maths?|équation|calcul).*pas à pas|comment.*calculer)/i.test(n):
+                lang==="sv"?/(?:lös|beräkna|förklara|hjälp.*(matte|matematik)|steg för steg)/i.test(n):
+                /(?:solve|calculate|step.by.step|math.*help|how.*calculate|equation)/i.test(n);
+  if(mathMatch&&/\d/.test(n)){
+    var mathPrompt=lang==="fr"?
+      "Résous ce problème de maths étape par étape, de façon très claire pour un élève. Explique chaque étape avec des mots simples. Utilise des emojis 🔢➕➖✖️➗ pour rendre ça fun.\n\nProblème : "+n:
+      lang==="sv"?
+      "Lös detta matteproblem steg för steg, mycket tydligt för en elev. Förklara varje steg med enkla ord. Använd emojis 🔢➕➖✖️➗ för att göra det roligt.\n\nProblem: "+n:
+      "Solve this math problem step by step, very clearly for a student. Explain each step with simple words. Use emojis 🔢➕➖✖️➗ to make it fun.\n\nProblem: "+n;
+    return callClaude(mathPrompt,lang,cb);
+  }
+  // ── Résumé de livre/film ──
+  var summaryMatch=lang==="fr"?n.match(/(?:résume?|résumé|de quoi parle|c.est quoi|synopsis|histoire de)\s+(.{2,60})/i):
+                   lang==="sv"?n.match(/(?:sammanfatta|berätta om|vad handlar)\s+(.{2,60})/i):
+                   n.match(/(?:summarize|summary of|what is|what's|synopsis of|plot of|story of)\s+(.{2,60})/i);
+  if(summaryMatch&&/(livre|book|film|movie|roman|manga|série|series|buch|bok)/i.test(n)){
+    var bookTitle=(summaryMatch[1]||"").trim();
+    var summaryPrompt=lang==="fr"?
+      "Fais un résumé clair et engageant de \""+bookTitle+"\" pour un jeune. Inclus : l'histoire principale, les personnages clés, les thèmes importants et pourquoi c'est intéressant. Utilise des emojis 📖✨.":
+      lang==="sv"?
+      "Gör en tydlig och engagerande sammanfattning av \""+bookTitle+"\" för en ung person. Inkludera: huvudhistorien, nyckelkaraktärerna, viktiga teman och varför det är intressant. Använd emojis 📖✨.":
+      "Make a clear and engaging summary of \""+bookTitle+"\" for a young person. Include: the main story, key characters, important themes and why it's interesting. Use emojis 📖✨.";
+    return callClaude(summaryPrompt,lang,cb);
+  }
   // Histoire personnalisée
   var storyMatch=lang==="fr"?/histoire.*(moi|héros|hero|avec moi|personnalis)|crée.*(histoire|conte).*moi/i.test(n):
                  lang==="sv"?/saga.*(mig|hjälte)|skriv.*(saga|historia).*mig/i.test(n):
@@ -4910,6 +4951,6 @@ window.addEventListener("load",init);
     </div>
   </div>
 </div>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-17</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-18</div>
 </body>
 </html>
