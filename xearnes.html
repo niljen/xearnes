@@ -482,7 +482,7 @@ var langs={
  fr:{code:"fr-FR",send:"Envoyer",placeholder:"Ecris un message...",
   welcomeTitle:"Bonjour ! Je suis Xearnes",
   welcomeDesc:"Pose-moi une question en francais, suedois ou anglais !",
-  chips:["Ouvre YouTube","Actualites Figaro","Raconte une blague","Histoire interactive","Recette du jour"],
+  chips:["Recette du jour","Programme sport","Gérer mon budget","Planifier ma semaine","Je suis stressé"],
   histTitle:"Historique",testPhrase:"Bonjour ! Je suis Xearnes et je parle francais. Bienvenue !",
   defaults:["Hmm, je ne suis pas sur. Tu peux reformuler ?",
             "Bonne question ! Pas de reponse parfaite.",
@@ -2610,6 +2610,70 @@ function _getReplyBody(input,lang,n,cb){
       "Föreslå "+instrument+"-ackord för: \""+chordTopic+"\". Ge ackordsprogressionen, förklara enkelt hur man placerar fingrarna för varje ackord för en nybörjare, och ge den rekommenderade rytmen. Använd musikemojis 🎸🎹.":
       "Suggest "+instrument+" chords for: \""+chordTopic+"\". Give the chord progression (e.g. Am - F - C - G), explain simply how to place fingers for each chord for a beginner, and give the recommended strumming pattern. Use music emojis 🎸🎹.";
     return callClaude(chordsPrompt,lang,cb);
+  }
+  // ── Coach sportif ──
+  var sportMatch=lang==="fr"?/(?:programme.*(sport|muscul|fit)|plan.*(sport|entra|fit)|routine.*(sport|fit)|exercice|entraîne|musculation|perdre.*poids|maigrir|séance.*(sport|fit)|coach.sport|sport.*coach)/i.test(n):
+                 lang==="sv"?/(?:träningsprogram|träningsplan|träningsrutin|övningar|fitness|muskelbyggnad|gå ner i vikt|träna)/i.test(n):
+                 /(?:workout|training program|exercise routine|fitness plan|lose weight|muscle|gym session|sport coach)/i.test(n);
+  if(sportMatch){
+    var sportPrompt=lang==="fr"?
+      "Tu es un coach sportif expert et motivant. Crée un programme d'entraînement personnalisé basé sur la demande. Inclus : échauffement (5 min), exercices principaux avec répétitions/séries/durée, récupération. Adapte au niveau (débutant si non précisé). Ajoute des conseils nutrition si pertinent. Utilise des emojis 💪🏋️‍♂️🔥🏃‍♂️ et structure en sections claires.\n\nDemande : "+input:
+      lang==="sv"?
+      "Du är en expertcoach och motiverande. Skapa ett personligt träningsprogram baserat på frågan. Inkludera: uppvärmning, huvudövningar med reps/sets, återhämtning. Anpassa till nivå. Lägg till emojis 💪🏋️‍♂️🔥.\n\nFråga: "+input:
+      "You are an expert and motivating fitness coach. Create a personalized workout plan based on the request. Include: warm-up (5 min), main exercises with reps/sets/duration, recovery. Adapt to level (beginner if not specified). Add emojis 💪🏋️‍♂️🔥.\n\nRequest: "+input;
+    return callClaude(sportPrompt,lang,cb);
+  }
+  // ── Coach sommeil ──
+  var sleepMatch=lang==="fr"?/(?:sommeil|dormir mal|insomnie|endormissement|fatigue.*soir|réveil.*nuit|rituel.*soir|routine.*nuit|mal.*dormir|aide.*dormir|comment.*mieux.*dormir)/i.test(n):
+                 lang==="sv"?/(?:sömnproblem|sova.*bättre|sömnlöshet|trött.*kväll|sovrutin|vaknar.*natt)/i.test(n):
+                 /(?:sleep problems|can.t sleep|insomnia|sleep routine|bedtime routine|wake up.*night|how to sleep better)/i.test(n);
+  if(sleepMatch){
+    var sleepPrompt=lang==="fr"?
+      "Tu es un expert en hygiène du sommeil. Donne des conseils pratiques et scientifiquement prouvés. Inclus : routine du soir idéale (heure par heure), techniques de relaxation, aliments/écrans à éviter, astuce pour s'endormir vite. Utilise des emojis 😴🌙✨💤 et des sections claires.\n\nDemande : "+input:
+      lang==="sv"?
+      "Du är en sömnexpert. Ge praktiska, vetenskapligt bevisade råd. Inkludera: ideal kväll-rutin, avslappningstekniker, vad man ska undvika. Lägg till emojis 😴🌙✨.\n\nFråga: "+input:
+      "You are a sleep hygiene expert. Give practical, scientifically proven advice. Include: ideal evening routine, relaxation techniques, things to avoid (screens, food), tips to fall asleep fast. Use emojis 😴🌙✨💤.\n\nRequest: "+input;
+    return callClaude(sleepPrompt,lang,cb);
+  }
+  // ── Calculateur de budget / finances ──
+  var budgetMatch=lang==="fr"?/(?:budget|dépenses|épargne|économiser|gérer.*argent|argent.*gérer|revenus.*charges|charges.*revenus|loyer.*budget|calculer.*budget|finances.*perso|conseil.*financier)/i.test(n):
+                  lang==="sv"?/(?:budget|utgifter|spara pengar|ekonomi|hantera pengar|hyra.*budget)/i.test(n):
+                  /(?:budget|manage.*money|money.*manage|savings plan|expenses.*salary|personal finance|financial advice)/i.test(n);
+  if(budgetMatch){
+    var budgetPrompt=lang==="fr"?
+      "Tu es un conseiller financier bienveillant et pratique. Aide l'utilisateur avec sa demande budgétaire. Donne des formules simples (règle 50/30/20, etc.), un plan d'action concret, des outils gratuits à utiliser. Utilise des emojis 💰📊💡📈 et des exemples chiffrés si possible.\n\nDemande : "+input:
+      lang==="sv"?
+      "Du är en vänlig och praktisk finansrådgivare. Hjälp med budget-frågan. Ge enkla formler, en konkret handlingsplan, gratis verktyg. Använd emojis 💰📊💡.\n\nFråga: "+input:
+      "You are a friendly and practical financial advisor. Help with the budget question. Give simple formulas (50/30/20 rule, etc.), a concrete action plan, free tools to use. Use emojis 💰📊💡📈 and real numbers if possible.\n\nRequest: "+input;
+    return callClaude(budgetPrompt,lang,cb);
+  }
+  // ── Planificateur de semaine / productivité ──
+  var plannerMatch=lang==="fr"?/(?:planning|agenda.*semaine|organise.*semaine|organiser.*journée|programme.*semaine|todo list|liste.*tâche|gestion.*temps|productivité|méthode.*pomodoro|time.*blocking)/i.test(n):
+                   lang==="sv"?/(?:veckoplanering|organisera.*veckan|att-göra.*lista|produktivitet|tidshantering)/i.test(n):
+                   /(?:weekly planner|week.*plan|organiz.*week|schedule.*week|to.do list|task.*list|time management|productivity|pomodoro)/i.test(n);
+  if(plannerMatch){
+    var plannerPrompt=lang==="fr"?
+      "Tu es un expert en productivité et organisation personnelle. Aide à planifier et organiser. Propose un planning structuré, des méthodes concrètes (Pomodoro, time-blocking, GTD, etc.), des priorités claires. Utilise des emojis 📅✅🎯⏰ et des créneaux horaires si utile.\n\nDemande : "+input:
+      lang==="sv"?
+      "Du är en produktivitetsexpert. Hjälp att planera och organisera. Föreslå ett strukturerat schema och konkreta metoder. Använd emojis 📅✅🎯⏰.\n\nFråga: "+input:
+      "You are a productivity and personal organization expert. Help plan and organize. Propose a structured schedule, concrete methods (Pomodoro, time-blocking, GTD, etc.), clear priorities. Use emojis 📅✅🎯⏰.\n\nRequest: "+input;
+    return callClaude(plannerPrompt,lang,cb);
+  }
+  // ── Journal de bien-être ──
+  var wellbeingMatch=lang==="fr"?/(?:je me sens|aujourd.hui je|je suis (stressé|anxieux|heureux|triste|fatigué)|bien.être|mental|méditation|gratitude|journal.*perso|mon humeur|je vais pas bien|ça va pas)/i.test(n):
+                     lang==="sv"?/(?:jag mår|idag är jag|välmående|meditation|tacksamhet|jag känner mig)/i.test(n):
+                     /(?:i feel|today i (am|feel)|i'm feeling|mental health|meditation|gratitude journal|not doing well|wellness)/i.test(n);
+  if(wellbeingMatch){
+    var journal=[];try{journal=JSON.parse(localStorage.getItem("xn_journal")||"[]");}catch(e){}
+    journal.push({date:new Date().toLocaleDateString(),text:input.substring(0,200)});
+    if(journal.length>50)journal.shift();
+    try{localStorage.setItem("xn_journal",JSON.stringify(journal));}catch(e){}
+    var wellbeingPrompt=lang==="fr"?
+      "Tu es un coach de bien-être bienveillant et empathique. L'utilisateur partage son état émotionnel. Réponds avec : 1) Validation chaleureuse de ce qu'il ressent 2) Un conseil pratique adapté 3) Une technique simple (respiration, gratitude, mouvement) 4) Un message encourageant. Sois chaleureux, jamais condescendant. Emojis doux : 💙🌸✨🌟.\n\nMessage : "+input:
+      lang==="sv"?
+      "Du är en empatisk välmåendecoach. Svara med: 1) Varm validering 2) Praktiskt råd 3) En enkel teknik 4) Uppmuntrande budskap. Emojis: 💙🌸✨.\n\nMeddelande: "+input:
+      "You are a caring wellness coach. Respond with: 1) Warm validation 2) Practical advice 3) A simple technique (breathing, gratitude, movement) 4) Encouraging message. Be warm, never condescending. Emojis: 💙🌸✨🌟.\n\nMessage: "+input;
+    return callClaude(wellbeingPrompt,lang,cb);
   }
   // Réponse défi secret en cours ?
   if(_currentSecretChallenge){var sa=checkSecretAnswer(n,lang);if(sa)return cb(sa);}
