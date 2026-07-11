@@ -145,6 +145,13 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 [data-color="green"]{--accent:#27ae60;--accent2:#2ecc71;--border:#1a6040}
 [data-color="blue"]{--accent:#2980b9;--accent2:#3498db;--border:#1a4060}
 [data-color="orange"]{--accent:#e67e22;--accent2:#f39c12;--border:#604020}
+/* Thèmes exclusifs abonnés */
+[data-color="diamond"]{--accent:#00d4ff;--accent2:#67e8f9;--border:#0a4060}
+[data-color="neon"]{--accent:#ff00ff;--accent2:#ff69b4;--border:#4d004d}
+[data-color="fire"]{--accent:#ff4500;--accent2:#ff6b35;--border:#5c1a00}
+[data-color="emerald"]{--accent:#00e676;--accent2:#69f0ae;--border:#003320}
+[data-color="midnight"]{--accent:#7c4dff;--accent2:#b388ff;--border:#1a0050}
+[data-color="cosmic"]{--accent:#FFD700;--accent2:#FFA500;--border:#2d1060;--bg:#050015;--card:#0a0030}
 /* ── SCORE ── */
 .score-badge{background:var(--accent);color:#000;font-weight:800;font-size:.8rem;padding:4px 10px;border-radius:20px;cursor:pointer}
 /* ── PENDU ── */
@@ -283,13 +290,19 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   </div>
   <div class="header-btns">
     <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#129302;</span>
-    <select id="colorSelect" class="lang-select" style="max-width:76px" onchange="setColorTheme(this.value)" title="Couleur">
-      <option value="">&#11088; Defaut</option>
-      <option value="blue">&#128309; Bleu</option>
-      <option value="purple">&#128995; Violet</option>
-      <option value="green">&#128994; Vert</option>
-      <option value="red">&#128308; Rouge</option>
-      <option value="orange">&#128992; Orange</option>
+    <select id="colorSelect" class="lang-select" style="max-width:86px" onchange="setColorTheme(this.value)" title="Couleur">
+      <option value="">⭐ Default</option>
+      <option value="blue">🔵 Blue</option>
+      <option value="purple">🟣 Purple</option>
+      <option value="green">🟢 Green</option>
+      <option value="red">🔴 Red</option>
+      <option value="orange">🟠 Orange</option>
+      <option value="diamond" data-tier="pro">💎 Diamond</option>
+      <option value="neon" data-tier="pro">🌸 Neon</option>
+      <option value="fire" data-tier="ultra">🔥 Fire</option>
+      <option value="emerald" data-tier="ultra">💚 Emerald</option>
+      <option value="midnight" data-tier="legend">🌌 Midnight</option>
+      <option value="cosmic" data-tier="legend">✨ Cosmic</option>
     </select>
     <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
       <option value="sv">&#127480;&#127466; Svenska</option>
@@ -1572,7 +1585,8 @@ function saveCurrentConversation(){
     savedConversations.unshift({id:currentConvId,title:title,lang:currentLang,messages:convHistory.slice(),updatedAt:now});
     localStorage.setItem("xn_last_conv_id",""+currentConvId);
   }
-  if(savedConversations.length>30)savedConversations=savedConversations.slice(0,30);
+  var _convMax=_xnTier==="legend"?999:_xnTier==="ultra"?50:_xnTier==="pro"?20:5;
+  if(savedConversations.length>_convMax)savedConversations=savedConversations.slice(0,_convMax);
   try{localStorage.setItem("xn_saved_convs",JSON.stringify(savedConversations));}catch(e){}
   renderConvList();
 }
@@ -1654,6 +1668,7 @@ function toggleConvPanel(){
 // ── MÉMOIRE DE CONVERSATION ──
 function addToConvHistory(role,text){
   convHistory.push({role:role,text:text});
+  if(role==="user")_extractMemoryFromMessage(text);
   if(role==="bot")saveCurrentConversation();
 }
 function getLastBotTopic(lang){
@@ -1890,6 +1905,38 @@ function detectName(n){
 
 var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
 
+// ── MÉMOIRE LONGUE (Pro+) ──
+var _xnMemory={};
+try{_xnMemory=JSON.parse(localStorage.getItem("xn_long_memory")||"{}");}catch(e){}
+function _saveMemoryFact(key,value){
+  _xnMemory[key]=value;
+  try{localStorage.setItem("xn_long_memory",JSON.stringify(_xnMemory));}catch(e){}
+}
+function _extractMemoryFromMessage(text){
+  var t=text.toLowerCase();
+  var m;
+  if((m=t.match(/je m.appelle\s+([a-zàéèêëîïôùûüç]{2,20})/i)))_saveMemoryFact("name",m[1]);
+  if((m=t.match(/j.ai\s+(\d{1,2})\s+ans/i)))_saveMemoryFact("age",m[1]+" ans");
+  if((m=t.match(/j.habite\s+(?:à|a|en|au)?\s*([a-zàéèêëîïôùûüç\s]{2,30})/i)))_saveMemoryFact("city",m[1].trim());
+  if(t.indexOf("j'aime")!==-1||t.indexOf("j aime")!==-1){
+    var likes=_xnMemory.likes||[];
+    var subjects=["football","musique","minecraft","roblox","manga","anime","basketball","tennis","natation","cuisine","dessin","lecture","maths","science","histoire"];
+    subjects.forEach(function(s){if(t.indexOf(s)!==-1&&likes.indexOf(s)===-1)likes.push(s);});
+    if(likes.length>0)_saveMemoryFact("likes",likes);
+  }
+}
+function _buildMemoryPrompt(){
+  if(_tierRank(_xnTier)<1)return"";
+  var facts=Object.keys(_xnMemory);
+  if(facts.length===0)return"";
+  var lines=["MÉMOIRE UTILISATEUR (souviens-toi toujours de ces infos) :"];
+  if(_xnMemory.name)lines.push("- Prénom : "+_xnMemory.name);
+  if(_xnMemory.age)lines.push("- Âge : "+_xnMemory.age);
+  if(_xnMemory.city)lines.push("- Ville : "+_xnMemory.city);
+  if(_xnMemory.likes&&_xnMemory.likes.length)lines.push("- Aime : "+_xnMemory.likes.join(", "));
+  return"\n\n"+lines.join("\n");
+}
+
 // ── ABONNEMENT ──
 var _xnTier="free"; // free / pro / ultra / legend
 var _xnEmail=null;
@@ -1922,6 +1969,9 @@ function checkSubscription(email,cb){
       _xnTier=d.tier||"free";
       try{localStorage.setItem("xn_sub_cache",JSON.stringify({tier:_xnTier,expires:Date.now()+3600000}));}catch(e){}
       _updateTierBadge();
+      if(_xnTier==="pro")earnBadge("member_pro");
+      if(_xnTier==="ultra"){earnBadge("member_pro");earnBadge("member_ultra");}
+      if(_xnTier==="legend"){earnBadge("member_pro");earnBadge("member_ultra");earnBadge("member_legend");}
       if(cb)cb(_xnTier);
     })
     .catch(function(){if(cb)cb(_xnTier);});
@@ -2051,6 +2101,7 @@ function callClaude(question,lang,cb,_attempt){
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
   var _now=new Date();var _mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][_now.getMonth()];var _dateStr="le "+_now.getDate()+" "+_mois+" "+_now.getFullYear();
   var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Nous sommes "+_dateStr+". Tu connais toujours la date exacte. Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Tu écris TOUJOURS en paragraphes courts séparés par une ligne vide — JAMAIS un seul grand bloc de texte. Chaque paragraphe = 2-3 phrases maximum. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections courtes, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu n'utilises JAMAIS de balises HTML brutes comme &lt;br&gt;, &lt;div&gt;, &lt;p&gt; dans tes réponses — utilise uniquement des sauts de ligne normaux et du markdown. Tu termines TOUJOURS tes phrases complètement, sans jamais couper au milieu. Tes réponses sont toujours cohérentes et ont du sens. Tu n'écris JAMAIS de longs blocs de texte — tu divises TOUJOURS en petits paragraphes courts de 1-3 phrases maximum, avec des listes à puces dès que possible. Maximum 3 phrases par paragraphe. Tu ne mentionnes jamais que tu es Claude ou une IA d'Anthropic. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef. Quand on te compare à d'autres IA ou outils, tu réponds TOUJOURS avec confiance et précision en tant que Xearnes — tu expliques ce que TU fais et en quoi tu es différent, sans jamais mentionner Claude ou Anthropic. Par exemple si on te compare à DeepSpeech (un simple outil de reconnaissance vocale), tu expliques fièrement que Xearnes est un assistant IA complet qui comprend, raisonne et répond à tout, pas juste un outil de transcription. Ne sois jamais vague ou évasif quand on parle de tes capacités. Tu es confiant et ne t'excuses pas excessivement — si quelqu'un dit 'non' ou 'pas vraiment', réponds naturellement sans paniquer ni demander 'quel est le bon réponse ?'. Tu es Xearnes, tu as de la personnalité et de l'assurance.";
+  sysPrompt+=_buildMemoryPrompt();
   if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris toujours le code dans des blocs markdown avec trois accents graves (```). Explique le code simplement, ligne par ligne si besoin, pour qu'un débutant comprenne. Donne du code complet qui marche, pas des morceaux incomplets.";
   var msgs=[];
   var hist=convHistory;
@@ -2331,10 +2382,20 @@ function _getReplyBody(input,lang,n,cb){
   var owq=detectOpenWeb(n,lang);
   if(owq){var owl=findWebLink(owq);if(owl)return cb(doOpenWeb(owl,lang));}
   // ── NOUVELLES FONCTIONNALITES ──
+  // Réponse défi secret en cours ?
+  if(_currentSecretChallenge){var sa=checkSecretAnswer(n,lang);if(sa)return cb(sa);}
   // Pendu en cours ?
   if(penduState)return cb(buildPenduHtml());
   // Pendu commande
   if(detectPendu(n,lang))return cb(startPendu(lang));
+  // Défis secrets (Ultra/Legend)
+  if(/d.fi secret|secret challenge|challenge secret/i.test(n)){
+    if(_tierRank(_xnTier)<2){
+      return cb(lang==="fr"?"🔒 Les défis secrets sont réservés aux abonnés <strong>Ultra</strong> et <strong>Legend</strong>. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
+                "🔒 Secret challenges are for <strong>Ultra</strong> and <strong>Legend</strong> subscribers. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>");
+    }
+    return cb(buildSecretChallenge(lang));
+  }
   // Définition
   var dw=detectDef(n,lang);
   if(dw){var dl=lookupDef(dw,lang);if(dl)return cb(buildDefHtml(dl.w,dl.def,lang));}
@@ -3628,7 +3689,53 @@ function cycleAvatar(){
   if(pb)pb.innerHTML=currentAvatar+'<span class="pb-badge" id="popupBadge"></span>';
 }
 // ── FEATURE 7 : THEMES COULEUR ──────────────────────
+// ── DÉFIS SECRETS ──
+var _secretChallenges={
+  fr:[
+    {q:"🧠 <strong>Défi Maths Secret</strong> — Sans calculatrice : combien font 37 × 43 ?",a:"1591"},
+    {q:"🌍 <strong>Défi Géo Secret</strong> — Quelle est la capitale du Kazakhstan ?",a:"astana"},
+    {q:"⚡ <strong>Défi Science Secret</strong> — Combien d'électrons a un atome d'oxygène ?",a:"8"},
+    {q:"🎭 <strong>Défi Culture Secret</strong> — Qui a peint la Joconde ?",a:"léonard de vinci"},
+    {q:"🔢 <strong>Défi Logique Secret</strong> — La suite : 2, 6, 18, 54... quel est le prochain nombre ?",a:"162"},
+  ],
+  en:[
+    {q:"🧠 <strong>Secret Math Challenge</strong> — No calculator: what is 37 × 43?",a:"1591"},
+    {q:"🌍 <strong>Secret Geo Challenge</strong> — What is the capital of Kazakhstan?",a:"astana"},
+    {q:"⚡ <strong>Secret Science Challenge</strong> — How many electrons does an oxygen atom have?",a:"8"},
+    {q:"🎭 <strong>Secret Culture Challenge</strong> — Who painted the Mona Lisa?",a:"leonardo da vinci"},
+    {q:"🔢 <strong>Secret Logic Challenge</strong> — The sequence: 2, 6, 18, 54... what comes next?",a:"162"},
+  ]
+};
+var _currentSecretChallenge=null;
+function buildSecretChallenge(lang){
+  var pool=_secretChallenges[lang]||_secretChallenges.en;
+  _currentSecretChallenge=pool[Math.floor(Math.random()*pool.length)];
+  return "<div class='defi-card'>🔐 <strong>"+(lang==="fr"?"DÉFI SECRET":"SECRET CHALLENGE")+"</strong><br><br>"+_currentSecretChallenge.q+"<br><br><em style='font-size:.8rem;color:var(--text2)'>"+(lang==="fr"?"Réponds avec ta réponse !":"Type your answer!")+"</em></div>";
+}
+function checkSecretAnswer(text,lang){
+  if(!_currentSecretChallenge)return null;
+  var ans=text.toLowerCase().replace(/[^a-z0-9àéèêëîïôùûüç]/g,"").trim();
+  var correct=_currentSecretChallenge.a.toLowerCase().replace(/[^a-z0-9àéèêëîïôùûüç]/g,"").trim();
+  if(ans.indexOf(correct)!==-1||correct.indexOf(ans)!==-1){
+    _currentSecretChallenge=null;
+    addScore(50);
+    return lang==="fr"?"🎉 <strong>Bravo ! +50 points !</strong> Tu as réussi le défi secret ! 🔐✨":"🎉 <strong>Correct! +50 points!</strong> You completed the secret challenge! 🔐✨";
+  }
+  return null;
+}
+var _THEME_TIERS={diamond:"pro",neon:"pro",fire:"ultra",emerald:"ultra",midnight:"legend",cosmic:"legend"};
+function _tierRank(t){return t==="legend"?3:t==="ultra"?2:t==="pro"?1:0;}
 function setColorTheme(c){
+  var needed=_THEME_TIERS[c];
+  if(needed&&_tierRank(_xnTier)<_tierRank(needed)){
+    var lang=currentLang||"fr";
+    var msg=lang==="fr"?"🔒 Ce thème est réservé aux abonnés <strong>"+needed.charAt(0).toUpperCase()+needed.slice(1)+"</strong> et plus. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
+            "🔒 This theme is for <strong>"+needed.charAt(0).toUpperCase()+needed.slice(1)+"</strong> subscribers and above. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>";
+    addMessage("bot",msg,"Xearnes");
+    var sel=document.getElementById("colorSelect");
+    if(sel)sel.value=localStorage.getItem("xn_color")||"";
+    return;
+  }
   if(c)document.documentElement.setAttribute("data-color",c);
   else document.documentElement.removeAttribute("data-color");
   localStorage.setItem("xn_color",c||"");
@@ -4170,6 +4277,9 @@ var badgeDefs={
   recipe_5:{icon:"🍽️",sv:"Gourmanden",fr:"Gourmand",en:"Foodie",desc:{sv:"Hittade 5 recept!",fr:"5 recettes trouvées !",en:"Found 5 recipes!"}},
   recipe_10:{icon:"🍴",sv:"Stjärnkocken",fr:"Chef étoilé",en:"Star Chef",desc:{sv:"Hittade 10 recept!",fr:"10 recettes trouvées !",en:"Found 10 recipes!"}},
   // ── DÉFI DU JOUR ───────────────────────────────────────────────
+  member_pro:{icon:"🔷",sv:"Pro-medlem",fr:"Membre Pro",en:"Pro Member",desc:{sv:"Pro-prenumeration aktiverad!",fr:"Abonnement Pro activé !",en:"Pro subscription activated!"}},
+  member_ultra:{icon:"⚡",sv:"Ultra-medlem",fr:"Membre Ultra",en:"Ultra Member",desc:{sv:"Ultra-prenumeration aktiverad!",fr:"Abonnement Ultra activé !",en:"Ultra subscription activated!"}},
+  member_legend:{icon:"👑",sv:"Legend",fr:"Légende",en:"Legend",desc:{sv:"Legend-prenumeration aktiverad — du är en legend!",fr:"Abonnement Legend activé — tu es une légende !",en:"Legend subscription activated — you are a legend!"}},
   defi_first:{icon:"⚡",sv:"Utmanaren",fr:"L'Aventurier",en:"The Challenger",desc:{sv:"Första dagliga utmaningen klar!",fr:"Premier défi du jour réussi !",en:"First daily challenge done!"}},
   defi_7:{icon:"🔥",sv:"Eldsjälen",fr:"7 jours de feu",en:"7-Day Fire",desc:{sv:"7 dagliga utmaningar klarade!",fr:"7 défis du jour réussis !",en:"7 daily challenges done!"}},
   defi_30:{icon:"💫",sv:"Utmanarnas Mästare",fr:"Maître des défis",en:"Challenge Master",desc:{sv:"30 dagliga utmaningar klarade!",fr:"30 défis du jour réussis !",en:"30 daily challenges done!"}},
@@ -4638,6 +4748,6 @@ window.addEventListener("load",init);
     </div>
   </div>
 </div>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-14</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-15</div>
 </body>
 </html>
