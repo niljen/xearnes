@@ -4424,7 +4424,11 @@ var badgeDefs={
   streak_7:{icon:"🔥",sv:"7 dagars streak",fr:"7 jours de suite",en:"7-Day Streak",desc:{sv:"7 dagar i rad på Xearnes!",fr:"7 jours consécutifs sur Xearnes !",en:"7 days in a row on Xearnes!"}},
   streak_30:{icon:"🌋",sv:"30 dagars streak",fr:"30 jours de suite",en:"30-Day Streak",desc:{sv:"30 dagar i rad — episkt!",fr:"30 jours consécutifs — épique !",en:"30 days in a row — epic!"}},
   streak_100:{icon:"⚡",sv:"100 dagars streak",fr:"100 jours de suite",en:"100-Day Streak",desc:{sv:"100 dagar i rad — du är en legend!",fr:"100 jours consécutifs — tu es une légende !",en:"100 days in a row — you're a legend!"}},
+  sharer_1:{icon:"📤",sv:"Första delningen",fr:"Premier partage",en:"First Share",desc:{sv:"Delade Xearnes för första gången!",fr:"Premier partage de Xearnes !",en:"Shared Xearnes for the first time!"}},
+  sharer_5:{icon:"📣",sv:"Spridaren",fr:"Le Diffuseur",en:"The Spreader",desc:{sv:"Delade Xearnes 5 gånger!",fr:"5 partages de Xearnes !",en:"Shared Xearnes 5 times!"}},
   sharer_20:{icon:"🌍",sv:"Ambassadören",fr:"L'Ambassadeur",en:"The Ambassador",desc:{sv:"Delade Xearnes med 20 personer!",fr:"Tu as partagé Xearnes avec 20 personnes !",en:"Shared Xearnes with 20 people!"}},
+  sharer_50:{icon:"🚀",sv:"Viral Spreader",fr:"Viral",en:"Gone Viral",desc:{sv:"Delade Xearnes 50 gånger — episkt!",fr:"50 partages — tu es viral !",en:"50 shares — you've gone viral!"}},
+  sharer_100:{icon:"🌟",sv:"Xearnes Legendaren",fr:"Légende du partage",en:"Sharing Legend",desc:{sv:"100 delningar — du är en legend!",fr:"100 partages — tu es une légende !",en:"100 shares — you're a legend!"}},
   member_pro:{icon:"🔷",sv:"Pro-medlem",fr:"Membre Pro",en:"Pro Member",desc:{sv:"Pro-prenumeration aktiverad!",fr:"Abonnement Pro activé !",en:"Pro subscription activated!"}},
   member_ultra:{icon:"⚡",sv:"Ultra-medlem",fr:"Membre Ultra",en:"Ultra Member",desc:{sv:"Ultra-prenumeration aktiverad!",fr:"Abonnement Ultra activé !",en:"Ultra subscription activated!"}},
   member_legend:{icon:"👑",sv:"Legend",fr:"Légende",en:"Legend",desc:{sv:"Legend-prenumeration aktiverad — du är en legend!",fr:"Abonnement Legend activé — tu es une légende !",en:"Legend subscription activated — you are a legend!"}},
@@ -4514,7 +4518,11 @@ function checkBadges(){
   if((xnStats.daysStreak||0)>=30)earnBadge("streak_30");
   if((xnStats.daysStreak||0)>=100)earnBadge("streak_100");
   // ── Partage ────────────────────────────────────────────────────
+  if((xnStats.sharesCount||0)>=1)earnBadge("sharer_1");
+  if((xnStats.sharesCount||0)>=5)earnBadge("sharer_5");
   if((xnStats.sharesCount||0)>=20)earnBadge("sharer_20");
+  if((xnStats.sharesCount||0)>=50)earnBadge("sharer_50");
+  if((xnStats.sharesCount||0)>=100)earnBadge("sharer_100");
   // ── Spéciaux & Secrets ─────────────────────────────────────────
   if(h>=22||h<4)earnBadge("night_owl");
   if(h<7)earnBadge("early_bird");
