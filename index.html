@@ -2382,6 +2382,21 @@ function _getReplyBody(input,lang,n,cb){
   var owq=detectOpenWeb(n,lang);
   if(owq){var owl=findWebLink(owq);if(owl)return cb(doOpenWeb(owl,lang));}
   // ── NOUVELLES FONCTIONNALITES ──
+  // Génération de paroles de chanson
+  var songMatch=null;
+  if(lang==="fr")songMatch=n.match(/(?:écris?|fais?|crée?|compose?|génère?)\s+(?:une?\s+)?(?:chanson|paroles?|rap|poème|lyrics?)\s*(?:sur|about|de|à propos de)?\s*(.{0,60})/i);
+  else if(lang==="sv")songMatch=n.match(/(?:skriv|skapa|gör)\s+(?:en\s+)?(?:låt|sång|rap|text|lyrics?)\s*(?:om|about)?\s*(.{0,60})/i);
+  else songMatch=n.match(/(?:write|create|make|compose|generate)\s+(?:a\s+)?(?:song|lyrics?|rap|poem)\s*(?:about|on|for)?\s*(.{0,60})/i);
+  if(!songMatch&&(lang==="fr"?/paroles|chanson|rap/.test(n):/lyrics|song|rap/.test(n)))songMatch=["",n];
+  if(songMatch){
+    var songTopic=(songMatch[1]||"").trim()||"la vie";
+    var songPrompt=lang==="fr"?
+      "Écris des paroles de chanson originales et créatives sur le thème : \""+songTopic+"\". Structure : un couplet, un refrain, un deuxième couplet, refrain. Ajoute des emojis musicaux. Rends-les fun et mémorables pour un jeune.":
+      lang==="sv"?
+      "Skriv originella och kreativa låttexter om ämnet: \""+songTopic+"\". Struktur: vers, refräng, vers, refräng. Lägg till musikemojis. Gör dem roliga och minnesvärda för en ung person.":
+      "Write original and creative song lyrics about the topic: \""+songTopic+"\". Structure: verse, chorus, verse, chorus. Add music emojis. Make them fun and memorable for a young person.";
+    return callClaude(songPrompt,lang,cb);
+  }
   // Réponse défi secret en cours ?
   if(_currentSecretChallenge){var sa=checkSecretAnswer(n,lang);if(sa)return cb(sa);}
   // Pendu en cours ?
