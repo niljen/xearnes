@@ -1344,6 +1344,9 @@ function detectStockCommand(n,lang){
   if(/teste xearnes|test xearnes|xearnes est.il bon|score.*bourse|score.*xearnes/.test(n)){
     return{type:"test"};
   }
+  if(/graphique|courbe|chart|diagram|évolution|evolution|historique/.test(n)&&/bourse|stock|portefeuille|portfolio/.test(n)){
+    return{type:"chart"};
+  }
   if(/bourse|portefeuille|simulateur|mina aktier|mitt konto/.test(n)&&!/(achete|achète|vends|vend|prix|analyse|köp|sälj|pris|analysera)/.test(n)){
     return{type:"portfolio"};
   }
@@ -1379,11 +1382,35 @@ function doPortfolioSummary(lang,cb){
       out.push(name+" — "+h.qty+" x "+price.toFixed(2)+"€ = "+value.toFixed(2)+"€ ("+sign+pct+"%)");
       if(remaining===0){
         out.push("");
-        out.push((lang==="fr"?"💼 Valeur totale (actions + argent) : ":lang==="sv"?"💼 Totalt värde (aktier + pengar): ":"💼 Total value (stocks + cash): ")+"<strong>"+(totalValue+p.cash).toFixed(2)+"€</strong>");
+        var total=totalValue+p.cash;
+        out.push((lang==="fr"?"💼 Valeur totale (actions + argent) : ":lang==="sv"?"💼 Totalt värde (aktier + pengar): ":"💼 Total value (stocks + cash): ")+"<strong>"+total.toFixed(2)+"€</strong>");
+        // Snapshot pour graphique
+        try{var hist=JSON.parse(localStorage.getItem("xn_stock_history")||"[]");hist.push({t:Date.now(),v:total});if(hist.length>60)hist=hist.slice(-60);localStorage.setItem("xn_stock_history",JSON.stringify(hist));}catch(e){}
+        if(_tierRank(_xnTier)>=2)out.push("<br>"+(lang==="fr"?"📈 Dis <em>graphique bourse</em> pour voir ton évolution !":lang==="sv"?"📈 Säg <em>börsdiagram</em> för att se din kurva!":"📈 Say <em>stock chart</em> to see your performance curve!"));
         cb(out.join("<br>"));
       }
     });
   });
+}
+function doStockChart(lang,cb){
+  if(_tierRank(_xnTier)<2){
+    return cb(lang==="fr"?"🔒 Les graphiques bourse sont réservés aux abonnés <strong>Ultra</strong> et <strong>Legend</strong>. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
+              "🔒 Stock charts are for <strong>Ultra</strong> and <strong>Legend</strong> subscribers. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>");
+  }
+  var hist=[];try{hist=JSON.parse(localStorage.getItem("xn_stock_history")||"[]");}catch(e){}
+  if(hist.length<2){
+    return cb(lang==="fr"?"📊 Pas encore assez de données. Consulte ton portefeuille plusieurs fois pour voir l'évolution !":"📊 Not enough data yet. Check your portfolio a few times to see the curve!");
+  }
+  var id="chart_"+Date.now();
+  var vals=hist.map(function(h){return h.v;});
+  var min=Math.min.apply(null,vals),max=Math.max.apply(null,vals);
+  var start=vals[0],end=vals[vals.length-1];
+  var pct=((end-start)/start*100).toFixed(1);
+  var color=end>=start?"#4ade80":"#f85149";
+  var html='<canvas id="'+id+'" width="320" height="140" style="border-radius:10px;background:#0a0f2c;display:block;margin:8px 0"></canvas>'+
+    '<div style="font-size:.8rem;color:'+color+';font-weight:700">'+(end>=start?"📈":"📉")+' '+(end>=start?"+":"")+pct+'% depuis le début · Valeur actuelle : <strong>'+end.toFixed(2)+'€</strong></div>'+
+    '<script>(function(){var c=document.getElementById("'+id+'");if(!c)return;var ctx=c.getContext("2d");var w=c.width,h=c.height,pad=14;var vals='+JSON.stringify(vals)+';var mn='+min+',mx='+max+';var range=mx-mn||1;ctx.strokeStyle="'+color+'";ctx.lineWidth=2;ctx.beginPath();vals.forEach(function(v,i){var x=pad+(w-pad*2)*i/(vals.length-1);var y=h-pad-(v-mn)/range*(h-pad*2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.fillStyle="rgba(74,222,128,0.08)";ctx.lineTo(pad+(w-pad*2),h-pad);ctx.lineTo(pad,h-pad);ctx.fill();})();<\/script>';
+  cb(html);
 }
 function doStockBuy(name,qty,lang,cb){
   var t=findTicker(name);
@@ -2330,6 +2357,7 @@ function _getReplyBody(input,lang,n,cb){
   if(stockCmd){
     if(stockCmd.type==="test")doStockTest(lang,cb);
     else if(stockCmd.type==="portfolio")doPortfolioSummary(lang,cb);
+    else if(stockCmd.type==="chart")doStockChart(lang,cb);
     else if(stockCmd.type==="buy")doStockBuy(stockCmd.name,stockCmd.qty,lang,cb);
     else if(stockCmd.type==="sell")doStockSell(stockCmd.name,stockCmd.qty,lang,cb);
     else if(stockCmd.type==="price")doStockPrice(stockCmd.name,lang,cb);
@@ -2382,6 +2410,55 @@ function _getReplyBody(input,lang,n,cb){
   var owq=detectOpenWeb(n,lang);
   if(owq){var owl=findWebLink(owq);if(owl)return cb(doOpenWeb(owl,lang));}
   // ── NOUVELLES FONCTIONNALITES ──
+  // Histoire personnalisée
+  var storyMatch=lang==="fr"?/histoire.*(moi|héros|hero|avec moi|personnalis)|crée.*(histoire|conte).*moi/i.test(n):
+                 lang==="sv"?/saga.*(mig|hjälte)|skriv.*(saga|historia).*mig/i.test(n):
+                 /story.*(me|hero|about me|personaliz)|create.*(story|tale).*me/i.test(n);
+  if(storyMatch){
+    var heroName=(_xnMemory&&_xnMemory.name)||"toi";
+    var storyPrompt=lang==="fr"?
+      "Écris une courte histoire personnalisée et captivante où le héros s'appelle "+heroName+". L'histoire doit être aventureuse, fun et adaptée à un jeune. Ajoute des emojis et une fin surprenante. Maximum 300 mots.":
+      lang==="sv"?
+      "Skriv en kort personlig och spännande historia där hjälten heter "+heroName+". Historien ska vara äventyrlig, rolig och lämplig för en ung person. Lägg till emojis och ett överraskande slut. Max 300 ord.":
+      "Write a short personalized and captivating story where the hero is named "+heroName+". The story should be adventurous, fun and suitable for a young person. Add emojis and a surprising ending. Max 300 words.";
+    return callClaude(storyPrompt,lang,cb);
+  }
+  // Mini-jeu
+  var gameMatch=lang==="fr"?/crée.*(mini.?jeu|jeu)|fais.*(jeu|mini.?jeu)/i.test(n):
+                lang==="sv"?/skapa.*(spel|mini.?spel)|gör.*(spel)/i.test(n):
+                /create.*(mini.?game|game)|make.*(game|mini.?game)/i.test(n);
+  if(gameMatch){
+    var gameTheme=n.replace(/crée|fais|create|make|mini.?jeu|mini.?game|jeu|game|spel|skapa|gör/gi,"").trim()||"clicker";
+    var gamePrompt=lang==="fr"?
+      "Crée un mini-jeu HTML complet et jouable sur le thème : \""+gameTheme+"\". Le jeu doit tenir en un seul bloc de code HTML/CSS/JS. Utilise des couleurs vives, rends-le fun et interactif. Inclus un score et un bouton rejouer.":
+      "Create a complete and playable HTML mini-game on the theme: \""+gameTheme+"\". The game must fit in a single HTML/CSS/JS code block. Use bright colors, make it fun and interactive. Include a score and a restart button.";
+    return callClaude(gamePrompt,lang,cb);
+  }
+  // Création de site web
+  var webMatch=lang==="fr"?/crée.*(site|page|web|html)|fais.*(site|page|web)/i.test(n):
+               lang==="sv"?/skapa.*(webbplats|sida|hemsida)|gör.*(webbplats|hemsida)/i.test(n):
+               /create.*(website|web page|site|html)|make.*(website|web page)/i.test(n);
+  if(webMatch){
+    var webTheme=n.replace(/crée|fais|create|make|skapa|gör|site web|website|web page|site|page|html|hemsida|webbplats/gi,"").trim()||"portfolio";
+    var webPrompt=lang==="fr"?
+      "Crée un site web HTML/CSS/JS complet, beau et moderne sur le thème : \""+webTheme+"\". Le site doit avoir un header, des sections, un footer. Utilise des couleurs attractives et du CSS moderne. Fournis le code complet dans un seul bloc HTML.":
+      "Create a complete, beautiful and modern HTML/CSS/JS website on the theme: \""+webTheme+"\". The site should have a header, sections, a footer. Use attractive colors and modern CSS. Provide the complete code in a single HTML block.";
+    return callClaude(webPrompt,lang,cb);
+  }
+  // Aide au travail (email, CV, rapport)
+  var workMatch=lang==="fr"?n.match(/(?:écris?|rédige?|fais?|crée?)\s+(?:un\s+|une\s+)?(?:email|mail|cv|curriculum|rapport|lettre|compte.rendu|résumé)\s*(?:pour|sur|de|à)?\s*(.{0,80})/i):
+                lang==="sv"?n.match(/(?:skriv|skapa|gör)\s+(?:ett?\s+)?(?:email|mail|cv|rapport|brev|sammanfattning)\s*(?:för|om|till)?\s*(.{0,80})/i):
+                n.match(/(?:write|create|make|draft)\s+(?:an?\s+)?(?:email|mail|cv|resume|report|letter|summary)\s*(?:for|about|to)?\s*(.{0,80})/i);
+  if(workMatch){
+    var workType=n.match(/email|mail/i)?"email":n.match(/cv|curriculum|resume/i)?"CV":n.match(/rapport|report/i)?"rapport":n.match(/lettre|letter/i)?"lettre":"document";
+    var workTopic=(workMatch[1]||"").trim()||"professionnel";
+    var workPrompt=lang==="fr"?
+      "Rédige un "+workType+" professionnel et bien structuré sur le sujet : \""+workTopic+"\". Utilise un ton approprié, une structure claire avec sections si nécessaire. Rends-le prêt à l'emploi.":
+      lang==="sv"?
+      "Skriv ett professionellt och välstrukturerat "+workType+" om ämnet: \""+workTopic+"\". Använd lämplig ton och tydlig struktur med sektioner vid behov.":
+      "Write a professional and well-structured "+workType+" about: \""+workTopic+"\". Use an appropriate tone, clear structure with sections if needed. Make it ready to use.";
+    return callClaude(workPrompt,lang,cb);
+  }
   // Génération de paroles de chanson
   var songMatch=null;
   if(lang==="fr")songMatch=n.match(/(?:écris?|fais?|crée?|compose?|génère?)\s+(?:une?\s+)?(?:chanson|paroles?|rap|poème|lyrics?)\s*(?:sur|about|de|à propos de)?\s*(.{0,60})/i);
@@ -4781,6 +4858,6 @@ window.addEventListener("load",init);
     </div>
   </div>
 </div>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-15</div>
+<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-16</div>
 </body>
 </html>
