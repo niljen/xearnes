@@ -2397,6 +2397,24 @@ function _getReplyBody(input,lang,n,cb){
       "Write original and creative song lyrics about the topic: \""+songTopic+"\". Structure: verse, chorus, verse, chorus. Add music emojis. Make them fun and memorable for a young person.";
     return callClaude(songPrompt,lang,cb);
   }
+  // Accords guitare / piano
+  var chordsMatch=null;
+  if(lang==="fr")chordsMatch=n.match(/(?:accords?|jouer|composer|comment jouer)\s+(?:de\s+)?(?:guitare|piano|clavier|guitar|keyboard)?\s*(?:pour|sur|en|de)?\s*(.{0,60})/i);
+  else if(lang==="sv")chordsMatch=n.match(/(?:ackord|spela|komponera)\s+(?:på\s+)?(?:gitarr|piano|keyboard)?\s*(?:för|till|i)?\s*(.{0,60})/i);
+  else chordsMatch=n.match(/(?:chords?|play|compose)\s+(?:on\s+)?(?:guitar|piano|keyboard)?\s*(?:for|in|to)?\s*(.{0,60})/i);
+  if(!chordsMatch&&(lang==="fr"?/guitare|piano|accord/.test(n):/guitar|piano|chord/.test(n)))chordsMatch=["",n];
+  if(chordsMatch){
+    var isGuitar=/guitare|guitar|gitarr/.test(n);
+    var isPiano=/piano|clavier|keyboard/.test(n);
+    var instrument=isGuitar?"guitare":isPiano?"piano":"guitare et piano";
+    var chordTopic=(chordsMatch[1]||"").trim()||"une chanson pop";
+    var chordsPrompt=lang==="fr"?
+      "Propose des accords de "+instrument+" pour : \""+chordTopic+"\". Donne la progression d'accords (ex: Am - F - C - G), explique comment poser les doigts sur chaque accord de façon simple pour un débutant, et donne le rythme conseillé. Utilise des emojis musicaux 🎸🎹.":
+      lang==="sv"?
+      "Föreslå "+instrument+"-ackord för: \""+chordTopic+"\". Ge ackordsprogressionen, förklara enkelt hur man placerar fingrarna för varje ackord för en nybörjare, och ge den rekommenderade rytmen. Använd musikemojis 🎸🎹.":
+      "Suggest "+instrument+" chords for: \""+chordTopic+"\". Give the chord progression (e.g. Am - F - C - G), explain simply how to place fingers for each chord for a beginner, and give the recommended strumming pattern. Use music emojis 🎸🎹.";
+    return callClaude(chordsPrompt,lang,cb);
+  }
   // Réponse défi secret en cours ?
   if(_currentSecretChallenge){var sa=checkSecretAnswer(n,lang);if(sa)return cb(sa);}
   // Pendu en cours ?
