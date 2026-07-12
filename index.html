@@ -2058,22 +2058,11 @@ function _nextShareUnlock(shares){
   for(var i=0;i<_shareUnlocks.length;i++){if(shares<_shareUnlocks[i].at)return _shareUnlocks[i];}
   return null;
 }
-function shareXearnes(){
-  var url="https://niljen.github.io/xearnes/";
-  var lang=currentLang||"fr";
-  var text=lang==="fr"?"Découvre Xearnes, une IA créée par un jeune de 11 ans ! 🤖⚡":
-           lang==="sv"?"Kolla in Xearnes, en AI skapad av en 11-åring! 🤖⚡":
-           "Check out Xearnes, an AI created by an 11-year-old! 🤖⚡";
+function _doShareCount(lang){
   var before=xnStats.sharesCount||0;
   xnStats.sharesCount=before+1;
   saveStats();checkBadges();
   var shares=xnStats.sharesCount;
-  if(navigator.share){
-    navigator.share({title:"Xearnes AI",text:text,url:url}).catch(function(){});
-  } else {
-    navigator.clipboard&&navigator.clipboard.writeText(url);
-  }
-  // Vérifier si un déblocage vient d'être atteint
   var justUnlocked=null;
   for(var i=0;i<_shareUnlocks.length;i++){
     if(before<_shareUnlocks[i].at&&shares>=_shareUnlocks[i].at){justUnlocked=_shareUnlocks[i];break;}
@@ -2089,6 +2078,27 @@ function shareXearnes(){
           lang==="sv"?"🔗 Länk delad! Tack för att du sprider Xearnes 🙏"+progressLine+unlockLine:
           "🔗 Link shared! Thanks for spreading Xearnes 🙏"+progressLine+unlockLine;
   addMessage("bot",msg,"Xearnes");
+}
+function shareXearnes(){
+  var url="https://niljen.github.io/xearnes/";
+  var lang=currentLang||"fr";
+  var text=lang==="fr"?"Découvre Xearnes, une IA créée par un jeune de 11 ans ! 🤖⚡":
+           lang==="sv"?"Kolla in Xearnes, en AI skapad av en 11-åring! 🤖⚡":
+           "Check out Xearnes, an AI created by an 11-year-old! 🤖⚡";
+  if(navigator.share){
+    // Compter seulement si l'utilisateur confirme le partage
+    navigator.share({title:"Xearnes AI",text:text,url:url}).then(function(){
+      _doShareCount(lang);
+    }).catch(function(){
+      // Annulé — on ne compte pas
+      var msg=lang==="fr"?"❌ Partage annulé.":lang==="sv"?"❌ Delning avbruten.":"❌ Share cancelled.";
+      addMessage("bot",msg,"Xearnes");
+    });
+  } else {
+    // Fallback : copie dans le presse-papiers — on compte car c'est intentionnel
+    navigator.clipboard&&navigator.clipboard.writeText(url);
+    _doShareCount(lang);
+  }
 }
 function _shareUnlockReached(at){
   if(_xnTier==="pro"||_xnTier==="ultra"||_xnTier==="legend")return true;
