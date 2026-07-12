@@ -2490,24 +2490,17 @@ function _getReplyBody(input,lang,n,cb){
   }
   // 5. Histoire → Claude
   var stP=detectStory(n,lang);
-  if(stP){
-    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(generateStory(stP,lang));});
-    return;
-  }
+  if(stP){callClaude(input.trim(),lang,cb);return;}
   // 6. Poème → Claude
   var pmP=detectPoem(n,lang);
-  if(pmP){
-    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(generatePoem(pmP,lang));});
-    return;
-  }
+  if(pmP){callClaude(input.trim(),lang,cb);return;}
   // 6b. Blague personnalisée → Claude
   var jpS=detectPersonalJoke(n,lang);
   if(jpS){
     var jokePrompt=lang==="fr"?"Fais une blague originale et drôle sur : "+jpS+". Courte, avec un punch line clair. Emoji à la fin.":
                    lang==="sv"?"Gör ett roligt skämt om: "+jpS+". Kort med en tydlig poäng.":
                    "Make a funny original joke about: "+jpS+". Short with a clear punchline.";
-    callClaude(jokePrompt,lang,function(r){if(r)return cb(r);cb(generatePersonalJoke(jpS,lang));});
-    return;
+    callClaude(jokePrompt,lang,cb);return;
   }
   // 6c. Voyage → Claude
   var tv=detectTravel(n,lang);
@@ -2515,8 +2508,7 @@ function _getReplyBody(input,lang,n,cb){
     var travelPrompt=lang==="fr"?"Crée un itinéraire de voyage détaillé pour "+tv+" : 3 jours, top activités, conseils pratiques, budget estimé, meilleure période. Emojis ✈️🗺️.":
                      lang==="sv"?"Skapa en detaljerad resplan för "+tv+": 3 dagar, topp-aktiviteter, praktiska tips, budget, bästa tid. Emojis ✈️🗺️.":
                      "Create a detailed travel itinerary for "+tv+": 3 days, top activities, practical tips, estimated budget, best time to visit. Emojis ✈️🗺️.";
-    callClaude(travelPrompt,lang,function(r){if(r)return cb(r);cb(buildTravelHtml(tv,lang));});
-    return;
+    callClaude(travelPrompt,lang,cb);return;
   }
   // 6d. Horoscope
   if(detectHoroscope(n,lang))return cb(buildHoroscopeHtml(lang));
