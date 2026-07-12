@@ -4879,22 +4879,43 @@ function renderBadgePanel(){
   var grid=document.getElementById("badgeGrid");
   var titleEl=document.getElementById("badgePanelTitle");
   if(!grid)return;
-  var earned=Object.keys(xnBadges).length;
-  var total=Object.keys(badgeDefs).length;
   var lang=currentLang;
-  if(titleEl)titleEl.textContent="🏅 "+(lang==="sv"?"Nivåer":lang==="fr"?"Niveaux":"Levels")+" ("+earned+"/"+total+")";
+  var shares=xnStats.sharesCount||0;
+  if(titleEl)titleEl.textContent="🚀 "+(lang==="sv"?"Nivåer":lang==="fr"?"Niveaux de partage":"Share Levels");
+  var levels=[
+    {at:3,icon:"🎨",fr:"Thème Premium",en:"Premium Theme",sv:"Premium-tema",descFr:"Partage 3 fois pour débloquer les thèmes exclusifs.",descEn:"Share 3 times to unlock exclusive themes.",descSv:"Dela 3 gånger för att låsa upp exklusiva teman."},
+    {at:5,icon:"💪",fr:"Coach Sport",en:"Sport Coach",sv:"Sportcoach",descFr:"Partage 5 fois pour débloquer le coach sportif.",descEn:"Share 5 times to unlock the sport coach.",descSv:"Dela 5 gånger för att låsa upp sportcoachen."},
+    {at:10,icon:"🍳",fr:"Recettes Frigo",en:"Fridge Recipes",sv:"Kylskåpsrecept",descFr:"Partage 10 fois pour débloquer les recettes.",descEn:"Share 10 times to unlock fridge recipes.",descSv:"Dela 10 gånger för att låsa upp recept."},
+    {at:20,icon:"💻",fr:"Mode Code",en:"Code Mode",sv:"Kodläge",descFr:"Partage 20 fois pour débloquer le Mode Code.",descEn:"Share 20 times to unlock Code Mode.",descSv:"Dela 20 gånger för att låsa upp kodläget."},
+    {at:50,icon:"✦",fr:"Membre Fondateur",en:"Founding Member",sv:"Grundande Medlem",descFr:"Partage 50 fois pour devenir Membre Fondateur.",descEn:"Share 50 times to become a Founding Member.",descSv:"Dela 50 gånger för att bli grundande medlem."}
+  ];
   grid.innerHTML="";
-  Object.keys(badgeDefs).forEach(function(id){
-    var b=badgeDefs[id];
-    var got=!!xnBadges[id];
-    var name=b[lang]||b.en;
-    var desc=b.desc[lang]||b.desc.en;
-    var div=document.createElement("div");
-    div.className="badge-item"+(got?" earned":" locked");
-    div.title=desc;
-    div.innerHTML="<span class='badge-icon'>"+b.icon+"</span><span class='badge-name'>"+name+"</span>";
-    grid.appendChild(div);
+  // Barre de partages en haut
+  var next=levels.find(function(l){return shares<l.at;});
+  var pct=next?Math.round((shares/next.at)*100):100;
+  var topHtml="<div style='padding:10px 12px 6px;border-bottom:1px solid var(--border);margin-bottom:8px'>"
+    +"<div style='font-size:.75rem;color:var(--text2);margin-bottom:5px'>"+(lang==="fr"?"📊 "+shares+" partage"+(shares>1?"s":"")+" effectué"+(shares>1?"s":""):lang==="sv"?"📊 "+shares+" delningar":"📊 "+shares+" share"+(shares!==1?"s":""))+"</div>"
+    +"<div style='background:var(--border);border-radius:20px;height:8px;overflow:hidden'><div style='height:100%;background:var(--accent);border-radius:20px;width:"+Math.min(pct,100)+"%'></div></div>"
+    +(next?"<div style='font-size:.68rem;color:var(--text2);margin-top:4px'>"+(lang==="fr"?"Prochain déblocage : "+next.fr+" à "+next.at+" partages":lang==="sv"?"Nästa upplåsning: "+next.sv+" vid "+next.at+" delningar":"Next unlock: "+next.en+" at "+next.at+" shares")+"</div>":"<div style='font-size:.68rem;color:#4ade80;margin-top:4px'>✦ "+(lang==="fr"?"Tout débloqué !":lang==="sv"?"Allt upplåst!":"Everything unlocked!")+"</div>")
+    +"</div>";
+  grid.innerHTML=topHtml;
+  // Grille des niveaux
+  var wrap=document.createElement("div");
+  wrap.style.cssText="display:flex;flex-direction:column;gap:7px;padding:4px 10px 10px";
+  levels.forEach(function(l){
+    var unlocked=shares>=l.at;
+    var name=lang==="fr"?l.fr:lang==="sv"?l.sv:l.en;
+    var desc=lang==="fr"?l.descFr:lang==="sv"?l.descSv:l.descEn;
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border:1px solid "+(unlocked?"var(--accent)":"var(--border)")+";background:"+(unlocked?"rgba(255,215,0,.07)":"transparent")+";"+(unlocked?"":"opacity:.45;filter:grayscale(1)");
+    row.innerHTML="<span style='font-size:1.5rem;line-height:1'>"+l.icon+"</span>"
+      +"<div style='flex:1;min-width:0'>"
+      +"<div style='font-size:.78rem;font-weight:700;color:"+(unlocked?"var(--accent)":"var(--text)")+"'>"+name+"</div>"
+      +"<div style='font-size:.65rem;color:var(--text2);margin-top:2px'>"+(unlocked?(lang==="fr"?"✅ Débloqué":lang==="sv"?"✅ Upplåst":"✅ Unlocked"):lang==="fr"?"🔒 "+l.at+" partages":lang==="sv"?"🔒 "+l.at+" delningar":"🔒 "+l.at+" shares")+"</div>"
+      +"</div>";
+    wrap.appendChild(row);
   });
+  grid.appendChild(wrap);
 }
 function toggleBadgePanel(){
   var panel=document.getElementById("badgePanel");if(!panel)return;
