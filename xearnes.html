@@ -2023,7 +2023,7 @@ function handleFileUpload(input){
   var isText=/text\/plain/.test(file.type);
   if(!isImage&&!isText){
     var lang=currentLang||"fr";
-    addMessage("bot",lang==="fr"?"⚠️ Format non supporté. Envoie une photo (JPG, PNG) ou un fichier texte (.txt) !":"⚠️ Format not supported. Send a photo (JPG, PNG) or a text file (.txt)!","Xearnes");
+    addMsg(lang==="fr"?"⚠️ Format non supporté. Envoie une photo (JPG, PNG) ou un fichier texte (.txt) !":"⚠️ Format not supported. Send a photo (JPG, PNG) or a text file (.txt)!","bot");
     input.value="";return;
   }
   var reader=new FileReader();
@@ -2077,7 +2077,7 @@ function _doShareCount(lang){
   var msg=lang==="fr"?"🔗 Lien partagé ! Merci de diffuser Xearnes 🙏"+progressLine+unlockLine:
           lang==="sv"?"🔗 Länk delad! Tack för att du sprider Xearnes 🙏"+progressLine+unlockLine:
           "🔗 Link shared! Thanks for spreading Xearnes 🙏"+progressLine+unlockLine;
-  addMessage("bot",msg,"Xearnes");
+  addMsg(msg,"bot");
 }
 function shareXearnes(){
   var url="https://niljen.github.io/xearnes/";
@@ -2092,7 +2092,7 @@ function shareXearnes(){
     }).catch(function(){
       // Annulé — on ne compte pas
       var msg=lang==="fr"?"❌ Partage annulé.":lang==="sv"?"❌ Delning avbruten.":"❌ Share cancelled.";
-      addMessage("bot",msg,"Xearnes");
+      addMsg(msg,"bot");
     });
   } else {
     // Fallback : copie dans le presse-papiers — on compte car c'est intentionnel
@@ -2126,7 +2126,7 @@ function submitEmail(){
   checkSubscription(email,function(tier){
     var lang=currentLang||"fr";
     var msgs={legend:"👑 Bienvenue Legend ! Tu utilises Fable 5, le modèle le plus puissant.",ultra:"⚡ Bienvenue Ultra ! Tu utilises Opus 4.8.",pro:"🔷 Bienvenue Pro ! Tu utilises Sonnet 4.6.",free:"✅ Email enregistré ! Tu utilises Xearnes gratuitement."};
-    addMessage("bot",msgs[tier]||msgs.free,"Xearnes");
+    addMsg(msgs[tier]||msgs.free,"bot");
   });
 }
 // 🔬 INTERNAL MODE
@@ -4237,7 +4237,7 @@ function setColorTheme(c){
     var lang=currentLang||"fr";
     var msg=lang==="fr"?"🔒 Ce thème est réservé aux abonnés <strong>"+needed.charAt(0).toUpperCase()+needed.slice(1)+"</strong> et plus. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
             "🔒 This theme is for <strong>"+needed.charAt(0).toUpperCase()+needed.slice(1)+"</strong> subscribers and above. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>";
-    addMessage("bot",msg,"Xearnes");
+    addMsg(msg,"bot");
     var sel=document.getElementById("colorSelect");
     if(sel)sel.value=localStorage.getItem("xn_color")||"";
     return;
