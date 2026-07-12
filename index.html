@@ -2410,10 +2410,9 @@ function _getReplyBody(input,lang,n,cb){
   // 🔍 ENRICHIR AVEC CONTEXTE DE CONVERSATION
   var _origN=n;
   n=enrichWithContext(n,lang);
-  // 💬 "ET TOI ?" — Xearnes donne son avis
+  // 💬 "ET TOI ?" — Xearnes donne son avis via Claude
   if(detectOpinionRequest(_origN,lang)){
-    var opTopic=lastTopic[lang]||getLastBotTopic(lang);
-    return cb(buildOpinionReply(opTopic,lang));
+    callClaude(input.trim(),lang,cb);return;
   }
   // 📖 "DIS-MOI PLUS" — Gemini ou Wikipedia sur le dernier sujet
   if(detectMoreInfo(_origN,lang)){
@@ -2878,17 +2877,9 @@ function _getReplyBody(input,lang,n,cb){
   var dw=detectDef(n,lang);
   if(dw){var dl=lookupDef(dw,lang);if(dl)return cb(buildDefHtml(dl.w,dl.def,lang));}
   // Histoire interactive → Claude
-  if(detectInteractiveStory(n,lang)){
-    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(startInteractiveStory(lang));});
-    return;
-  }
-  // Humeur → Claude (réponse plus personnalisée)
-  var mood=detectMood(n,lang);
-  if(mood){
-    var mr2=moodReplies[mood][lang]||moodReplies[mood].en;
-    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(pick(mr2));});
-    return;
-  }
+  if(detectInteractiveStory(n,lang)){callClaude(input.trim(),lang,cb);return;}
+  // Humeur → Claude
+  if(detectMood(n,lang)){callClaude(input.trim(),lang,cb);return;}
   // 4. Small talk (greetings, thanks, etc.) — only for short messages
   var st=detectSmallTalk(n,lang);
   if(st)return cb(st);
@@ -2943,11 +2934,9 @@ function _getReplyBody(input,lang,n,cb){
     if(queries.length>0){
       fetchWikiChain(queries,lang,function(res){
         if(res)return cb(buildWikiHtml(res));
-        if(km)return cb(pick(km.entry.r));
         cb(pick(cfg.defaults));
       });
     }else{
-      if(km)return cb(pick(km.entry.r));
       cb(pick(cfg.defaults));
     }
   });
