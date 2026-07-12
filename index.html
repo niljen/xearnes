@@ -2450,14 +2450,36 @@ function _getReplyBody(input,lang,n,cb){
       return cb(lang==="fr"?"🎨 Impossible de générer une image pour l instant.":lang==="sv"?"🎨 Det gick inte att skapa bilden.":"🎨 Could not generate image right now.");
     });return;
   }
-  // 5. Histoire
-  var stP=detectStory(n,lang);if(stP)return cb(generateStory(stP,lang));
-  // 6. Poème
-  var pmP=detectPoem(n,lang);if(pmP)return cb(generatePoem(pmP,lang));
-  // 6b. Blague personnalisée
-  var jpS=detectPersonalJoke(n,lang);if(jpS)return cb(generatePersonalJoke(jpS,lang));
-  // 6c. Voyage
-  var tv=detectTravel(n,lang);if(tv)return cb(buildTravelHtml(tv,lang));
+  // 5. Histoire → Claude
+  var stP=detectStory(n,lang);
+  if(stP){
+    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(generateStory(stP,lang));});
+    return;
+  }
+  // 6. Poème → Claude
+  var pmP=detectPoem(n,lang);
+  if(pmP){
+    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(generatePoem(pmP,lang));});
+    return;
+  }
+  // 6b. Blague personnalisée → Claude
+  var jpS=detectPersonalJoke(n,lang);
+  if(jpS){
+    var jokePrompt=lang==="fr"?"Fais une blague originale et drôle sur : "+jpS+". Courte, avec un punch line clair. Emoji à la fin.":
+                   lang==="sv"?"Gör ett roligt skämt om: "+jpS+". Kort med en tydlig poäng.":
+                   "Make a funny original joke about: "+jpS+". Short with a clear punchline.";
+    callClaude(jokePrompt,lang,function(r){if(r)return cb(r);cb(generatePersonalJoke(jpS,lang));});
+    return;
+  }
+  // 6c. Voyage → Claude
+  var tv=detectTravel(n,lang);
+  if(tv){
+    var travelPrompt=lang==="fr"?"Crée un itinéraire de voyage détaillé pour "+tv+" : 3 jours, top activités, conseils pratiques, budget estimé, meilleure période. Emojis ✈️🗺️.":
+                     lang==="sv"?"Skapa en detaljerad resplan för "+tv+": 3 dagar, topp-aktiviteter, praktiska tips, budget, bästa tid. Emojis ✈️🗺️.":
+                     "Create a detailed travel itinerary for "+tv+": 3 days, top activities, practical tips, estimated budget, best time to visit. Emojis ✈️🗺️.";
+    callClaude(travelPrompt,lang,function(r){if(r)return cb(r);cb(buildTravelHtml(tv,lang));});
+    return;
+  }
   // 6d. Horoscope
   if(detectHoroscope(n,lang))return cb(buildHoroscopeHtml(lang));
   // 6e. Calcul d'âge
@@ -2825,11 +2847,18 @@ function _getReplyBody(input,lang,n,cb){
   // Définition
   var dw=detectDef(n,lang);
   if(dw){var dl=lookupDef(dw,lang);if(dl)return cb(buildDefHtml(dl.w,dl.def,lang));}
-  // Histoire interactive
-  if(detectInteractiveStory(n,lang))return cb(startInteractiveStory(lang));
-  // Humeur
+  // Histoire interactive → Claude
+  if(detectInteractiveStory(n,lang)){
+    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(startInteractiveStory(lang));});
+    return;
+  }
+  // Humeur → Claude (réponse plus personnalisée)
   var mood=detectMood(n,lang);
-  if(mood){var mr2=moodReplies[mood][lang]||moodReplies[mood].en;return cb(pick(mr2));}
+  if(mood){
+    var mr2=moodReplies[mood][lang]||moodReplies[mood].en;
+    callClaude(input.trim(),lang,function(r){if(r)return cb(r);cb(pick(mr2));});
+    return;
+  }
   // 4. Small talk (greetings, thanks, etc.) — only for short messages
   var st=detectSmallTalk(n,lang);
   if(st)return cb(st);
