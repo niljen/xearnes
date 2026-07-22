@@ -2265,15 +2265,22 @@ function callClaude(question,lang,cb,_attempt){
     _pendingFile=null;
     clearFile();
   }
+  // Web search activé pour Pro, Ultra, Legend — ou si la question semble nécessiter des infos récentes
+  var needsSearch=_xnTier==="pro"||_xnTier==="ultra"||_xnTier==="legend";
+  var requestBody={
+    model:_tierModel()||(codeMode?"claude-sonnet-4-6":"claude-haiku-4-5-20251001"),
+    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:codeMode?4000:2500,
+    system:sysPrompt,
+    messages:msgs,
+    _tier:_xnTier||"free"
+  };
+  if(needsSearch){
+    requestBody.tools=[{type:"web_search_20260209",name:"web_search",max_uses:3}];
+  }
   fetch(CLAUDE_WORKER_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:_tierModel()||(codeMode?"claude-sonnet-4-6":"claude-haiku-4-5-20251001"),
-      max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:codeMode?4000:2500,
-      system:sysPrompt,
-      messages:msgs
-    })
+    body:JSON.stringify(requestBody)
   })
   .then(function(r){
     if((r.status===529||r.status===429||r.status===500||r.status===503)&&_attempt<3){
@@ -2290,7 +2297,9 @@ function callClaude(question,lang,cb,_attempt){
       console.error("[Xearnes Claude] Erreur "+res.status+":",errMsg,d);
       cb(null);return;
     }
-    var t=d&&d.content&&d.content[0]&&d.content[0].text;
+    // Avec web_search, il peut y avoir plusieurs blocs — on prend tous les blocs "text"
+    var t="";
+    if(d&&d.content){for(var i=0;i<d.content.length;i++){if(d.content[i].type==="text")t+=d.content[i].text;}}
     if(t)cb(sanitizeAI(t.trim()));
     else{console.error("[Xearnes Claude] Réponse inattendue:",d);cb(null);}
   })
