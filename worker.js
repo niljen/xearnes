@@ -1,4 +1,6 @@
-// Xearnes Cloudflare Worker — VERSION-14
+// Xearnes Cloudflare Worker — VERSION-17
+// Tier gratuit → Phi-4 14B fine-tuné sur RunPod Serverless
+// Added: /koko route for Koko AI with web_search tool
 // KV binding requis : SUBSCRIPTIONS (dans Cloudflare dashboard → Workers → KV)
 // Variables d'environnement : CLAUDE_API_KEY, STRIPE_WEBHOOK_SECRET
 
@@ -6,6 +8,7 @@ const ALLOWED_ORIGINS = [
   "https://niljen.github.io",
   "http://localhost:3000",
   "http://localhost:3001",
+  "null", // fichiers ouverts en local (file://)
 ];
 
 const CORS = {
@@ -93,17 +96,100 @@ export default {
     // ── Proxy Claude (existant) ──
     if (request.method === "POST" && url.pathname === "/") {
       const body = await request.json();
+
+      // Tier gratuit → Xearnes Phi-4 fine-tuné sur RunPod Serverless
+      if (body._tier === "free" && env.RUNPOD_API_KEY) {
+        const messages = [
+          { role: "system", content: body.system || "" },
+          ...(body.messages || [])
+        ];
+        const runpodBody = {
+          input: {
+            model: "niljen/xearnes-phi4",
+            messages,
+            max_tokens: body.max_tokens || 2500,
+            temperature: 0.7,
+          }
+        };
+        const response = await fetch("https://api.runpod.ai/v2/reg74qzhf20zsd/runsync", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${env.RUNPOD_API_KEY}`,
+          },
+          body: JSON.stringify(runpodBody),
+        });
+        const data = await response.json();
+        const text = data.output?.choices?.[0]?.message?.content || data.error || JSON.stringify(data);
+        return new Response(JSON.stringify({
+          content: [{ type: "text", text }],
+          stop_reason: "end_turn"
+        }), {
+          status: 200,
+          headers: { ...CORS, "Content-Type": "application/json" },
+        });
+      }
+
+      // Tiers payants → Claude
+      const headers = {
+        "Content-Type": "application/json",
+        "x-api-key": env.CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01",
+      };
+      if (body.tools && body.tools.some(t => t.type && t.type.startsWith("web_search"))) {
+        headers["anthropic-beta"] = "web-search-2025-03-05";
+      }
+      // Enlever le champ _tier avant d'envoyer à Claude
+      delete body._tier;
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        status: response.status,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Koko AI avec web_search ──
+    if (request.method === "POST" && url.pathname === "/koko") {
+      const { messages, systemPrompt } = await request.json();
+
+      // Appel Claude avec outil web_search
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-api-key": env.CLAUDE_API_KEY,
           "anthropic-version": "2023-06-01",
+          "anthropic-beta": "web-search-2025-03-05",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 4096,
+          system: systemPrompt,
+          tools: [{
+            type: "web_search_20260209",
+            name: "web_search",
+            max_uses: 5,
+          }],
+          messages,
+        }),
       });
+
       const data = await response.json();
-      return new Response(JSON.stringify(data), {
+
+      // Extraire le texte final de la réponse (après les recherches)
+      let finalText = "";
+      if (data.content) {
+        for (const block of data.content) {
+          if (block.type === "text") finalText += block.text;
+        }
+      }
+
+      return new Response(JSON.stringify({ text: finalText, raw: data }), {
         status: response.status,
         headers: { ...CORS, "Content-Type": "application/json" },
       });
