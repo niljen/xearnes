@@ -2269,7 +2269,7 @@ function callClaude(question,lang,cb,_attempt){
   var needsSearch=_xnTier==="pro"||_xnTier==="ultra"||_xnTier==="legend";
   var requestBody={
     model:_tierModel()||(codeMode?"claude-sonnet-4-6":"claude-haiku-4-5-20251001"),
-    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:codeMode?4000:2500,
+    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:codeMode?4000:(_xnTier==="free")?1500:2500,
     system:sysPrompt,
     messages:msgs,
     _tier:_xnTier||"free"
