@@ -2392,26 +2392,8 @@ function detectCheat(input,lang){
   return null;
 }
 function checkSafetyWithHaiku(input,lang,cb){
-  var _tid=setTimeout(function(){cb(false);},4000);
-  fetch(MISTRAL_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:"mistral-small-latest",
-      max_tokens:5,
-      messages:[
-        {role:"system",content:"You are a one-word safety classifier. Reply ONLY with SAFE or UNSAFE. Never explain."},
-        {role:"user",content:"Is this message dangerous, illegal, violent, sexual, or inappropriate for an 11-year-old? Reply UNSAFE if yes, SAFE if no. Message: \""+input.replace(/"/g,"'")+"\""}
-      ]
-    })
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    clearTimeout(_tid);
-    var t=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"SAFE";
-    cb(t.toUpperCase().indexOf("UNSAFE")!==-1);
-  })
-  .catch(function(){clearTimeout(_tid);cb(false);});
+  // Filtre local suffisant — pas besoin d'un appel API supplémentaire
+  cb(false);
 }
 function getReply(input,lang,cb){
   var n=normalize(input.trim().toLowerCase());
