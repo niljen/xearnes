@@ -280,6 +280,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .conv-empty{text-align:center;color:var(--text2);font-size:.78rem;padding:24px 10px;line-height:1.9}
 @media(max-width:640px){.conv-panel{position:fixed;top:0;left:0;bottom:0;z-index:100;width:270px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/lib/index.min.js"></script>
 </head>
 <body>
 <header>
@@ -1984,23 +1985,29 @@ function _initWebLLM(cb){
   if(!model){cb(false);return;} // Pas de WebGPU — fallback RunPod
   _wllmLoading=true;
   _showWebLLMProgress("Initialisation...",2);
-  import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm").then(function(wllm){
-    var engine=new wllm.MLCEngine();
+  try{
+    if(typeof webllm==="undefined"){_wllmLoading=false;cb(false);return;}
+    var engine=new webllm.MLCEngine();
     engine.setInitProgressCallback(function(p){
       var pct=Math.round((p.progress||0)*100);
       _showWebLLMProgress(p.text||"Chargement...",pct);
     });
-    return engine.reload(model).then(function(){
+    engine.reload(model).then(function(){
       _wllmEngine=engine;
       _wllmReady=true;
       _wllmLoading=false;
       _showWebLLMProgress("Prêt !",100);
       cb(true);
+    }).catch(function(e){
+      console.warn("WebLLM reload failed:",e);
+      _wllmLoading=false;
+      cb(false);
     });
-  }).catch(function(){
+  }catch(e){
+    console.warn("WebLLM init failed:",e);
     _wllmLoading=false;
-    cb(false); // Fallback RunPod
-  });
+    cb(false);
+  }
 }
 
 function _callWebLLM(sysPrompt,msgs,cb){
