@@ -1948,26 +1948,85 @@ function detectName(n){
 
 var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
 
-// ── MISTRAL API ──────────────────────────────────────────────────────────────
-// Les appels passent par le Worker Cloudflare — la clé est un secret serveur
+// ── WEBLLM — modèle local dans le navigateur ──────────────────────────────────
+var _wllmEngine=null;
+var _wllmReady=false;
+var _wllmLoading=false;
+
+function _detectWebLLMModel(){
+  // Choisit le modèle selon les capacités de l'appareil
+  if(!navigator.gpu)return null; // Pas de WebGPU
+  var mem=navigator.deviceMemory||4; // GB RAM (approximatif)
+  if(mem>=8)return"Llama-3.2-3B-Instruct-q4f16_1-MLC";  // ~2GB — meilleur
+  if(mem>=4)return"Phi-3.5-mini-instruct-q4f16_1-MLC";   // ~1.8GB — bon
+  return"gemma-2-2b-it-q4f16_1-MLC";                      // ~1.3GB — léger
+}
+
+function _showWebLLMProgress(label,pct){
+  var bar=document.getElementById("_wllm_bar");
+  if(!bar){
+    var div=document.createElement("div");
+    div.id="_wllm_banner";
+    div.style.cssText="position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#0d1235;border:1px solid #DAA520;border-radius:10px;padding:10px 18px;z-index:9999;min-width:260px;text-align:center;font-size:.8rem;color:#e0e0ff;";
+    div.innerHTML='<div style="margin-bottom:6px;color:#DAA520;font-weight:700;">⚡ Xearnes AI — Chargement local</div><div id="_wllm_label" style="margin-bottom:8px;font-size:.75rem;color:#aaaacc;"></div><div style="background:#2a2f6c;border-radius:6px;height:6px;overflow:hidden;"><div id="_wllm_bar" style="height:100%;background:#DAA520;width:0%;transition:width .3s;"></div></div>';
+    document.body.appendChild(div);
+    bar=document.getElementById("_wllm_bar");
+  }
+  document.getElementById("_wllm_label").textContent=label;
+  bar.style.width=(pct||0)+"%";
+  if(pct>=100){setTimeout(function(){var b=document.getElementById("_wllm_banner");if(b)b.remove();},1500);}
+}
+
+function _initWebLLM(cb){
+  if(_wllmReady){cb(true);return;}
+  if(_wllmLoading){var t=setInterval(function(){if(_wllmReady){clearInterval(t);cb(true);}},500);return;}
+  var model=_detectWebLLMModel();
+  if(!model){cb(false);return;} // Pas de WebGPU — fallback RunPod
+  _wllmLoading=true;
+  _showWebLLMProgress("Initialisation...",2);
+  import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm").then(function(wllm){
+    var engine=new wllm.MLCEngine();
+    engine.setInitProgressCallback(function(p){
+      var pct=Math.round((p.progress||0)*100);
+      _showWebLLMProgress(p.text||"Chargement...",pct);
+    });
+    return engine.reload(model).then(function(){
+      _wllmEngine=engine;
+      _wllmReady=true;
+      _wllmLoading=false;
+      _showWebLLMProgress("Prêt !",100);
+      cb(true);
+    });
+  }).catch(function(){
+    _wllmLoading=false;
+    cb(false); // Fallback RunPod
+  });
+}
+
+function _callWebLLM(sysPrompt,msgs,cb){
+  _initWebLLM(function(ok){
+    if(!ok){_callRunPod(sysPrompt,msgs,cb);return;}
+    var messages=[{role:"user",content:sysPrompt+"\n\n"+msgs[0].content}];
+    for(var i=1;i<msgs.length;i++)messages.push(msgs[i]);
+    _wllmEngine.chat.completions.create({messages:messages,max_tokens:2500,temperature:0.7})
+    .then(function(r){
+      var t=r.choices&&r.choices[0]&&r.choices[0].message&&r.choices[0].message.content||"";
+      if(t)cb(sanitizeAI(t.trim()));else cb(null);
+    }).catch(function(){_callRunPod(sysPrompt,msgs,cb);});
+  });
+}
+
+// ── MISTRAL API (RunPod fallback) ─────────────────────────────────────────────
 var MISTRAL_API_KEY="worker";
 var MISTRAL_URL="https://xearnes-mistral.niljen.workers.dev";
 
-function _mistralModel(){
-  if(_xnTier==="legend")return"mistral-large-latest";
-  if(_xnTier==="ultra")return"mistral-large-latest";
-  if(_xnTier==="pro")return"mistral-small-latest";
-  return"mistral-small-latest";
-}
-
-function callMistral(sysPrompt,msgs,cb,_attempt){
+function _callRunPod(sysPrompt,msgs,cb,_attempt){
   _attempt=_attempt||1;
   var body={
-    model:_mistralModel(),
+    model:"mistral-small-latest",
     max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:2500,
     messages:[{role:"system",content:sysPrompt}].concat(msgs)
   };
-  // Soumet le job et reçoit un jobId
   fetch(MISTRAL_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -1976,18 +2035,25 @@ function callMistral(sysPrompt,msgs,cb,_attempt){
   .then(function(r){return r.json();})
   .then(function(d){
     if(!d.jobId){
-      // Réponse directe (pas de polling nécessaire)
       var t=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
       if(t)cb(sanitizeAI(t.trim()));else cb(null);
       return;
     }
-    // Polling jusqu'à ce que le job soit terminé
     _pollRunpod(d.jobId,cb,0);
   })
   .catch(function(){
-    if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},2000*_attempt);
+    if(_attempt<3)setTimeout(function(){_callRunPod(sysPrompt,msgs,cb,_attempt+1);},2000*_attempt);
     else cb(null);
   });
+}
+
+function callMistral(sysPrompt,msgs,cb){
+  // WebLLM si WebGPU dispo, sinon RunPod serverless
+  if(navigator.gpu){
+    _callWebLLM(sysPrompt,msgs,cb);
+  } else {
+    _callRunPod(sysPrompt,msgs,cb);
+  }
 }
 
 function _pollRunpod(jobId,cb,tries){
