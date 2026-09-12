@@ -1967,28 +1967,46 @@ function callMistral(sysPrompt,msgs,cb,_attempt){
     max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:2500,
     messages:[{role:"system",content:sysPrompt}].concat(msgs)
   };
+  // Soumet le job et reçoit un jobId
   fetch(MISTRAL_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify(body)
   })
-  .then(function(r){
-    if((r.status===429||r.status===500||r.status===503)&&_attempt<3){
-      setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},1500*_attempt);
-      return null;
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(!d.jobId){
+      // Réponse directe (pas de polling nécessaire)
+      var t=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
+      if(t)cb(sanitizeAI(t.trim()));else cb(null);
+      return;
     }
-    return r.json().then(function(d){return{status:r.status,data:d};});
+    // Polling jusqu'à ce que le job soit terminé
+    _pollRunpod(d.jobId,cb,0);
   })
-  .then(function(res){
-    if(res===null)return;
-    if(res.status!==200){cb(null);return;}
-    var t=res.data&&res.data.choices&&res.data.choices[0]&&res.data.choices[0].message&&res.data.choices[0].message.content||"";
-    if(t)cb(sanitizeAI(t.trim()));else cb(null);
-  })
-  .catch(function(e){
-    if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},1500*_attempt);
+  .catch(function(){
+    if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},2000*_attempt);
     else cb(null);
   });
+}
+
+function _pollRunpod(jobId,cb,tries){
+  setTimeout(function(){
+    fetch(MISTRAL_URL+"/status?id="+jobId,{method:"POST",headers:{"Content-Type":"application/json","Origin":"https://xearnes.com"},body:"{}"})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.done){
+        if(d.content)cb(sanitizeAI(d.content.trim()));else cb(null);
+      } else if(tries<60){
+        _pollRunpod(jobId,cb,tries+1);
+      } else {
+        cb(null);
+      }
+    })
+    .catch(function(){
+      if(tries<60)_pollRunpod(jobId,cb,tries+1);else cb(null);
+    });
+  },tries===0?3000:2000);
 }
 
 // ── MÉMOIRE LONGUE (Pro+) ──
