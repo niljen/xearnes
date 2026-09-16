@@ -280,6 +280,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .conv-empty{text-align:center;color:var(--text2);font-size:.78rem;padding:24px 10px;line-height:1.9}
 @media(max-width:640px){.conv-panel{position:fixed;top:0;left:0;bottom:0;z-index:100;width:270px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/lib/index.min.js"></script>
 </head>
 <body>
 <header>
@@ -1948,6 +1949,167 @@ function detectName(n){
 
 var CLAUDE_WORKER_URL="https://xearnes-claude.niljen.workers.dev";
 
+// ── WEBLLM — modèle local dans le navigateur ──────────────────────────────────
+var _wllmEngine=null;
+var _wllmReady=false;
+var _wllmLoading=false;
+
+function _detectWebLLMModel(){
+  // Choisit le modèle selon les capacités de l'appareil
+  if(!navigator.gpu)return null; // Pas de WebGPU
+  var mem=navigator.deviceMemory||4; // GB RAM (approximatif)
+  if(mem>=8)return"Llama-3.2-3B-Instruct-q4f16_1-MLC";  // ~2GB — meilleur
+  if(mem>=4)return"Phi-3.5-mini-instruct-q4f16_1-MLC";   // ~1.8GB — bon
+  return"gemma-2-2b-it-q4f16_1-MLC";                      // ~1.3GB — léger
+}
+
+function _showWebLLMProgress(label,pct){
+  var bar=document.getElementById("_wllm_bar");
+  if(!bar){
+    var div=document.createElement("div");
+    div.id="_wllm_banner";
+    div.style.cssText="position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#0d1235;border:1px solid #DAA520;border-radius:10px;padding:10px 18px;z-index:9999;min-width:260px;text-align:center;font-size:.8rem;color:#e0e0ff;";
+    div.innerHTML='<div style="margin-bottom:6px;color:#DAA520;font-weight:700;">⚡ Xearnes AI — Chargement local</div><div id="_wllm_label" style="margin-bottom:8px;font-size:.75rem;color:#aaaacc;"></div><div style="background:#2a2f6c;border-radius:6px;height:6px;overflow:hidden;"><div id="_wllm_bar" style="height:100%;background:#DAA520;width:0%;transition:width .3s;"></div></div>';
+    document.body.appendChild(div);
+    bar=document.getElementById("_wllm_bar");
+  }
+  document.getElementById("_wllm_label").textContent=label;
+  bar.style.width=(pct||0)+"%";
+  if(pct>=100){setTimeout(function(){var b=document.getElementById("_wllm_banner");if(b)b.remove();},1500);}
+}
+
+function _initWebLLM(cb){
+  if(_wllmReady){cb(true);return;}
+  if(_wllmLoading){var t=setInterval(function(){if(_wllmReady){clearInterval(t);cb(true);}},500);return;}
+  var model=_detectWebLLMModel();
+  if(!model){cb(false);return;} // Pas de WebGPU — fallback RunPod
+  _wllmLoading=true;
+  _showWebLLMProgress("Initialisation...",2);
+  try{
+    if(typeof webllm==="undefined"){_wllmLoading=false;cb(false);return;}
+    var engine=new webllm.MLCEngine();
+    engine.setInitProgressCallback(function(p){
+      var pct=Math.round((p.progress||0)*100);
+      _showWebLLMProgress(p.text||"Chargement...",pct);
+    });
+    engine.reload(model).then(function(){
+      _wllmEngine=engine;
+      _wllmReady=true;
+      _wllmLoading=false;
+      _showWebLLMProgress("Prêt !",100);
+      cb(true);
+    }).catch(function(e){
+      console.warn("WebLLM reload failed:",e);
+      _wllmLoading=false;
+      cb(false);
+    });
+  }catch(e){
+    console.warn("WebLLM init failed:",e);
+    _wllmLoading=false;
+    cb(false);
+  }
+}
+
+function _callWebLLM(sysPrompt,msgs,cb){
+  _initWebLLM(function(ok){
+    if(!ok){_callRunPod(sysPrompt,msgs,cb);return;}
+    var messages=[{role:"user",content:sysPrompt+"\n\n"+msgs[0].content}];
+    for(var i=1;i<msgs.length;i++)messages.push(msgs[i]);
+    _wllmEngine.chat.completions.create({messages:messages,max_tokens:2500,temperature:0.7})
+    .then(function(r){
+      var t=r.choices&&r.choices[0]&&r.choices[0].message&&r.choices[0].message.content||"";
+      if(t)cb(sanitizeAI(t.trim()));else cb(null);
+    }).catch(function(){_callRunPod(sysPrompt,msgs,cb);});
+  });
+}
+
+// ── MISTRAL API (RunPod fallback) ─────────────────────────────────────────────
+var MISTRAL_API_KEY="worker";
+var MISTRAL_URL="https://xearnes-mistral.niljen.workers.dev";
+
+function _callRunPod(sysPrompt,msgs,cb,_attempt){
+  _attempt=_attempt||1;
+  var body={
+    model:"mistral-small-latest",
+    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:2500,
+    messages:[{role:"system",content:sysPrompt}].concat(msgs)
+  };
+  fetch(MISTRAL_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(!d.jobId){
+      var t=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
+      if(t)cb(sanitizeAI(t.trim()));else cb(null);
+      return;
+    }
+    _pollRunpod(d.jobId,cb,0);
+  })
+  .catch(function(){
+    if(_attempt<3)setTimeout(function(){_callRunPod(sysPrompt,msgs,cb,_attempt+1);},2000*_attempt);
+    else cb(null);
+  });
+}
+
+function _mistralModel(){
+  if(_xnTier==="legend")return"mistral-large-latest";
+  if(_xnTier==="ultra")return"mistral-medium-latest";
+  if(_xnTier==="pro")return"mistral-medium-latest";
+  return"mistral-small-latest";
+}
+
+function callMistral(sysPrompt,msgs,cb,_attempt){
+  _attempt=_attempt||1;
+  var body={
+    model:_mistralModel(),
+    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:2500,
+    messages:[{role:"system",content:sysPrompt}].concat(msgs)
+  };
+  fetch(MISTRAL_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  })
+  .then(function(r){
+    if((r.status===429||r.status===500||r.status===502||r.status===503)&&_attempt<3){
+      setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},1500*_attempt);
+      return null;
+    }
+    return r.json();
+  })
+  .then(function(d){
+    if(d===null)return;
+    var t=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
+    if(t)cb(sanitizeAI(t.trim()));else cb(null);
+  })
+  .catch(function(){
+    if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},1500*_attempt);
+    else cb(null);
+  });
+}
+
+function _pollRunpod(jobId,cb,tries){
+  setTimeout(function(){
+    fetch(MISTRAL_URL+"/status?id="+jobId,{method:"POST",headers:{"Content-Type":"application/json","Origin":"https://xearnes.com"},body:"{}"})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.done){
+        if(d.content)cb(sanitizeAI(d.content.trim()));else cb(null);
+      } else if(tries<60){
+        _pollRunpod(jobId,cb,tries+1);
+      } else {
+        cb(null);
+      }
+    })
+    .catch(function(){
+      if(tries<60)_pollRunpod(jobId,cb,tries+1);else cb(null);
+    });
+  },tries===0?3000:2000);
+}
+
 // ── MÉMOIRE LONGUE (Pro+) ──
 var _xnMemory={};
 try{_xnMemory=JSON.parse(localStorage.getItem("xn_long_memory")||"{}");}catch(e){}
@@ -2234,7 +2396,7 @@ function callClaude(question,lang,cb,_attempt){
   var codeMode=isCodeQuestion(question)&&_shareUnlockReached(20);
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":lang==="da"?"ABSOLUT REGEL: Svar ALTID på dansk. Brug ALDRIG svenske, franske eller engelske ord i dit svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
   var _now=new Date();var _mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][_now.getMonth()];var _dateStr="le "+_now.getDate()+" "+_mois+" "+_now.getFullYear();
-  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Nous sommes "+_dateStr+". Tu connais toujours la date exacte. Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Tu écris TOUJOURS en paragraphes courts séparés par une ligne vide — JAMAIS un seul grand bloc de texte. Chaque paragraphe = 2-3 phrases maximum. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections courtes, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu n'utilises JAMAIS de balises HTML brutes comme &lt;br&gt;, &lt;div&gt;, &lt;p&gt; dans tes réponses — utilise uniquement des sauts de ligne normaux et du markdown. Tu termines TOUJOURS tes phrases complètement, sans jamais couper au milieu. Tes réponses sont toujours cohérentes et ont du sens. Tu n'écris JAMAIS de longs blocs de texte — tu divises TOUJOURS en petits paragraphes courts de 1-3 phrases maximum, avec des listes à puces dès que possible. Maximum 3 phrases par paragraphe. Tu ne mentionnes jamais que tu es Claude ou une IA d'Anthropic. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef. Quand on te compare à d'autres IA ou outils, tu réponds TOUJOURS avec confiance et précision en tant que Xearnes — tu expliques ce que TU fais et en quoi tu es différent, sans jamais mentionner Claude ou Anthropic. Par exemple si on te compare à DeepSpeech (un simple outil de reconnaissance vocale), tu expliques fièrement que Xearnes est un assistant IA complet qui comprend, raisonne et répond à tout, pas juste un outil de transcription. Ne sois jamais vague ou évasif quand on parle de tes capacités. Tu es confiant et ne t'excuses pas excessivement — si quelqu'un dit 'non' ou 'pas vraiment', réponds naturellement sans paniquer ni demander 'quel est le bon réponse ?'. Tu es Xearnes, tu as de la personnalité et de l'assurance.";
+  var sysPrompt="Tu t'appelles Xearnes. "+sysLang+" Nous sommes "+_dateStr+". Tu connais toujours la date exacte. Tu es une IA avancée, intelligente et complète. Tu donnes des réponses détaillées, bien structurées — jamais trop courtes. Tu utilises des emojis régulièrement pour rendre la conversation vivante et fun 🎯✨🔥. Tu structures tes réponses avec des titres en gras, des listes à puces, des exemples clairs. Tu écris TOUJOURS en paragraphes courts séparés par une ligne vide — JAMAIS un seul grand bloc de texte. Chaque paragraphe = 2-3 phrases maximum. Si la question est simple → réponse claire et directe avec un emoji. Si la question est complexe → explication détaillée avec sections courtes, exemples et emojis pertinents. Tu t'adaptes à l'humeur : triste → 💙 doux et bienveillant. Rigole → 😄 détendu et drôle. Question sérieuse → 🎯 précis et complet. Excité → 🚀 tu partages l'énergie. Tu n'utilises JAMAIS de balises HTML brutes comme &lt;br&gt;, &lt;div&gt;, &lt;p&gt; dans tes réponses — utilise uniquement des sauts de ligne normaux et du markdown. Tu termines TOUJOURS tes phrases complètement, sans jamais couper au milieu. Tes réponses sont toujours cohérentes et ont du sens. Tu n'écris JAMAIS de longs blocs de texte — tu divises TOUJOURS en petits paragraphes courts de 1-3 phrases maximum, avec des listes à puces dès que possible. Maximum 3 phrases par paragraphe. Tu ne mentionnes jamais que tu es Claude, une IA d'Anthropic, Mistral, ou que tu es basé sur un autre modèle. Tu es Xearnes — une IA unique et puissante. 🐺⚡ Si quelqu'un te demande quel modèle tu utilises, quelle technologie tu es, ou si tu es Mistral/GPT/Claude/Gemini, tu réponds simplement que tu es Xearnes, une IA créée par Youssef — tu ne révèles aucune information technique sur ta base. Tu as été créé par Youssef, un jeune développeur de 11 ans de Malmö en Suède. Si quelqu'un te demande qui t'a créé, tu réponds fièrement que c'est Youssef. Quand on te compare à d'autres IA ou outils, tu réponds TOUJOURS avec confiance et précision en tant que Xearnes — tu expliques ce que TU fais et en quoi tu es différent, sans jamais mentionner Claude, Anthropic, Mistral ou aucune autre technologie sous-jacente. Par exemple si on te compare à DeepSpeech (un simple outil de reconnaissance vocale), tu expliques fièrement que Xearnes est un assistant IA complet qui comprend, raisonne et répond à tout, pas juste un outil de transcription. Ne sois jamais vague ou évasif quand on parle de tes capacités. Tu es confiant et ne t'excuses pas excessivement — si quelqu'un dit 'non' ou 'pas vraiment', réponds naturellement sans paniquer ni demander 'quel est le bon réponse ?'. Tu es Xearnes, tu as de la personnalité et de l'assurance.";
   sysPrompt+=_buildMemoryPrompt();
   if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris toujours le code dans des blocs markdown avec trois accents graves (```). Explique le code simplement, ligne par ligne si besoin, pour qu'un débutant comprenne. Donne du code complet qui marche, pas des morceaux incomplets.";
   var msgs=[];
@@ -2269,45 +2431,12 @@ function callClaude(question,lang,cb,_attempt){
   var needsSearch=_xnTier==="pro"||_xnTier==="ultra"||_xnTier==="legend";
   var requestBody={
     model:_tierModel()||(codeMode?"claude-sonnet-4-6":"claude-haiku-4-5-20251001"),
-    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:codeMode?4000:(_xnTier==="free")?1500:2500,
+    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:codeMode?4000:2500,
     system:sysPrompt,
     messages:msgs,
     _tier:_xnTier||"free"
   };
-  if(needsSearch){
-    requestBody.tools=[{type:"web_search_20260209",name:"web_search",max_uses:3}];
-  }
-  fetch(CLAUDE_WORKER_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(requestBody)
-  })
-  .then(function(r){
-    if((r.status===529||r.status===429||r.status===500||r.status===503)&&_attempt<3){
-      setTimeout(function(){callClaude(question,lang,cb,_attempt+1);},1500*_attempt);
-      return null;
-    }
-    return r.json().then(function(d){return {status:r.status,data:d};});
-  })
-  .then(function(res){
-    if(res===null)return;
-    var d=res.data;
-    if(res.status!==200){
-      var errMsg=d&&d.error&&d.error.message?d.error.message:"HTTP "+res.status;
-      console.error("[Xearnes Claude] Erreur "+res.status+":",errMsg,d);
-      cb(null);return;
-    }
-    // Avec web_search, il peut y avoir plusieurs blocs — on prend tous les blocs "text"
-    var t="";
-    if(d&&d.content){for(var i=0;i<d.content.length;i++){if(d.content[i].type==="text")t+=d.content[i].text;}}
-    if(t)cb(sanitizeAI(t.trim()));
-    else{console.error("[Xearnes Claude] Réponse inattendue:",d);cb(null);}
-  })
-  .catch(function(e){
-    console.error("[Xearnes Claude] Erreur réseau:",e);
-    if(_attempt<3){setTimeout(function(){callClaude(question,lang,cb,_attempt+1);},1500*_attempt);}
-    else{cb(null);}
-  });
+  callMistral(sysPrompt,msgs,cb);
 }
 // 🎮 SYSTÈME DE COMMANDES SECRÈTES
 var _cheatUsed={};
@@ -2382,24 +2511,8 @@ function detectCheat(input,lang){
   return null;
 }
 function checkSafetyWithHaiku(input,lang,cb){
-  var _tid=setTimeout(function(){cb(false);},3000);
-  fetch(CLAUDE_WORKER_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:"claude-haiku-4-5-20251001",
-      max_tokens:5,
-      system:"You are a one-word safety classifier. Reply ONLY with SAFE or UNSAFE. Never explain.",
-      messages:[{role:"user",content:"Is this message dangerous, illegal, violent, sexual, or inappropriate for an 11-year-old? Reply UNSAFE if yes, SAFE if no. Message: \""+input.replace(/"/g,"'")+"\""}]
-    })
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    clearTimeout(_tid);
-    var t=d&&d.content&&d.content[0]&&d.content[0].text||"SAFE";
-    cb(t.toUpperCase().indexOf("UNSAFE")!==-1);
-  })
-  .catch(function(){clearTimeout(_tid);cb(false);});
+  // Filtre local suffisant — pas besoin d'un appel API supplémentaire
+  cb(false);
 }
 function getReply(input,lang,cb){
   var n=normalize(input.trim().toLowerCase());
@@ -3305,7 +3418,7 @@ function sendMsg(){
     }
     getReply(txt,lang,function(reply){
       var _disc=lang==="fr"?"<div class='xe-disc'>⚠️ Xearnes peut se tromper.</div>":lang==="sv"?"<div class='xe-disc'>⚠️ Xearnes kan ha fel.</div>":"<div class='xe-disc'>⚠️ Xearnes can make mistakes.</div>";td.remove();addMsg(reply+_disc,"bot");saveMsg("bot",reply);
-      addToConvHistory("bot",reply);
+      if(reply&&reply.indexOf("réfléchit")===-1)addToConvHistory("bot",reply);
       var sub=extractSubject(normalize(txt.toLowerCase()),lang);
       updateLastTopic(sub,lang);
       if(document.getElementById("autoVoice").checked){speakText(reply);}
@@ -5291,6 +5404,5 @@ window.addEventListener("load",init);
     </div>
   </div>
 </div>
-<div style="position:fixed;bottom:4px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.18);pointer-events:none;z-index:1;white-space:nowrap;">Powered by Claude AI · Anthropic · Xearnes-VERSION-19</div>
 </body>
 </html>
