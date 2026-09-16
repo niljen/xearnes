@@ -2054,13 +2054,41 @@ function _callRunPod(sysPrompt,msgs,cb,_attempt){
   });
 }
 
-function callMistral(sysPrompt,msgs,cb){
-  // WebLLM si WebGPU dispo, sinon RunPod serverless
-  if(navigator.gpu){
-    _callWebLLM(sysPrompt,msgs,cb);
-  } else {
-    _callRunPod(sysPrompt,msgs,cb);
-  }
+function _mistralModel(){
+  if(_xnTier==="legend")return"mistral-large-latest";
+  if(_xnTier==="ultra")return"mistral-medium-latest";
+  if(_xnTier==="pro")return"mistral-medium-latest";
+  return"mistral-small-latest";
+}
+
+function callMistral(sysPrompt,msgs,cb,_attempt){
+  _attempt=_attempt||1;
+  var body={
+    model:_mistralModel(),
+    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:2500,
+    messages:[{role:"system",content:sysPrompt}].concat(msgs)
+  };
+  fetch(MISTRAL_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  })
+  .then(function(r){
+    if((r.status===429||r.status===500||r.status===502||r.status===503)&&_attempt<3){
+      setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},1500*_attempt);
+      return null;
+    }
+    return r.json();
+  })
+  .then(function(d){
+    if(d===null)return;
+    var t=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
+    if(t)cb(sanitizeAI(t.trim()));else cb(null);
+  })
+  .catch(function(){
+    if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},1500*_attempt);
+    else cb(null);
+  });
 }
 
 function _pollRunpod(jobId,cb,tries){
