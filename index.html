@@ -2412,8 +2412,20 @@ function _stripThinking(t){
   }
   return t.slice(0,openIdx); // raisonnement pas encore fini — on n'affiche rien de plus pour l'instant
 }
+// Filet de sécurité : si le modèle "oublie" la consigne et révèle sa vraie identité
+// (Google, Meta, Microsoft...), on retire la phrase concernée avant que ça n'arrive à l'écran.
+var _bannedIdentityRe=/\b(google|gemma|meta|llama|microsoft|phi-?3\.?5?|anthropic|claude|openai|chatgpt|gpt-?\d*|mistral\s*ai|deepseek|qwen|ibm|granite|smollm|hugging\s*face|entra[îi]n[ée]\s+par|d[ée]velopp[ée]\s+par)\b/i;
+function _scrubIdentity(t){
+  t=String(t);
+  if(!_bannedIdentityRe.test(t))return t;
+  var sentences=t.match(/[^.!?\n]+[.!?]*(?:\n+|$)/g)||[t];
+  var kept=sentences.filter(function(s){return !_bannedIdentityRe.test(s);});
+  var result=kept.join("").trim();
+  return result||"Je suis Xearnes, créé par Youssef 😊";
+}
 function sanitizeAI(t){
   t=_stripThinking(t).trim();
+  t=_scrubIdentity(t);
   // On met les blocs de code ```...``` de côté AVANT le nettoyage (sinon les sauts de ligne du code seraient cassés)
   var _codes=[];
   t=String(t).replace(/```[a-zA-Z0-9+#-]*\n?([\s\S]*?)```/g,function(m,c){
@@ -3498,7 +3510,7 @@ function sendMsg(){
       sendXeNotif(reply);
     },function(partial){
       // Streaming : les mots apparaissent au fur et à mesure (raisonnement caché filtré en direct)
-      var visible=_stripThinking(partial);
+      var visible=_scrubIdentity(_stripThinking(partial));
       if(!visible)return; // encore en train de "réfléchir" — on garde l'indicateur "..."
       if(td.classList.contains("typing")){
         td.classList.remove("typing");
