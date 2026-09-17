@@ -88,7 +88,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 [data-theme="light"] .lang-btn{background:#5a52e0;color:#fff}
 [data-theme="light"] .lang-btn.active{background:#fff;color:#6c63ff}
 .input-bar{background:var(--card);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;align-items:flex-end;flex-shrink:0}
-.input-bar textarea{flex:1;background:#131840;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.9rem;font-family:inherit;resize:none;min-height:42px;max-height:120px;line-height:1.4;transition:.2s}
+.input-bar textarea{flex:1;background:#141414;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.9rem;font-family:inherit;resize:none;min-height:42px;max-height:120px;line-height:1.4;transition:.2s}
 .input-bar textarea:focus{outline:none;border-color:var(--accent)}
 .send-btn{background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 18px;font-size:.9rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;min-height:42px}
 .send-btn:hover{filter:brightness(1.15)}
@@ -128,7 +128,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .mp-msg.bot{background:none;border:none;border-radius:0;align-self:flex-start;color:#d0d8ff;padding-left:4px;max-width:95%}
 .mp-msg.user{background:var(--accent);color:#000;font-weight:500;align-self:flex-end;border-radius:10px 10px 2px 10px}
 .mp-bar{padding:8px 10px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0}
-.mp-bar input{flex:1;background:#131840;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:.82rem;font-family:inherit}
+.mp-bar input{flex:1;background:#141414;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:.82rem;font-family:inherit}
 .mp-bar input:focus{outline:none;border-color:var(--accent)}
 .mp-send{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 13px;font-size:.82rem;font-weight:700;cursor:pointer}
 [data-theme="light"] .mp-msg.bot{background:none;border:none;color:#2d2d4e}
@@ -327,7 +327,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <button class="icon-btn" id="badgeBtn" onclick="toggleBadgePanel()" title="Niveaux">&#127942;</button>
     <button class="icon-btn" id="convBtn" onclick="toggleConvPanel()" title="Conversations">&#128172;</button>
     <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()" title="Historique">&#128214;</button>
-    <span id="streakBadge" style="display:none;align-items:center;font-size:.75rem;background:#1a1a3a;color:#ff6b35;border:1px solid #ff6b35;border-radius:20px;padding:3px 10px;font-weight:700" title="Jours consécutifs"></span>
+    <span id="streakBadge" style="display:none;align-items:center;font-size:.75rem;background:#1a1408;color:#ff6b35;border:1px solid #ff6b35;border-radius:20px;padding:3px 10px;font-weight:700" title="Jours consécutifs"></span>
     <button onclick="shareXearnes()" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;cursor:pointer" title="Partager Xearnes">🔗 Share</button>
     <button onclick="openUpgradeModal()" style="background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border:none;border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;cursor:pointer" title="Abonnements">🚀 Upgrade</button>
     <span id="tierBadge" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border-radius:20px;padding:2px 10px;font-weight:700;cursor:pointer" onclick="openUpgradeModal()" title="Ton abonnement"></span>
