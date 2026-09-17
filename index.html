@@ -2615,14 +2615,14 @@ function getReply(input,lang,cb,onChunk){
   if(detectHarmful(n,lang)){
     checkSafetyWithHaiku(input,lang,function(_reallyUnsafe){
       if(_reallyUnsafe){var hr=harmfulReply[lang]||harmfulReply.en;return cb(pick(hr));}
-      _getReplyBody(input,lang,n,cb);
+      _getReplyBody(input,lang,n,cb,onChunk);
     });
     return;
   }
   // ✅ Rien de suspect → réponse normale directement
-  _getReplyBody(input,lang,n,cb);
+  _getReplyBody(input,lang,n,cb,onChunk);
 }
-function _getReplyBody(input,lang,n,cb){
+function _getReplyBody(input,lang,n,cb,onChunk){
   var cfg=langs[lang];
   // ✏️ CORRECTION EN ATTENTE
   if(awaitingCorrection)return cb(handleCorrectionAnswer(n,lang));
