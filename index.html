@@ -3143,14 +3143,23 @@ function _getReplyBody(input,lang,n,cb){
   if(subject&&subject.length>1)queries.push(subject);
   var wq=getWikiQuery(n,lang);
   if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
-  // 8. Sujet factuel détecté → on vérifie Wikipédia D'ABORD pour donner des vrais faits à Xearnes
-  //    (évite qu'il invente des dates/détails faux sur un sujet précis)
+  // 8. Sujet factuel détecté → on vérifie plusieurs sources gratuites D'ABORD pour donner
+  //    des vrais faits à Xearnes (évite qu'il invente des dates/détails faux). Ordre : Wikipédia
+  //    (fiable, gratuit) puis DuckDuckGo (complément gratuit) si Wikipédia n'a rien trouvé.
+  //    NE.se écarté : nécessite un abonnement, pas d'accès libre.
+  function _fetchFactsMultiSource(cb2){
+    if(queries.length===0){cb2(null);return;}
+    fetchWikiChain(queries,lang,function(res){
+      if(res){cb2(res);return;}
+      fetchDDG(queries[0],function(ddg){cb2(ddg);});
+    });
+  }
   function _finishWithClaude(groundingFacts){
     callClaude(input.trim(),lang,function(r){
       if(r)return cb(r);
-      // Si Xearnes échoue quand même, on affiche directement le résumé Wikipédia trouvé
+      // Si Xearnes échoue quand même, on affiche directement le résumé trouvé
       if(queries.length>0){
-        fetchWikiChain(queries,lang,function(res){
+        _fetchFactsMultiSource(function(res){
           if(res)return cb(buildWikiHtml(res));
           cb(pick(cfg.defaults));
         });
@@ -3159,13 +3168,9 @@ function _getReplyBody(input,lang,n,cb){
       cb(pick(cfg.defaults));
     },undefined,onChunk,groundingFacts);
   }
-  if(queries.length>0){
-    fetchWikiChain(queries,lang,function(res){
-      _finishWithClaude(res&&res.extract?res.extract:null);
-    });
-  } else {
-    _finishWithClaude(null);
-  }
+  _fetchFactsMultiSource(function(res){
+    _finishWithClaude(res&&res.extract?res.extract:null);
+  });
 }
 // Transforme le texte d'un message bot en HTML propre (nettoyage puces/entités + paragraphes).
 // Utilisé PARTOUT (nouveaux messages ET anciennes conversations restaurées) pour un rendu identique.
