@@ -2475,7 +2475,7 @@ function isReasoningQuestion(t){
   for(var i=0;i<kw.length;i++){if(t.indexOf(kw[i])!==-1)return true;}
   return false;
 }
-function callClaude(question,lang,cb,_attempt,onChunk){
+function callClaude(question,lang,cb,_attempt,onChunk,groundingFacts){
   _attempt=_attempt||1;
   var codeMode=isCodeQuestion(question)&&_shareUnlockReached(20);
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":lang==="da"?"ABSOLUT REGEL: Svar ALTID på dansk. Brug ALDRIG svenske, franske eller engelske ord i dit svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
@@ -2484,6 +2484,7 @@ function callClaude(question,lang,cb,_attempt,onChunk){
   sysPrompt+=_buildMemoryPrompt();
   if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris toujours le code dans des blocs markdown avec trois accents graves (```). Explique le code simplement, ligne par ligne si besoin, pour qu'un débutant comprenne. Donne du code complet qui marche, pas des morceaux incomplets.";
   if(isReasoningQuestion(question))sysPrompt+=" RÉFLEXION ÉTAPE PAR ÉTAPE : Cette question demande de la logique, du calcul ou un raisonnement. AVANT de répondre, réfléchis intégralement à l'intérieur d'une balise <think>...</think> (décompose le problème, vérifie ton calcul). Ne mets JAMAIS d'informations sur ta technologie ou ton modèle dans cette réflexion. Une fois la balise </think> fermée, écris UNIQUEMENT ta réponse finale, claire et directe, sans répéter le raisonnement.";
+  if(groundingFacts)sysPrompt+=" FAITS VÉRIFIÉS (source Wikipédia) À UTILISER POUR RÉPONDRE : \""+groundingFacts+"\" — Base ta réponse sur CES faits précis, reformulés avec ta propre personnalité. N'invente AUCUN autre fait, date ou détail qui n'est pas dans ce texte. Si ces faits ne suffisent pas pour répondre complètement, dis-le simplement plutôt que d'inventer.";
   var msgs=[];
   var hist=convHistory;
   var lastRole=null;
@@ -3142,19 +3143,29 @@ function _getReplyBody(input,lang,n,cb){
   if(subject&&subject.length>1)queries.push(subject);
   var wq=getWikiQuery(n,lang);
   if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
-  // 8. Claude → Wikipedia/DDG fallback
-  callClaude(input.trim(),lang,function(r){
-    if(r)return cb(r);
-    // Fallback Wikipedia si Claude échoue
-    if(queries.length>0){
-      fetchWikiChain(queries,lang,function(res){
-        if(res)return cb(buildWikiHtml(res));
-        cb(pick(cfg.defaults));
-      });
-      return;
-    }
-    cb(pick(cfg.defaults));
-  },undefined,onChunk);
+  // 8. Sujet factuel détecté → on vérifie Wikipédia D'ABORD pour donner des vrais faits à Xearnes
+  //    (évite qu'il invente des dates/détails faux sur un sujet précis)
+  function _finishWithClaude(groundingFacts){
+    callClaude(input.trim(),lang,function(r){
+      if(r)return cb(r);
+      // Si Xearnes échoue quand même, on affiche directement le résumé Wikipédia trouvé
+      if(queries.length>0){
+        fetchWikiChain(queries,lang,function(res){
+          if(res)return cb(buildWikiHtml(res));
+          cb(pick(cfg.defaults));
+        });
+        return;
+      }
+      cb(pick(cfg.defaults));
+    },undefined,onChunk,groundingFacts);
+  }
+  if(queries.length>0){
+    fetchWikiChain(queries,lang,function(res){
+      _finishWithClaude(res&&res.extract?res.extract:null);
+    });
+  } else {
+    _finishWithClaude(null);
+  }
 }
 // Transforme le texte d'un message bot en HTML propre (nettoyage puces/entités + paragraphes).
 // Utilisé PARTOUT (nouveaux messages ET anciennes conversations restaurées) pour un rendu identique.
