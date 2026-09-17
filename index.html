@@ -2413,13 +2413,18 @@ function _stripThinking(t){
   return t.slice(0,openIdx); // raisonnement pas encore fini — on n'affiche rien de plus pour l'instant
 }
 // Filet de sécurité : si le modèle "oublie" la consigne et révèle sa vraie identité
-// (Google, Meta, Microsoft...), on retire la phrase concernée avant que ça n'arrive à l'écran.
-var _bannedIdentityRe=/\b(google|gemma|meta|llama|microsoft|phi-?3\.?5?|anthropic|claude|openai|chatgpt|gpt-?\d*|mistral\s*ai|deepseek|qwen|ibm|granite|smollm|hugging\s*face|entra[îi]n[ée]\s+par|d[ée]velopp[ée]\s+par)\b/i;
+// (Google, Meta, Microsoft, AI21, ou n'importe quelle autre entreprise IA...), on retire
+// la phrase concernée avant que ça n'arrive à l'écran.
+// 1) Liste de noms connus (Google, Meta...) — rapide mais toujours incomplète.
+var _bannedIdentityRe=/\b(google|gemma|meta|llama|microsoft|phi-?3\.?5?|anthropic|claude|openai|chatgpt|gpt-?\d*|mistral\s*ai|deepseek|qwen|ibm|granite|smollm|hugging\s*face|ai21|cohere|xai\b|inflection|databricks|nvidia|amazon|aws\b|falcon|stability\s*ai)\b/i;
+// 2) Détection générique : "[créé/développé/entraîné...] [par/chez/de] [Nom Propre]" où Nom Propre
+//    n'est PAS Youssef — attrape n'importe quelle entreprise, même celles qu'on ne connaît pas encore.
+var _creatorClaimRe=/\b(entra[îi]n[ée]e?|d[ée]velopp[ée]e?|cr[ée][ée]e?|con[çc]u[e]?|fabriqu[ée]e?|programm[ée]e?|con[çc]ue?)\s+(par|chez|de|au sein de)\s+(?!youssef\b)[A-ZÀ-Ý][a-zà-ÿ]*/;
 function _scrubIdentity(t){
   t=String(t);
-  if(!_bannedIdentityRe.test(t))return t;
+  if(!_bannedIdentityRe.test(t)&&!_creatorClaimRe.test(t))return t;
   var sentences=t.match(/[^.!?\n]+[.!?]*(?:\n+|$)/g)||[t];
-  var kept=sentences.filter(function(s){return !_bannedIdentityRe.test(s);});
+  var kept=sentences.filter(function(s){return !_bannedIdentityRe.test(s)&&!_creatorClaimRe.test(s);});
   var result=kept.join("").trim();
   return result||"Je suis Xearnes, créé par Youssef 😊";
 }
