@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0a0f2c;--card:#0d1235;--border:#2a2f6c;--accent:#DAA520;--accent2:#E8C547;--text:#e0e0ff;--text2:#aaaacc;--danger:#f85149;--radius:12px}
+:root{--bg:#0a0a0a;--card:#141414;--border:#3d3218;--accent:#DAA520;--accent2:#E8C547;--text:#f0ede4;--text2:#a8a29a;--danger:#f85149;--radius:12px}
 body{background:var(--bg);color:var(--text);font-family:Segoe UI,system-ui,sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 header{background:var(--card);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
 .logo{font-size:1.5rem;font-weight:800;letter-spacing:3px;color:#DAA520;text-shadow:0 0 12px rgba(218,165,32,.6)}
@@ -57,7 +57,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .msg{max-width:78%;padding:11px 16px;border-radius:var(--radius);font-size:.9rem;line-height:1.55;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .msg.bot{background:none;border:none;border-radius:0;align-self:flex-start;color:#d0d8ff;padding-left:4px;max-width:92%}
-.msg.user{background:var(--accent);color:#0a0f2c;font-weight:500;border-radius:var(--radius) var(--radius) 4px var(--radius);align-self:flex-end}
+.msg.user{background:var(--accent);color:#0a0a0a;font-weight:500;border-radius:var(--radius) var(--radius) 4px var(--radius);align-self:flex-end}
 .msg .meta{font-size:.65rem;margin-top:4px}
 .msg.bot .meta{color:var(--text2)}
 .msg.user .meta{color:rgba(0,0,0,.5);text-align:right}
@@ -136,7 +136,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 [data-theme="light"] .mp-close{color:#fff}
 /* ── SÉLECTEUR LANGUE ── */
 .lang-select{background:var(--border);color:var(--text);border:1px solid var(--accent);border-radius:20px;padding:5px 12px;font-size:.82rem;cursor:pointer;outline:none;font-weight:600;max-width:130px}
-.lang-select option{background:#0d1235;color:#e0e0ff}
+.lang-select option{background:#141414;color:#f0ede4}
 [data-theme="light"] .lang-select{background:#5a52e0;color:#fff;border-color:#5a52e0}
 [data-theme="light"] .lang-select option{background:#fff;color:#2d2d4e}
 /* ── THÈMES COULEURS ── */
@@ -1424,7 +1424,7 @@ function doStockChart(lang,cb){
   var start=vals[0],end=vals[vals.length-1];
   var pct=((end-start)/start*100).toFixed(1);
   var color=end>=start?"#4ade80":"#f85149";
-  var html='<canvas id="'+id+'" width="320" height="140" style="border-radius:10px;background:#0a0f2c;display:block;margin:8px 0"></canvas>'+
+  var html='<canvas id="'+id+'" width="320" height="140" style="border-radius:10px;background:#0a0a0a;display:block;margin:8px 0"></canvas>'+
     '<div style="font-size:.8rem;color:'+color+';font-weight:700">'+(end>=start?"📈":"📉")+' '+(end>=start?"+":"")+pct+'% depuis le début · Valeur actuelle : <strong>'+end.toFixed(2)+'€</strong></div>'+
     '<script>(function(){var c=document.getElementById("'+id+'");if(!c)return;var ctx=c.getContext("2d");var w=c.width,h=c.height,pad=14;var vals='+JSON.stringify(vals)+';var mn='+min+',mx='+max+';var range=mx-mn||1;ctx.strokeStyle="'+color+'";ctx.lineWidth=2;ctx.beginPath();vals.forEach(function(v,i){var x=pad+(w-pad*2)*i/(vals.length-1);var y=h-pad-(v-mn)/range*(h-pad*2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.fillStyle="rgba(74,222,128,0.08)";ctx.lineTo(pad+(w-pad*2),h-pad);ctx.lineTo(pad,h-pad);ctx.fill();})();<\/script>';
   cb(html);
@@ -1968,8 +1968,8 @@ function _showWebLLMProgress(label,pct){
   if(!bar){
     var div=document.createElement("div");
     div.id="_wllm_banner";
-    div.style.cssText="position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#0d1235;border:1px solid #DAA520;border-radius:10px;padding:10px 18px;z-index:9999;min-width:260px;text-align:center;font-size:.8rem;color:#e0e0ff;";
-    div.innerHTML='<div style="margin-bottom:6px;color:#DAA520;font-weight:700;">⚡ Xearnes AI — Chargement local</div><div id="_wllm_label" style="margin-bottom:8px;font-size:.75rem;color:#aaaacc;"></div><div style="background:#2a2f6c;border-radius:6px;height:6px;overflow:hidden;"><div id="_wllm_bar" style="height:100%;background:#DAA520;width:0%;transition:width .3s;"></div></div>';
+    div.style.cssText="position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#141414;border:1px solid #DAA520;border-radius:10px;padding:10px 18px;z-index:9999;min-width:260px;text-align:center;font-size:.8rem;color:#f0ede4;";
+    div.innerHTML='<div style="margin-bottom:6px;color:#DAA520;font-weight:700;">⚡ Xearnes AI — Chargement local</div><div id="_wllm_label" style="margin-bottom:8px;font-size:.75rem;color:#a8a29a;"></div><div style="background:#3d3218;border-radius:6px;height:6px;overflow:hidden;"><div id="_wllm_bar" style="height:100%;background:#DAA520;width:0%;transition:width .3s;"></div></div>';
     document.body.appendChild(div);
     bar=document.getElementById("_wllm_bar");
   }
@@ -5475,48 +5475,48 @@ window.addEventListener("load",init);
 </script>
 <!-- Modal email -->
 <div id="emailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#0d1235;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:360px;width:90%;text-align:center">
+  <div style="background:#141414;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:360px;width:90%;text-align:center">
     <div style="font-size:2rem;margin-bottom:8px">✉️</div>
     <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:8px">Connecte-toi à Xearnes</h2>
-    <p style="color:#aaaacc;font-size:.85rem;margin-bottom:18px">Entre ton email pour accéder à ton abonnement et garder ton profil.</p>
-    <input id="emailInput" type="email" placeholder="ton@email.com" style="width:100%;background:#0a0f2c;border:1px solid #2a2f6c;color:#e0e0ff;border-radius:8px;padding:9px 12px;font-size:.9rem;margin-bottom:8px;outline:none">
+    <p style="color:#a8a29a;font-size:.85rem;margin-bottom:18px">Entre ton email pour accéder à ton abonnement et garder ton profil.</p>
+    <input id="emailInput" type="email" placeholder="ton@email.com" style="width:100%;background:#0a0a0a;border:1px solid #3d3218;color:#f0ede4;border-radius:8px;padding:9px 12px;font-size:.9rem;margin-bottom:8px;outline:none">
     <div id="emailErr" style="color:#f85149;font-size:.78rem;min-height:18px;margin-bottom:8px"></div>
     <button onclick="submitEmail()" style="width:100%;background:#DAA520;color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:8px">Continuer</button>
-    <button onclick="closeEmailModal()" style="background:none;border:none;color:#aaaacc;font-size:.8rem;cursor:pointer">Continuer sans compte</button>
+    <button onclick="closeEmailModal()" style="background:none;border:none;color:#a8a29a;font-size:.8rem;cursor:pointer">Continuer sans compte</button>
   </div>
 </div>
 <!-- Modal upgrade -->
 <div id="upgradeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#0d1235;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:400px;width:90%;text-align:center">
+  <div style="background:#141414;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:400px;width:90%;text-align:center">
     <div style="font-size:2rem;margin-bottom:8px">🚀</div>
     <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:16px">Passe à un abonnement Xearnes</h2>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
-      <div style="background:#0a0f2c;border:1px solid #DAA520;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="background:#0a0a0a;border:1px solid #DAA520;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
           <div style="font-weight:700;color:#DAA520">👑 Legend — 1000 kr/mois</div>
-          <div style="font-size:.78rem;color:#aaaacc">IA la plus puissante · réponses ultra-détaillées · priorité absolue</div>
+          <div style="font-size:.78rem;color:#a8a29a">IA la plus puissante · réponses ultra-détaillées · priorité absolue</div>
         </div>
         <a href="STRIPE_LEGEND_LINK" target="_blank" style="background:#DAA520;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
-      <div style="background:#0a0f2c;border:1px solid #8888ff;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="background:#0a0a0a;border:1px solid #8888ff;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
           <div style="font-weight:700;color:#8888ff">⚡ Ultra — 500 kr/mois</div>
-          <div style="font-size:.78rem;color:#aaaacc">IA très avancée · réponses longues et précises · idéal pour tout</div>
+          <div style="font-size:.78rem;color:#a8a29a">IA très avancée · réponses longues et précises · idéal pour tout</div>
         </div>
         <a href="STRIPE_ULTRA_LINK" target="_blank" style="background:#8888ff;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
-      <div style="background:#0a0f2c;border:1px solid #4ea8de;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="background:#0a0a0a;border:1px solid #4ea8de;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
           <div style="font-weight:700;color:#4ea8de">🔷 Pro — 200 kr/mois</div>
-          <div style="font-size:.78rem;color:#aaaacc">IA rapide et intelligente · parfait pour les questions du quotidien</div>
+          <div style="font-size:.78rem;color:#a8a29a">IA rapide et intelligente · parfait pour les questions du quotidien</div>
         </div>
         <a href="STRIPE_PRO_LINK" target="_blank" style="background:#4ea8de;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
     </div>
-    <p style="color:#aaaacc;font-size:.75rem;margin-bottom:14px">Après le paiement, reviens ici et entre ton email pour activer ton accès.</p>
+    <p style="color:#a8a29a;font-size:.75rem;margin-bottom:14px">Après le paiement, reviens ici et entre ton email pour activer ton accès.</p>
     <div style="display:flex;gap:10px;justify-content:center;align-items:center">
       <a href="pricing.html" target="_blank" style="color:#DAA520;font-size:.82rem;text-decoration:none;border-bottom:1px solid rgba(218,165,32,.3)">See full comparison →</a>
-      <button onclick="closeUpgradeModal()" style="background:none;border:1px solid #2a2f6c;color:#aaaacc;border-radius:8px;padding:8px 24px;font-weight:700;cursor:pointer;font-size:.85rem">Fermer</button>
+      <button onclick="closeUpgradeModal()" style="background:none;border:1px solid #3d3218;color:#a8a29a;border-radius:8px;padding:8px 24px;font-weight:700;cursor:pointer;font-size:.85rem">Fermer</button>
     </div>
   </div>
 </div>
