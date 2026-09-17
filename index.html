@@ -323,7 +323,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <span class="online-badge" id="onlineBadge" title="Joueurs en ligne"><span class="online-dot"></span><span id="onlineCount">...</span></span>
     <button class="icon-btn" id="voiceBtn" onclick="toggleVoicePanel()" title="Voix &amp; accent">&#128266;</button>
     <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Mode jour/nuit">&#9728;</button>
-    <button class="icon-btn" id="lbBtn" onclick="toggleLeaderboardPanel()" title="Classement mondial">&#127758;</button>
     <button class="icon-btn" id="badgeBtn" onclick="toggleBadgePanel()" title="Niveaux">&#127942;</button>
     <button class="icon-btn" id="convBtn" onclick="toggleConvPanel()" title="Conversations">&#128172;</button>
     <button class="icon-btn" id="histBtn" onclick="toggleHistPanel()" title="Historique">&#128214;</button>
@@ -3870,6 +3869,7 @@ function buildChips(){
   var chips=document.getElementById("chips");
   if(!chips)return;
   chips.innerHTML="";
+  return; // Suggestions de démarrage désactivées (Youssef)
   var cfg=langs[currentLang];
   (cfg.chips||[]).forEach(function(c){
     var btn=document.createElement("button");
