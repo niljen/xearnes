@@ -2423,7 +2423,7 @@ var _creatorClaimRe=/\b(entra[îi]n[ée]e?|d[ée]velopp[ée]e?|cr[ée][ée]e?|co
 function _scrubIdentity(t){
   t=String(t);
   if(!_bannedIdentityRe.test(t)&&!_creatorClaimRe.test(t))return t;
-  var sentences=t.match(/[^.!?\n]+[.!?]*(?:\n+|$)/g)||[t];
+  var sentences=t.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[t];
   var kept=sentences.filter(function(s){return !_bannedIdentityRe.test(s)&&!_creatorClaimRe.test(s);});
   var result=kept.join("").trim();
   return result||"Je suis Xearnes, créé par Youssef 😊";
