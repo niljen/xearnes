@@ -2061,8 +2061,9 @@ function _mistralModel(){
   return"mistral-small-latest";
 }
 
-function callMistral(sysPrompt,msgs,cb,_attempt){
+function callMistral(sysPrompt,msgs,cb,_attempt,onChunk){
   _attempt=_attempt||1;
+  if(onChunk){_callMistralStream(sysPrompt,msgs,cb,_attempt,onChunk);return;}
   var body={
     model:_mistralModel(),
     max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:2500,
@@ -2087,6 +2088,51 @@ function callMistral(sysPrompt,msgs,cb,_attempt){
   })
   .catch(function(){
     if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1);},1500*_attempt);
+    else cb(null);
+  });
+}
+
+function _callMistralStream(sysPrompt,msgs,cb,_attempt,onChunk){
+  var body={
+    model:_mistralModel(),
+    max_tokens:(_xnTier==="legend"||_xnTier==="ultra")?6000:2500,
+    messages:[{role:"system",content:sysPrompt}].concat(msgs),
+    stream:true
+  };
+  fetch(MISTRAL_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  })
+  .then(function(r){
+    if(!r.ok||!r.body){
+      if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1,onChunk);},1500*_attempt);
+      else cb(null);
+      return;
+    }
+    var reader=r.body.getReader();
+    var decoder=new TextDecoder();
+    var full="";
+    function pump(){
+      reader.read().then(function(res){
+        if(res.done){
+          var t=full.trim();
+          if(t)cb(sanitizeAI(t));else cb(null);
+          return;
+        }
+        var chunk=decoder.decode(res.value,{stream:true});
+        if(chunk){full+=chunk;onChunk(full);}
+        pump();
+      }).catch(function(){
+        if(full.trim())cb(sanitizeAI(full.trim()));
+        else if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1,onChunk);},1500*_attempt);
+        else cb(null);
+      });
+    }
+    pump();
+  })
+  .catch(function(){
+    if(_attempt<3)setTimeout(function(){callMistral(sysPrompt,msgs,cb,_attempt+1,onChunk);},1500*_attempt);
     else cb(null);
   });
 }
@@ -2391,7 +2437,7 @@ function isCodeQuestion(t){
   for(var i=0;i<kw.length;i++){if(t.indexOf(kw[i])!==-1)return true;}
   return false;
 }
-function callClaude(question,lang,cb,_attempt){
+function callClaude(question,lang,cb,_attempt,onChunk){
   _attempt=_attempt||1;
   var codeMode=isCodeQuestion(question)&&_shareUnlockReached(20);
   var sysLang=lang==="fr"?"RÈGLE ABSOLUE : Réponds TOUJOURS en français. N'utilise JAMAIS de mots suédois ou anglais dans ta réponse.":lang==="sv"?"ABSOLUT REGEL: Svara ALLTID på svenska. Använd ALDRIG franska eller engelska ord i ditt svar.":lang==="da"?"ABSOLUT REGEL: Svar ALTID på dansk. Brug ALDRIG svenske, franske eller engelske ord i dit svar.":"ABSOLUTE RULE: ALWAYS respond in English. NEVER use French or Swedish words in your response.";
@@ -2436,7 +2482,7 @@ function callClaude(question,lang,cb,_attempt){
     messages:msgs,
     _tier:_xnTier||"free"
   };
-  callMistral(sysPrompt,msgs,cb);
+  callMistral(sysPrompt,msgs,cb,undefined,onChunk);
 }
 // 🎮 SYSTÈME DE COMMANDES SECRÈTES
 var _cheatUsed={};
@@ -2514,7 +2560,7 @@ function checkSafetyWithHaiku(input,lang,cb){
   // Filtre local suffisant — pas besoin d'un appel API supplémentaire
   cb(false);
 }
-function getReply(input,lang,cb){
+function getReply(input,lang,cb,onChunk){
   var n=normalize(input.trim().toLowerCase());
   n=fixTypos(n,lang);
   // 🎮 CHEAT CODES
@@ -3066,10 +3112,10 @@ function _getReplyBody(input,lang,n,cb){
         if(res)return cb(buildWikiHtml(res));
         cb(pick(cfg.defaults));
       });
-    }else{
-      cb(pick(cfg.defaults));
+      return;
     }
-  });
+    cb(pick(cfg.defaults));
+  },undefined,onChunk);
 }
 // Transforme le texte d'un message bot en HTML propre (nettoyage puces/entités + paragraphes).
 // Utilisé PARTOUT (nouveaux messages ET anciennes conversations restaurées) pour un rendu identique.
@@ -3423,6 +3469,14 @@ function sendMsg(){
       updateLastTopic(sub,lang);
       if(document.getElementById("autoVoice").checked){speakText(reply);}
       sendXeNotif(reply);
+    },function(partial){
+      // Streaming : les mots apparaissent au fur et à mesure
+      if(td.classList.contains("typing")){
+        td.classList.remove("typing");
+        td.innerHTML="";
+      }
+      td.textContent=partial;
+      var chat=document.getElementById("chat");chat.scrollTop=chat.scrollHeight;
     });
   },delay);
 }
