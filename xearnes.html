@@ -4188,8 +4188,7 @@ function init(){
     localStorage.setItem("xn_voice_pitch",this.value);
   });
   // ── Mode nuit auto (Feature 1) ──
-  var savedTheme=localStorage.getItem("xn_theme");
-  if(!savedTheme){var h=new Date().getHours();savedTheme=(h>=20||h<7)?"dark":"light";}
+  var savedTheme=localStorage.getItem("xn_theme")||"dark";
   document.documentElement.setAttribute("data-theme",savedTheme);
   document.getElementById("themeBtn").textContent=savedTheme==="light"?"☽":"☀";
   // ── Couleur sauvegardee (Feature 7) ──
