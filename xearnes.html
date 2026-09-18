@@ -3144,6 +3144,13 @@ function _getReplyBody(input,lang,n,cb,onChunk){
   if(subject&&subject.length>1)queries.push(subject);
   var wq=getWikiQuery(n,lang);
   if(wq&&wq.length>2&&queries.indexOf(wq)===-1)queries.push(wq);
+  // Filet élargi : si aucun sujet précis détecté mais que la question ressemble
+  // quand même à une vraie question factuelle (pas un calcul/logique, assez longue
+  // pour être une vraie question) → on tente quand même une recherche avec le texte
+  // brut, pour couvrir les questions factuelles que les détecteurs ratent.
+  if(queries.length===0&&!isReasoningQuestion(input)&&input.trim().length>8&&/[?？]|^(qui|que|quoi|quand|où|ou|comment|pourquoi|combien|vem|vad|när|var|hur|varför|who|what|when|where|how|why)\b/i.test(input.trim())){
+    queries.push(input.trim().slice(0,100));
+  }
   // 8. Sujet factuel détecté → on vérifie plusieurs sources gratuites D'ABORD pour donner
   //    des vrais faits à Xearnes (évite qu'il invente des dates/détails faux). Ordre : Wikipédia
   //    (fiable, gratuit) puis DuckDuckGo (complément gratuit) si Wikipédia n'a rien trouvé.
