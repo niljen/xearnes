@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Xearnes — Pricing</title>
-<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="icon" type="image/png" href="logo-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0a0f2c;
-  --card:#0d1235;
-  --border:#2a2f6c;
-  --text:#e0e0ff;
-  --text2:#aaaacc;
+  --bg:#0a0a0a;
+  --card:#141414;
+  --border:#3d3218;
+  --text:#f0ede4;
+  --text2:#a8a29a;
   --gold:#DAA520;
   --gold2:#E8C547;
   --purple:#8888ff;
@@ -61,17 +61,11 @@ body{background:var(--bg);color:var(--text);font-family:Segoe UI,system-ui,sans-
 .plan-btn:hover{opacity:.85;transform:translateY(-1px)}
 
 /* FEATURES */
-.features{display:flex;flex-direction:column;gap:0;flex:1}
-.feat-section{font-size:.65rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text2);padding:10px 0 6px;border-top:1px solid var(--border);margin-top:6px}
-.feat-section:first-child{border-top:none;margin-top:0;padding-top:0}
-.feat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0}
-.feat-label{font-size:.8rem;color:var(--text2)}
-.feat-val{font-size:.82rem;font-weight:600;text-align:right;flex-shrink:0}
-.yes{color:#4ade80}
-.no{color:#555577}
-.plan.featured .yes{color:var(--gold2)}
-.plan.ultra .yes{color:var(--purple)}
-.plan.pro .yes{color:var(--blue)}
+.features{display:flex;flex-direction:column;gap:6px;flex:1}
+.feat-item{font-size:.82rem;color:var(--text2);padding:5px 8px;border-radius:7px;background:rgba(255,255,255,.03)}
+.plan.featured .feat-item{background:rgba(218,165,32,.06);color:var(--text)}
+.plan.ultra .feat-item{background:rgba(136,136,255,.06);color:var(--text)}
+.plan.pro .feat-item{background:rgba(78,168,222,.06);color:var(--text)}
 
 /* FOOTER NOTE */
 .note{text-align:center;margin-top:40px;color:var(--text2);font-size:.82rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.6}
@@ -94,6 +88,45 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
   <p>Start for free. Upgrade anytime to unlock a more powerful AI, image generation, and exclusive features.</p>
 </div>
 
+<!-- PROMOS -->
+<div style="max-width:1080px;margin:0 auto 32px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
+
+  <div style="background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(218,165,32,.05));border:1px solid rgba(218,165,32,.4);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
+    <span style="font-size:1.6rem">👑</span>
+    <div>
+      <div style="font-weight:800;color:#DAA520;font-size:.95rem">1st subscriber — 90% off FOR LIFE on ALL tiers</div>
+      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Pro 20 kr · Ultra 50 kr · Legend 100 kr — forever, even if you upgrade</div>
+    </div>
+    <div id="firstSpots" style="margin-left:auto;background:rgba(218,165,32,.2);color:#DAA520;font-weight:800;font-size:.8rem;padding:4px 12px;border-radius:20px;white-space:nowrap">🔥 1 spot left</div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,rgba(78,168,222,.1),rgba(78,168,222,.03));border:1px solid rgba(78,168,222,.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
+    <span style="font-size:1.6rem">🚀</span>
+    <div>
+      <div style="font-weight:800;color:#4ea8de;font-size:.95rem">First 10 subscribers — 50% off FOR LIFE</div>
+      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Pro 100 kr · Ultra 250 kr · Legend 500 kr — on any tier you choose</div>
+    </div>
+    <div id="tenSpots" style="margin-left:auto;background:rgba(78,168,222,.15);color:#4ea8de;font-weight:800;font-size:.8rem;padding:4px 12px;border-radius:20px;white-space:nowrap">⚡ 10 spots left</div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,rgba(136,136,255,.1),rgba(136,136,255,.03));border:1px solid rgba(136,136,255,.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
+    <span style="font-size:1.6rem">⬆️</span>
+    <div>
+      <div style="font-weight:800;color:#8888ff;font-size:.95rem">Upgrade discount — 40% off when you move up</div>
+      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Pro → Ultra: 300 kr · Ultra → Legend: 600 kr · Loyalty reward for existing subscribers</div>
+    </div>
+  </div>
+
+  <div style="background:linear-gradient(135deg,rgba(74,222,128,.1),rgba(74,222,128,.03));border:1px solid rgba(74,222,128,.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
+    <span style="font-size:1.6rem">🛍️</span>
+    <div>
+      <div style="font-weight:800;color:#4ade80;font-size:.95rem">Black Friday — 30% off · Black Week — 20% off</div>
+      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Also: Christmas -15% · New Year -15% · Back to school -10%</div>
+    </div>
+  </div>
+
+</div>
+
 <div class="grid">
 
   <!-- FREE -->
@@ -104,23 +137,9 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
     <div class="plan-period">forever</div>
     <a href="index.html" class="plan-btn plan-btn-free">Get started</a>
     <div class="features">
-      <div class="feat-section">AI Chat</div>
-      <div class="feat-row"><span class="feat-label">AI model</span><span class="feat-val" style="color:var(--text)">Basic</span></div>
-      <div class="feat-row"><span class="feat-label">Code mode</span><span class="feat-val no">✕</span></div>
-      <div class="feat-row"><span class="feat-label">Long memory</span><span class="feat-val no">✕</span></div>
-
-      <div class="feat-section">Images</div>
-      <div class="feat-row"><span class="feat-label">Image generation</span><span class="feat-val no">✕</span></div>
-
-      <div class="feat-section">Stock Simulator</div>
-      <div class="feat-row"><span class="feat-label">Buy &amp; sell stocks</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Advanced charts</span><span class="feat-val no">✕</span></div>
-
-      <div class="feat-section">Extras</div>
-      <div class="feat-row"><span class="feat-label">Saved conversations</span><span class="feat-val" style="color:var(--text)">5</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive themes</span><span class="feat-val no">✕</span></div>
-      <div class="feat-row"><span class="feat-label">Secret challenges</span><span class="feat-val no">✕</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive badge</span><span class="feat-val no">✕</span></div>
+      <div class="feat-item">🤖 Basic AI chat</div>
+      <div class="feat-item">📈 Stock simulator</div>
+      <div class="feat-item">💬 5 saved conversations</div>
     </div>
   </div>
 
@@ -132,23 +151,14 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
     <div class="plan-period">per month</div>
     <a href="STRIPE_PRO_LINK" target="_blank" class="plan-btn plan-btn-pro">Subscribe</a>
     <div class="features">
-      <div class="feat-section">AI Chat</div>
-      <div class="feat-row"><span class="feat-label">AI model</span><span class="feat-val" style="color:var(--blue)">Smart</span></div>
-      <div class="feat-row"><span class="feat-label">Code mode</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Long memory</span><span class="feat-val yes">✓</span></div>
-
-      <div class="feat-section">Images</div>
-      <div class="feat-row"><span class="feat-label">Image generation</span><span class="feat-val yes">5 / day</span></div>
-
-      <div class="feat-section">Stock Simulator</div>
-      <div class="feat-row"><span class="feat-label">Buy &amp; sell stocks</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Advanced charts</span><span class="feat-val no">✕</span></div>
-
-      <div class="feat-section">Extras</div>
-      <div class="feat-row"><span class="feat-label">Saved conversations</span><span class="feat-val" style="color:var(--text)">20</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive themes</span><span class="feat-val yes">3</span></div>
-      <div class="feat-row"><span class="feat-label">Secret challenges</span><span class="feat-val no">✕</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive badge</span><span class="feat-val yes">🔷 Pro</span></div>
+      <div class="feat-item">🧠 Smart AI model</div>
+      <div class="feat-item">💻 Code mode</div>
+      <div class="feat-item">🧩 Long memory</div>
+      <div class="feat-item">🎨 5 images / day</div>
+      <div class="feat-item">📈 Stock simulator</div>
+      <div class="feat-item">💬 20 saved conversations</div>
+      <div class="feat-item">🎨 3 exclusive themes</div>
+      <div class="feat-item">🔷 Pro badge</div>
     </div>
   </div>
 
@@ -160,23 +170,16 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
     <div class="plan-period">per month</div>
     <a href="STRIPE_ULTRA_LINK" target="_blank" class="plan-btn plan-btn-ultra">Subscribe</a>
     <div class="features">
-      <div class="feat-section">AI Chat</div>
-      <div class="feat-row"><span class="feat-label">AI model</span><span class="feat-val" style="color:var(--purple)">Very powerful</span></div>
-      <div class="feat-row"><span class="feat-label">Code mode</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Long memory</span><span class="feat-val yes">✓</span></div>
-
-      <div class="feat-section">Images</div>
-      <div class="feat-row"><span class="feat-label">Image generation</span><span class="feat-val yes">20 / day</span></div>
-
-      <div class="feat-section">Stock Simulator</div>
-      <div class="feat-row"><span class="feat-label">Buy &amp; sell stocks</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Advanced charts</span><span class="feat-val yes">✓</span></div>
-
-      <div class="feat-section">Extras</div>
-      <div class="feat-row"><span class="feat-label">Saved conversations</span><span class="feat-val" style="color:var(--text)">50</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive themes</span><span class="feat-val yes">6</span></div>
-      <div class="feat-row"><span class="feat-label">Secret challenges</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive badge</span><span class="feat-val yes">⚡ Ultra</span></div>
+      <div class="feat-item">🚀 Very powerful AI</div>
+      <div class="feat-item">💻 Code mode</div>
+      <div class="feat-item">🧩 Long memory</div>
+      <div class="feat-item">🎨 20 images / day</div>
+      <div class="feat-item">📈 Stock simulator</div>
+      <div class="feat-item">📊 Advanced charts</div>
+      <div class="feat-item">💬 50 saved conversations</div>
+      <div class="feat-item">🎨 6 exclusive themes</div>
+      <div class="feat-item">🔐 Secret challenges</div>
+      <div class="feat-item">⚡ Ultra badge</div>
     </div>
   </div>
 
@@ -189,23 +192,16 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
     <div class="plan-period">per month</div>
     <a href="STRIPE_LEGEND_LINK" target="_blank" class="plan-btn plan-btn-legend">Subscribe</a>
     <div class="features">
-      <div class="feat-section">AI Chat</div>
-      <div class="feat-row"><span class="feat-label">AI model</span><span class="feat-val" style="color:var(--gold)">Most powerful</span></div>
-      <div class="feat-row"><span class="feat-label">Code mode</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Long memory</span><span class="feat-val yes">✓</span></div>
-
-      <div class="feat-section">Images</div>
-      <div class="feat-row"><span class="feat-label">Image generation</span><span class="feat-val yes">Unlimited</span></div>
-
-      <div class="feat-section">Stock Simulator</div>
-      <div class="feat-row"><span class="feat-label">Buy &amp; sell stocks</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Advanced charts</span><span class="feat-val yes">✓</span></div>
-
-      <div class="feat-section">Extras</div>
-      <div class="feat-row"><span class="feat-label">Saved conversations</span><span class="feat-val yes">Unlimited</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive themes</span><span class="feat-val yes">All</span></div>
-      <div class="feat-row"><span class="feat-label">Secret challenges</span><span class="feat-val yes">✓</span></div>
-      <div class="feat-row"><span class="feat-label">Exclusive badge</span><span class="feat-val yes">👑 Legend</span></div>
+      <div class="feat-item">👑 Most powerful AI</div>
+      <div class="feat-item">💻 Code mode</div>
+      <div class="feat-item">🧩 Long memory</div>
+      <div class="feat-item">🎨 Unlimited images</div>
+      <div class="feat-item">📈 Stock simulator</div>
+      <div class="feat-item">📊 Advanced charts</div>
+      <div class="feat-item">💬 Unlimited conversations</div>
+      <div class="feat-item">🎨 All exclusive themes</div>
+      <div class="feat-item">🔐 Secret challenges</div>
+      <div class="feat-item">👑 Legend badge</div>
     </div>
   </div>
 
