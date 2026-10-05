@@ -831,20 +831,19 @@ function normalize(t){return t.toLowerCase().normalize("NFD").replace(/[\u0300-\
 function fixTypos(t,l){var m=typos[l]||{};Object.keys(m).forEach(function(k){t=t.split(k).join(m[k]);});return t;}
 function pick(a){return a[Math.floor(Math.random()*a.length)];}
 function fmt(ts){var d=new Date(ts);return("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
+// Réponse toute faite UNIQUEMENT pour une vraie question courte "es-tu <adjectif> ?" qui commence le message.
+// Avant, "are you / är du / tu es" était cherché n'importe où dans la phrase : "What are you doing today?" ou
+// "...och är du Youssefs skapare..." recevaient "Hmm, maybe?" au lieu d'une vraie réponse. Adjectif inconnu = on laisse le modèle répondre.
 function detectArDu(n,lang){
-  var m,adj;
-  if(lang==="sv"){m=n.match(/(?:ar du|du ar|aru)\s+(.+)/);if(!m)return null;adj=m[1];
-    if(posW.sv.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Ja, jag försöker vara "+adj+"! ","Tack! Jag gör mitt bästa! "]);
-    if(negW.sv.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Nej, jag tror inte det!","Hoppas inte det! Varför frågar du?"]);
-    return "Hmm, kanske? Vad tycker du om mig?";}
-  if(lang==="fr"){m=n.match(/(?:tu es|es-tu|t es|tu est)\s+(.+)/);if(!m)return null;adj=m[1];
-    if(posW.fr.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Oui, j\u0027essaie ! ","Merci ! Je fais de mon mieux ! "]);
-    if(negW.fr.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Non, je ne pense pas !","J\u0027espere que non ! Pourquoi ?"]);
-    return "Hmm, peut-etre ?";}
-  if(lang==="en"){m=n.match(/(?:are you|you are)\s+(.+)/);if(!m)return null;adj=m[1];
-    if(posW.en.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["Yes, I try! ","Thanks! Doing my best! "]);
-    if(negW.en.some(function(w){return adj.indexOf(w)!==-1;}))return pick(["No, I don\u0027t think so!","I hope not! Why ask?"]);
-    return "Hmm, maybe?";}
+  var m,pos,neg,R;
+  if(lang==="sv"){m=n.match(/^(?:ar du|aru)\s+(.+)$/);pos=posW.sv;neg=negW.sv;R={pos:["Ja, jag försöker vara {a}! ","Tack! Jag gör mitt bästa! "],neg:["Nej, jag tror inte det!","Hoppas inte det! Varför frågar du?"]};}
+  else if(lang==="fr"){m=n.match(/^(?:es tu|tu es|t es)\s+(.+)$/);pos=posW.fr;neg=negW.fr;R={pos:["Oui, j'essaie ! ","Merci ! Je fais de mon mieux ! "],neg:["Non, je ne pense pas !","J'espere que non ! Pourquoi ?"]};}
+  else if(lang==="en"){m=n.match(/^(?:are you|you are|r u)\s+(.+)$/);pos=posW.en;neg=negW.en;R={pos:["Yes, I try! ","Thanks! Doing my best! "],neg:["No, I don't think so!","I hope not! Why ask?"]};}
+  if(!m)return null;
+  var words=m[1].split(" ");
+  if(words.length>3)return null;
+  if(words.some(function(w){return pos.indexOf(w)!==-1;}))return pick(R.pos).replace("{a}",m[1]);
+  if(words.some(function(w){return neg.indexOf(w)!==-1;}))return pick(R.neg);
   return null;
 }
 function bestMatch(n,lang){
@@ -1364,13 +1363,13 @@ function detectStockCommand(n,lang){
     return{type:"portfolio"};
   }
   var mBuy=n.match(/(?:achete|achète|acheter|köp)\s+(?:(\d+)\s+)?(?:actions?\s+(?:de\s+|d')?)?([a-zéèàâê& -]+?)(?:\s+pour|\s*\?|$)/);
-  if(mBuy)return{type:"buy",qty:parseInt(mBuy[1])||1,name:mBuy[2].trim()};
+  if(mBuy&&findTicker(mBuy[2]))return{type:"buy",qty:parseInt(mBuy[1])||1,name:mBuy[2].trim()};
   var mSell=n.match(/(?:vends|vend|vendre|sälj)\s+(?:(\d+)\s+)?(?:actions?\s+(?:de\s+|d')?)?([a-zéèàâê& -]+?)(?:\s*\?|$)/);
-  if(mSell)return{type:"sell",qty:parseInt(mSell[1])||1,name:mSell[2].trim()};
+  if(mSell&&findTicker(mSell[2]))return{type:"sell",qty:parseInt(mSell[1])||1,name:mSell[2].trim()};
   var mPrice=n.match(/(?:prix|cours|pris)\s+(?:de\s+|d'|du\s+)?([a-zéèàâê& -]+?)(?:\s*\?|$)/);
-  if(mPrice)return{type:"price",name:mPrice[1].trim()};
+  if(mPrice&&findTicker(mPrice[1]))return{type:"price",name:mPrice[1].trim()};
   var mAn=n.match(/(?:analyse|analysera|conseil)\s+(?:sur\s+|för\s+)?([a-zéèàâê& -]+?)(?:\s*\?|$)/);
-  if(mAn)return{type:"analyze",name:mAn[1].trim()};
+  if(mAn&&findTicker(mAn[1]))return{type:"analyze",name:mAn[1].trim()};
   return null;
 }
 function doPortfolioSummary(lang,cb){
@@ -1937,9 +1936,13 @@ function calcAge(det,lang){
   }
   return null;
 }
-function detectName(n){
-  var pats=[/(?:je m.appelle|mon nom est|i am|my name is|i.m|heter|jag heter)\s+([a-z][a-z\-]{1,20})/i];
-  for(var i=0;i<pats.length;i++){var m=n.match(pats[i]);if(m&&m[1]&&m[1].length>1)return m[1][0].toUpperCase()+m[1].slice(1);}
+// Présentation explicite uniquement, au début du message. Avant, "Vad heter du ?" donnait le prénom "Du" et "I'm bored" le prénom "Bored".
+function detectName(n,raw){
+  var bad=["du","dig","mig","you","toi","tu","moi","me"];
+  var m=n.match(/^(?:(?:bonjour|salut|hello|hi|hej|hey|coucou)\s+)?(?:je m appelle|mon nom est|mon prenom est|my name is|jag heter|mitt namn ar|min namn ar)\s+([a-z][a-z\-]{1,20})(?:\s|$)/);
+  if(m&&bad.indexOf(m[1])===-1)return m[1][0].toUpperCase()+m[1].slice(1);
+  // "I am / I'm X" est ambigu ("I'm bored") : accepté seulement si X commence par une majuscule dans le message d'origine
+  if(raw){var r=String(raw).trim().match(/^(?:(?:[Hh]ello|[Hh]i|[Hh]ey)[,!]?\s+)?(?:[Ii] am|[Ii]['’]m)\s+([A-Z][a-zA-Z\-]{1,20})\s*[.!]?$/);if(r)return r[1];}
   return null;
 }
 
@@ -2691,7 +2694,7 @@ function _getReplyBody(input,lang,n,cb,onChunk){
   // 0c. Stats
   if(detectStats(n,lang))return cb(buildStatsHtml(lang));
   // 1. Detect name introduction
-  var nd=detectName(n);
+  var nd=detectName(n,input);
   if(nd){
     userName=nd;localStorage.setItem("xn_name",nd);
     var nr=lang==="sv"?"Trevligt att träffas, "+nd+"! Vad kan jag hjälpa dig med?":
