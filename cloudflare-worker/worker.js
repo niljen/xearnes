@@ -1,10 +1,10 @@
 // Xearnes AI Worker — Cloudflare Edge
-// Proxy vers Ollama auto-hébergé sur Oracle Cloud (Gemma 2 2B), via Cloudflare Tunnel
+// Proxy vers Ollama auto-hébergé sur Oracle Cloud (Gemma 3 1B), via Cloudflare Tunnel
 // NOTE : l'URL du tunnel change si le service cloudflared redémarre côté serveur —
 // dans ce cas, mettre à jour OLLAMA_URL ci-dessous puis redéployer.
 
 const OLLAMA_URL = "https://saskatchewan-validation-style-essential.trycloudflare.com/api/chat";
-const OLLAMA_MODEL = "gemma2:2b";
+const OLLAMA_MODEL = "gemma3:1b";
 
 const ALLOWED_ORIGINS = [
   "https://xearnes.com",
@@ -46,7 +46,8 @@ export default {
       messages: body.messages || [],
       stream: wantsStream,
       options: {
-        num_predict: 400, // limite la longueur de réponse — plus rapide en CPU
+        num_predict: 600, // plafond de longueur (le prompt demande 2-5 phrases, donc rarement atteint)
+        temperature: 0.3, // moins de réponses absurdes avec un petit modèle (1B) qu'avec la valeur par défaut ~0.8
       },
     };
 
