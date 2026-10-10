@@ -290,7 +290,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <span id="userCountBadge" style="display:none">👥 <span id="userCountNum"></span></span>
   </div>
   <div class="header-btns">
-    <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#129302;</span>
+    <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#11088;</span>
     <select id="colorSelect" class="lang-select" style="max-width:86px" onchange="setColorTheme(this.value)" title="Couleur">
       <option value="">⭐ Default</option>
       <option value="blue">🔵 Blue</option>
@@ -376,7 +376,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   <div class="chat-wrap">
     <div class="chat" id="chat">
       <div class="welcome" id="welcome">
-        <div class="wl-icon">&#129302;</div>
         <h2 id="welcomeTitle">Xearnes</h2>
         <p id="welcomeDesc">...</p>
         <div class="chips" id="chips"></div>
@@ -450,7 +449,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
   &#128266;
 </button>
 <button class="popup-btn" id="popupBtn" onclick="togglePopup()" title="Xearnes Mini (Ctrl+Shift+X)">
-  &#129302;
+  &#11088;
   <span class="pb-badge" id="popupBadge"></span>
 </button>
 <div class="mini-popup" id="miniPopup">
@@ -2297,9 +2296,9 @@ function _doShareCount(lang){
 function shareXearnes(){
   var url="https://niljen.github.io/xearnes/";
   var lang=currentLang||"fr";
-  var text=lang==="fr"?"Découvre Xearnes, une IA créée par un jeune de 11 ans ! 🤖⚡":
-           lang==="sv"?"Kolla in Xearnes, en AI skapad av en 11-åring! 🤖⚡":
-           "Check out Xearnes, an AI created by an 11-year-old! 🤖⚡";
+  var text=lang==="fr"?"Découvre Xearnes, une IA créée par un jeune de 11 ans ! ⚡":
+           lang==="sv"?"Kolla in Xearnes, en AI skapad av en 11-åring! ⚡":
+           "Check out Xearnes, an AI created by an 11-year-old! ⚡";
   if(navigator.share){
     // Compter seulement si l'utilisateur confirme le partage
     navigator.share({title:"Xearnes AI",text:text,url:url}).then(function(){
@@ -3697,7 +3696,7 @@ function diagVoices(){
   var html="<strong>Total voix : "+all.length+"</strong><br>";
   html+="🔵 Google TTS : "+(google.length?google.map(function(v){return v.name;}).join(", "):"<span style='color:#e74c3c'>AUCUNE ❌</span>")+"<br>";
   html+="🇸🇪 Voix suédoises : "+(sv.length?sv.map(function(v){return v.name+(v.name.toLowerCase().indexOf("google")!==-1?" ✅":" 🔇");}).join(", "):"<span style='color:#e74c3c'>AUCUNE ❌</span>")+"<br>";
-  html+="🤖 eSpeak : "+(espeak.length?espeak.map(function(v){return v.name;}).join(", "):"aucun")+"<br>";
+  html+="🔊 eSpeak : "+(espeak.length?espeak.map(function(v){return v.name;}).join(", "):"aucun")+"<br>";
   html+=_isChromebook?"📱 <strong>Chromebook détecté</strong>":"💻 PC/Mac";
   el.innerHTML=html;
 }
@@ -3811,40 +3810,44 @@ function doSpeak(text,voice,rate,pitch){
     },10000);
   },150);
 }
-// ── MESSAGE DE BIENVENUE QUOTIDIEN ──────────────────────────────
+// ── MESSAGE D'ACCUEIL (selon l'heure, le prénom et le retour de l'utilisateur) ──
+var _xnGreetings={
+  fr:{
+    morning:["Bonjour {name} ! Xearnes est prêt pour une toute nouvelle journée.","Salut {name} ! J'espère que tu as bien dormi — Xearnes est en ligne.","Debout, {name} ! Comment puis-je t'aider aujourd'hui ?"],
+    day:["Salut {name} ! Content de te revoir. Qu'est-ce qu'on fait ?","Bonjour {name} ! Xearnes à ton service !","Hey {name} ! Une question, une tâche, une idée ? Je suis là."],
+    evening:["Bonsoir {name} ! Xearnes est encore réveillé, comme toujours.","Bonsoir {name} ! Comment puis-je t'aider ce soir ?","Salut {name}, longue journée ? Raconte-moi tout."],
+    back:["Hey {name}, content de te revoir !","Bon retour {name} ! On reprend là où on s'était arrêtés ?","{name} ! Xearnes t'attendait. On y va !"],
+    future:["Système initialisé. Bienvenue, {name}.","Xearnes v1.0 en ligne. Bonjour, {name}. En attente d'instructions."]
+  },
+  sv:{
+    morning:["God morgon {name}! Xearnes är redo för en ny dag.","Morgon {name}! Hoppas du sovit gott — Xearnes är online.","God morgon {name}! Hur kan jag hjälpa dig idag?"],
+    day:["Hej {name}! Kul att se dig igen. Vad står på programmet?","Hejsan {name}! Xearnes till din tjänst!","Hej {name}! En fråga, en uppgift, en idé? Jag är här."],
+    evening:["God kväll {name}! Xearnes är vaken, som alltid.","Kväll {name}! Hur kan jag hjälpa dig ikväll?","Hej {name}, lång dag? Berätta!"],
+    back:["Hej {name}, kul att du är tillbaka!","Välkommen tillbaka {name}! Ska vi fortsätta där vi slutade?","{name}! Xearnes har väntat på dig. Kör igång!"],
+    future:["Systemet initierat. Välkommen, {name}.","Xearnes v1.0 online. Hej, {name}. Väntar på instruktioner."]
+  },
+  en:{
+    morning:["Good morning {name}! Xearnes is ready for a brand new day.","Morning {name}! Hope you slept well — Xearnes is online.","Rise and shine, {name}! How can I help you today?"],
+    day:["Hi {name}! Great to see you again. What's on the agenda?","Hello {name}! Xearnes at your service!","Hey {name}! A question, a task, an idea? I'm here."],
+    evening:["Good evening {name}! Xearnes is still up, as always.","Evening {name}! How can I help you tonight?","Hi {name}, long day? Tell me all about it."],
+    back:["Hey {name}, good to see you again!","Welcome back {name}! Shall we pick up where we left off?","{name}! Xearnes was waiting for you. Let's go!"],
+    future:["System initialized. Welcome, {name}.","Xearnes v1.0 online. Hello, {name}. Awaiting instructions."]
+  }
+};
 function getDailyWelcome(lang){
-  var day=new Date().getDay(); // 0=dim,1=lun,...,6=sam
-  var msgs={
-    fr:[
-      "Bon dimanche ! Détends-toi et pose-moi des questions 😌",
-      "Bonne semaine ! On commence fort aujourd hui 💪",
-      "Mardi = jour parfait pour apprendre quelque chose de nouveau ! 🧠",
-      "Mercredi — mi-chemin ! On continue à apprendre ! 🧠",
-      "Jeudi, presque le weekend... courage ! 😄",
-      "Vendredi !!! Bonne humeur garantie 🎉",
-      "Weekend ! Mode fun activé, qu est-ce qu on fait ? 🎮"
-    ],
-    sv:[
-      "God söndag! Vila och ställ mig frågor 😌",
-      "God måndag! Vi börjar veckan starkt 💪",
-      "Tisdag — perfekt dag att lära sig något nytt! 🧠",
-      "Onsdag — halvvägs! Vi fortsätter lära oss! 🧠",
-      "Torsdag, snart helg... kämpa på! 😄",
-      "Fredag!!! Bra humör garanterat 🎉",
-      "Helg! Roligt läge aktiverat, vad gör vi? 🎮"
-    ],
-    en:[
-      "Happy Sunday! Relax and ask me anything 😌",
-      "Happy Monday! Let's start the week strong 💪",
-      "Tuesday — perfect day to learn something new! 🧠",
-      "Wednesday — halfway there! Keep on learning! 🧠",
-      "Thursday, almost the weekend... keep going! 😄",
-      "Friday!!! Good vibes guaranteed 🎉",
-      "Weekend! Fun mode activated, what are we doing? 🎮"
-    ]
-  };
-  var arr=msgs[lang]||msgs.en;
-  return arr[day];
+  var g=_xnGreetings[lang]||_xnGreetings.en;
+  var h=new Date().getHours();
+  var pick=function(a){return a[Math.floor(Math.random()*a.length)];};
+  // Visiteur de retour (plus de 3 h depuis la dernière visite) : message de retour 1 fois sur 2
+  var last=0;try{last=parseInt(localStorage.getItem("xn_lastvisit")||"0",10)||0;localStorage.setItem("xn_lastvisit",String(Date.now()));}catch(e){}
+  var returning=last>0&&Date.now()-last>3*3600*1000;
+  var set=h>=5&&h<12?g.morning:h>=12&&h<18?g.day:g.evening;
+  var r=Math.random();
+  var s=returning&&r<0.5?pick(g.back):r>0.9?pick(g.future):pick(set);
+  if(userName)return s.replace(/\{name\}/g,userName);
+  // Sans prénom : on retire {name} proprement
+  s=s.replace(/\s?\{name\}/g,"").replace(/\s+([!,.])/g,"$1").replace(/,\s*\./g,".").replace(/^[\s!,.]+/,"").replace(/^./,function(c){return c.toUpperCase();});
+  return lang==="fr"?s.replace(/(\S)([!?])/g,"$1 $2"):s;
 }
 // ── PAGE DE STATS ────────────────────────────────────────────────
 function detectStats(n,lang){
@@ -4234,7 +4237,7 @@ function init(){
   if(savedColor)document.documentElement.setAttribute("data-color",savedColor);
   var cs=document.getElementById("colorSelect");if(cs)cs.value=savedColor;
   // ── Avatar sauvegarde (Feature 6) ──
-  var savedAvatar=localStorage.getItem("xn_avatar")||"&#129302;";
+  var savedAvatar=localStorage.getItem("xn_avatar")||"&#11088;";
   currentAvatar=savedAvatar;
   var av=document.getElementById("xAvatar");if(av)av.innerHTML=savedAvatar;
   var pb=document.getElementById("popupBtn");
@@ -4342,8 +4345,8 @@ var webLinks={
   sydsvenskan:{u:"https://www.sydsvenskan.se",n:"Sydsvenskan",i:"&#127480;&#127466;"},
   khan:{u:"https://fr.khanacademy.org",n:"Khan Academy",i:"&#127979;"},
   duolingo:{u:"https://www.duolingo.com",n:"Duolingo",i:"&#129417;"},
-  claude:{u:"https://claude.ai",n:"Claude AI",i:"&#129302;"},
-  chatgpt:{u:"https://chat.openai.com",n:"ChatGPT",i:"&#129302;"}
+  claude:{u:"https://claude.ai",n:"Claude AI",i:"&#128172;"},
+  chatgpt:{u:"https://chat.openai.com",n:"ChatGPT",i:"&#128172;"}
 };
 function detectOpenWeb(n,lang){
   var m;
@@ -4389,10 +4392,10 @@ function sendXeNotif(text){
   if(!document.hidden&&document.hasFocus())return;
   var plain=text.replace(/<[^>]+>/g," ").replace(/&[a-z]+;/g," ").replace(/\s+/g," ").trim().slice(0,120);
   if(!plain)return;
-  var notif=new Notification("Xearnes 🤖",{
+  var notif=new Notification("Xearnes",{
     body:plain,
     tag:"xearnes",
-    icon:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>"
+    icon:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⭐</text></svg>"
   });
   notif.onclick=function(){window.focus();notif.close();};
   setTimeout(function(){notif.close();},6000);
@@ -4443,8 +4446,8 @@ function addShareBtn(div,rawText){
   div.appendChild(btn);
 }
 // ── FEATURE 6 : AVATAR ──────────────────────────────
-var avatarList=["&#129302;","&#128126;","&#128049;","&#128009;","&#129430;","&#129418;","&#128056;","&#128123;","&#129412;","&#11088;","&#127919;","&#128293;"];
-var currentAvatar=localStorage.getItem("xn_avatar")||"&#129302;";
+var avatarList=["&#11088;","&#128126;","&#128049;","&#128009;","&#129430;","&#129418;","&#128056;","&#128123;","&#129412;","&#11088;","&#127919;","&#128293;"];
+var currentAvatar=localStorage.getItem("xn_avatar")||"&#11088;";
 function cycleAvatar(){
   var idx=avatarList.indexOf(currentAvatar);
   idx=(idx+1)%avatarList.length;
@@ -5082,14 +5085,8 @@ function earnBadge(id){
   xnBadges[id]=Date.now();
   try{localStorage.setItem("xn_badges",JSON.stringify(xnBadges));}catch(e){}
   var b=badgeDefs[id];if(!b)return;
-  var lang=currentLang;
-  var name=b[lang]||b.en;
-  var desc=b.desc[lang]||b.desc.en;
-  var title=lang==="fr"?"🏅 Badge débloqué !":lang==="sv"?"🏅 Märke upplåst!":"🏅 Badge unlocked!";
-  setTimeout(function(){
-    addMsg(title+"<div class='badge-earned-notif' style='display:flex;align-items:center;gap:10px;margin-top:8px;background:rgba(255,215,0,.08);padding:10px;border-radius:10px;border:1px solid var(--accent)'><span style='font-size:2.2rem;line-height:1'>"+b.icon+"</span><div><strong style='color:var(--accent);font-size:.95rem'>"+name+"</strong><br><span style='font-size:.75rem;color:var(--text2)'>"+desc+"</span></div></div>","bot");
-    playBeep();renderBadgePanel();
-  },500);
+  // Plus de message dans le chat (Youssef) : le badge est enregistré, visible dans le panneau des niveaux
+  setTimeout(renderBadgePanel,500);
 }
 function checkBadges(){
   var h=new Date().getHours();
