@@ -296,36 +296,6 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <span id="userCountBadge" style="display:none">👥 <span id="userCountNum"></span></span>
   </div>
   <div class="header-btns">
-    <span class="xearnes-avatar" id="xAvatar" onclick="cycleAvatar()" title="Changer l avatar">&#11088;</span>
-    <select id="colorSelect" class="lang-select" style="max-width:86px" onchange="setColorTheme(this.value)" title="Couleur">
-      <option value="">⭐ Default</option>
-      <option value="blue">🔵 Blue</option>
-      <option value="purple">🟣 Purple</option>
-      <option value="green">🟢 Green</option>
-      <option value="red">🔴 Red</option>
-      <option value="orange">🟠 Orange</option>
-      <option value="diamond" data-tier="pro">💎 Diamond</option>
-      <option value="neon" data-tier="pro">🌸 Neon</option>
-      <option value="fire" data-tier="ultra">🔥 Fire</option>
-      <option value="emerald" data-tier="ultra">💚 Emerald</option>
-      <option value="midnight" data-tier="legend">🌌 Midnight</option>
-      <option value="cosmic" data-tier="legend">✨ Cosmic</option>
-    </select>
-    <select class="lang-select" id="langSelect" onchange="setLang(this.value,true)">
-      <option value="sv">&#127480;&#127466; Svenska</option>
-      <option value="fr">&#127467;&#127479; Francais</option>
-      <option value="en">&#127468;&#127463; English</option>
-      <option value="es">&#127466;&#127480; Espanol</option>
-      <option value="de">&#127465;&#127466; Deutsch</option>
-      <option value="it">&#127470;&#127481; Italiano</option>
-      <option value="pt">&#127477;&#127481; Portugues</option>
-      <option value="ja">&#127471;&#127477; Nihongo</option>
-      <option value="zh">&#127464;&#127475; Zhongwen</option>
-      <option value="ar">&#127480;&#127462; Arabi</option>
-      <option value="ru">&#127479;&#127482; Russkiy</option>
-      <option value="da">&#127465;&#127472; Dansk</option>
-    </select>
-    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Mode jour/nuit">&#9728;</button>
     <button class="icon-btn" id="convBtn" onclick="toggleConvPanel()" title="Conversations">&#128172;</button>
     <span id="tierBadge" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border-radius:20px;padding:2px 10px;font-weight:700;cursor:pointer" onclick="openUpgradeModal()" title="Ton abonnement"></span>
     <span id="internalInd" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:#1a3a2a;color:#4ade80;border:1px solid #4ade80;border-radius:20px;padding:2px 8px;font-weight:700">🔬 Internal</span>
@@ -1075,7 +1045,7 @@ function detectInputLang(text){
 function toggleTheme(){
   var isDark=document.documentElement.getAttribute("data-theme")!=="light";
   document.documentElement.setAttribute("data-theme",isDark?"light":"dark");
-  document.getElementById("themeBtn").textContent=isDark?"☽":"☀";
+  var _tb=document.getElementById("themeBtn");if(_tb)_tb.textContent=isDark?"☽":"☀";
   localStorage.setItem("xn_theme",isDark?"light":"dark");
 }
 // ── STORIES ──
@@ -1622,7 +1592,7 @@ function saveCurrentConversation(){
   if(currentConvId){
     var found=false;
     for(var i=0;i<savedConversations.length;i++){
-      if(savedConversations[i].id===currentConvId){savedConversations[i].messages=convHistory.slice();savedConversations[i].updatedAt=now;savedConversations[i].title=title;found=true;break;}
+      if(savedConversations[i].id===currentConvId){savedConversations[i].messages=convHistory.slice();savedConversations[i].updatedAt=now;if(!savedConversations[i].aiTitle)savedConversations[i].title=title;found=true;break;}
     }
     if(!found)currentConvId=null;
   }
@@ -1635,6 +1605,41 @@ function saveCurrentConversation(){
   if(savedConversations.length>_convMax)savedConversations=savedConversations.slice(0,_convMax);
   try{localStorage.setItem("xn_saved_convs",JSON.stringify(savedConversations));}catch(e){}
   renderConvList();
+  _xnMaybeTitle(currentConvId);
+}
+// ── Titre du chat choisi par l'IA (comme Claude et ChatGPT), une seule fois par conversation ──
+var _titleTried={};
+var _titleSys={
+  fr:"Tu donnes un titre court à une conversation. Réponds uniquement par le titre : 2 à 5 mots, sans guillemets, sans point final, dans la langue du message de l'utilisateur.",
+  sv:"Du ger en kort titel åt en konversation. Svara bara med titeln: 2 till 5 ord, utan citattecken, utan punkt på slutet, på samma språk som användarens meddelande.",
+  en:"You give a short title to a conversation. Reply with the title only: 2 to 5 words, no quotes, no final period, in the same language as the user's message."
+};
+function _cleanTitle(t){
+  if(!t)return "";
+  t=String(t).split("\n")[0].replace(/<[^>]+>/g,"").replace(/^\s*(titre|title|titel)\s*[:\-–]\s*/i,"").replace(/[*_#`"«»“”]/g,"").replace(/^[\s'’-]+|[\s.!:;,'’-]+$/g,"").trim();
+  if((t.match(/[\p{L}\p{N}]/gu)||[]).length<2)return "";
+  if(t.split(/\s+/).length>8||t.length>60)return "";
+  return t.length>40?t.slice(0,38).trim()+"…":t;
+}
+function _xnMaybeTitle(id){
+  if(!id||_titleTried[id])return;
+  var conv=null;for(var i=0;i<savedConversations.length;i++){if(savedConversations[i].id===id){conv=savedConversations[i];break;}}
+  if(!conv||conv.aiTitle)return;
+  var u="",bt="";
+  for(var k=0;k<conv.messages.length;k++){var m=conv.messages[k];if(m.role==="user"&&!u)u=m.text;else if(m.role==="bot"&&u&&!bt){bt=m.text;break;}}
+  if(!u||!bt)return;
+  _titleTried[id]=true;
+  var lang=conv.lang||currentLang;
+  var plain=function(x,n){return String(x).replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,n);};
+  callMistral(_titleSys[lang]||_titleSys.en,[{role:"user",content:(lang==="fr"?"Message : ":lang==="sv"?"Meddelande: ":"Message: ")+plain(u,200)+"\n"+(lang==="fr"?"Réponse : ":lang==="sv"?"Svar: ":"Reply: ")+plain(bt,200)}],function(r){
+    var t=_cleanTitle(r);
+    if(!t)return;
+    for(var i=0;i<savedConversations.length;i++){
+      if(savedConversations[i].id===id){savedConversations[i].title=t;savedConversations[i].aiTitle=true;break;}
+    }
+    try{localStorage.setItem("xn_saved_convs",JSON.stringify(savedConversations));}catch(e){}
+    renderConvList();
+  });
 }
 function renderConvList(){
   var list=document.getElementById("convList");
@@ -4260,7 +4265,7 @@ function init(){
   // ── Mode nuit auto (Feature 1) ──
   var savedTheme=localStorage.getItem("xn_theme")||"dark";
   document.documentElement.setAttribute("data-theme",savedTheme);
-  document.getElementById("themeBtn").textContent=savedTheme==="light"?"☽":"☀";
+  var _tb2=document.getElementById("themeBtn");if(_tb2)_tb2.textContent=savedTheme==="light"?"☽":"☀";
   // ── Couleur sauvegardee (Feature 7) ──
   var savedColor=localStorage.getItem("xn_color")||"";
   if(savedColor)document.documentElement.setAttribute("data-color",savedColor);
