@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confidentialité · Xearnes</title>
+<style>
+:root{--bg:#0a0a0a;--card:#141414;--text:#f0ede4;--text2:#a8a29a;--accent:#DAA520;--border:#3d3218}
+@media (prefers-color-scheme: light){:root{--bg:#faf7ef;--card:#ffffff;--text:#1a1710;--text2:#5c564a;--accent:#9a6f00;--border:#e3d9bd}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 16px 60px}
+main{max-width:720px;margin:0 auto}
+h1{color:var(--accent);font-size:1.6rem;margin:0 0 4px}
+h2{color:var(--accent);font-size:1.05rem;margin:26px 0 6px}
+p,li{color:var(--text)}
+ul{padding-left:20px}
+.nav{display:flex;gap:10px;margin:10px 0 22px}
+.nav button{background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:5px 14px;cursor:pointer;font-size:.85rem}
+.nav button.on{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px}
+.todo{color:#f85149;font-weight:700}
+.upd{color:var(--text2);font-size:.8rem;margin-top:30px}
+a{color:var(--accent)}
+section{display:none}
+section.on{display:block}
+</style>
+</head>
+<body>
+<main>
+<div class="nav">
+  <button data-l="fr">Français</button>
+  <button data-l="sv">Svenska</button>
+  <button data-l="en">English</button>
+</div>
+
+<section id="fr">
+  <h1>Confidentialité</h1>
+  <p>Xearnes est un projet de passion, sans publicité. Voici, simplement, ce qui se passe avec tes données.</p>
+
+  <h2>Ce qui reste sur ton appareil</h2>
+  <p>Ton historique de chats, ton score, tes réglages et ton pseudo restent sur ton appareil. Tu peux tout effacer avec le bouton « Supprimer mes données » de la barre de gauche.</p>
+
+  <h2>Ce qui part sur internet</h2>
+  <ul>
+    <li><b>Tes questions</b> sont envoyées pour obtenir une réponse. Elles passent par Cloudflare (société américaine, réseau mondial) puis arrivent sur notre serveur chez Oracle, en Suède. Nous ne gardons pas tes conversations sur nos serveurs. Nos fournisseurs techniques peuvent garder des journaux techniques de base (par exemple l'adresse IP) pour la sécurité.</li>
+    <li><b>Classement et compteur « en ligne » :</b> si tu te connectes avec un pseudo, ton pseudo et ton score sont enregistrés chez Firebase (Google, en Europe). Le compteur « en ligne » n'envoie qu'un numéro de session anonyme.</li>
+    <li><b>Certaines demandes utilisent un service extérieur :</b> la météo (open-meteo, avec ta ville), Wikipédia (avec le sujet), les images (pollinations.ai, avec ta description) et les actualités (via un relais public). La traduction est faite par notre propre modèle.</li>
+    <li><b>Email :</b> facultatif, réservé aux adultes et aux parents, seulement pour retrouver un abonnement.</li>
+  </ul>
+
+  <h2>Ce que nous ne faisons pas</h2>
+  <p>Pas de publicité. Pas de vente de données. Pas d'outil de statistiques.</p>
+
+  <h2>Un conseil</h2>
+  <p>Ne donne jamais ton nom de famille, ton adresse, ton téléphone ou ton école dans le chat ou dans ton pseudo.</p>
+
+  <h2>Tes droits</h2>
+  <p>Tu peux effacer tes données avec le bouton « Supprimer mes données ». Pour toute question ou demande, écris-nous. Si tu penses que tes données ne sont pas bien protégées, tu peux te plaindre à l'autorité suédoise de protection des données (IMY, imy.se).</p>
+
+  <h2>Responsable</h2>
+  <div class="box">Xearnes est exploité par <b>Jens Nilsson</b>, Suède.<br>Contact : <a href="mailto:xearnes.ai@gmail.com">xearnes.ai@gmail.com</a></div>
+</section>
+
+<section id="sv">
+  <h1>Integritet</h1>
+  <p>Xearnes är ett hobbyprojekt utan reklam. Så här hanteras dina uppgifter, enkelt förklarat.</p>
+
+  <h2>Det som stannar på din enhet</h2>
+  <p>Din chatthistorik, dina poäng, dina inställningar och ditt smeknamn stannar på din enhet. Du kan radera allt med knappen "Radera mina data" i vänstermenyn.</p>
+
+  <h2>Det som skickas över internet</h2>
+  <ul>
+    <li><b>Dina frågor</b> skickas för att få ett svar. De går via Cloudflare (amerikanskt företag, globalt nätverk) och kommer till vår server hos Oracle i Sverige. Vi sparar inte dina samtal på våra servrar. Våra tekniska leverantörer kan spara grundläggande tekniska loggar (till exempel IP-adress) av säkerhetsskäl.</li>
+    <li><b>Topplista och "online"-räknare:</b> om du loggar in med ett smeknamn sparas smeknamn och poäng hos Firebase (Google, i Europa). "Online"-räknaren skickar bara ett anonymt sessionsnummer.</li>
+    <li><b>Vissa frågor använder en extern tjänst:</b> väder (open-meteo, med din stad), Wikipedia (med ämnet), bilder (pollinations.ai, med din beskrivning) och nyheter (via en offentlig mellanhand). Översättning görs av vår egen modell.</li>
+    <li><b>E-post:</b> frivillig, endast för vuxna och föräldrar, bara för att hitta en prenumeration.</li>
+  </ul>
+
+  <h2>Det vi inte gör</h2>
+  <p>Ingen reklam. Ingen försäljning av data. Inga statistikverktyg.</p>
+
+  <h2>Ett tips</h2>
+  <p>Skriv aldrig ditt efternamn, din adress, ditt telefonnummer eller din skola i chatten eller i ditt smeknamn.</p>
+
+  <h2>Dina rättigheter</h2>
+  <p>Du kan radera dina data med knappen "Radera mina data". Har du frågor, kontakta oss. Tycker du att dina uppgifter inte skyddas väl kan du klaga hos Integritetsskyddsmyndigheten (IMY, imy.se).</p>
+
+  <h2>Ansvarig</h2>
+  <div class="box">Xearnes drivs av <b>Jens Nilsson</b>, Sverige.<br>Kontakt: <a href="mailto:xearnes.ai@gmail.com">xearnes.ai@gmail.com</a></div>
+</section>
+
+<section id="en">
+  <h1>Privacy</h1>
+  <p>Xearnes is a hobby project with no ads. Here is, simply, what happens with your data.</p>
+
+  <h2>What stays on your device</h2>
+  <p>Your chat history, score, settings and nickname stay on your device. You can erase everything with the "Delete my data" button in the left sidebar.</p>
+
+  <h2>What goes over the internet</h2>
+  <ul>
+    <li><b>Your questions</b> are sent to get an answer. They pass through Cloudflare (a US company with a global network) and arrive at our server at Oracle in Sweden. We do not keep your conversations on our servers. Our technical providers may keep basic technical logs (for example the IP address) for security.</li>
+    <li><b>Leaderboard and "online" counter:</b> if you sign in with a nickname, your nickname and score are stored with Firebase (Google, in Europe). The "online" counter only sends an anonymous session number.</li>
+    <li><b>Some requests use an outside service:</b> weather (open-meteo, with your city), Wikipedia (with the topic), images (pollinations.ai, with your description) and news (through a public relay). Translation is done by our own model.</li>
+    <li><b>Email:</b> optional, for adults and parents only, just to find a subscription.</li>
+  </ul>
+
+  <h2>What we do not do</h2>
+  <p>No ads. No selling data. No analytics tools.</p>
+
+  <h2>A tip</h2>
+  <p>Never share your last name, address, phone number or school in the chat or in your nickname.</p>
+
+  <h2>Your rights</h2>
+  <p>You can erase your data with the "Delete my data" button. For any question or request, contact us. If you think your data is not well protected, you can complain to the Swedish data protection authority (IMY, imy.se).</p>
+
+  <h2>Who is responsible</h2>
+  <div class="box">Xearnes is operated by <b>Jens Nilsson</b>, Sweden.<br>Contact: <a href="mailto:xearnes.ai@gmail.com">xearnes.ai@gmail.com</a></div>
+</section>
+
+<p class="upd">2026-10-12</p>
+</main>
+<script>
+(function(){
+  var ok=["fr","sv","en"];
+  var q=(location.hash||"").replace("#","");
+  var l=ok.indexOf(q)>=0?q:((navigator.language||"en").toLowerCase().slice(0,2));
+  if(ok.indexOf(l)<0)l="en";
+  function show(x){
+    ok.forEach(function(k){document.getElementById(k).className=(k===x?"on":"");});
+    [].forEach.call(document.querySelectorAll(".nav button"),function(b){b.className=(b.getAttribute("data-l")===x?"on":"");});
+    document.documentElement.lang=x;
+  }
+  [].forEach.call(document.querySelectorAll(".nav button"),function(b){b.onclick=function(){show(b.getAttribute("data-l"));};});
+  show(l);
+})();
+</script>
+</body>
+</html>

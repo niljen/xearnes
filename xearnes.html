@@ -281,12 +281,14 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .upg-btn{width:100%;background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border:none;border-radius:10px;padding:9px 12px;font-size:.8rem;font-weight:700;cursor:pointer}
 .upg-btn:hover{filter:brightness(1.1)}
 .conv-foot .user-btn{width:100%;max-width:none;height:44px;padding:0 10px;border-radius:10px;gap:10px;justify-content:flex-start;font-size:.85rem}
+.priv-row{display:flex;justify-content:space-between;gap:8px;font-size:.68rem}
+.priv-row a,.priv-row button{color:var(--text2);background:none;border:none;cursor:pointer;text-decoration:underline;font-size:.68rem;padding:0}
+.priv-row a:hover,.priv-row button:hover{color:var(--accent)}
 .up-av{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0}
 .up-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .conv-empty{text-align:center;color:var(--text2);font-size:.78rem;padding:24px 10px;line-height:1.9}
 @media(max-width:640px){.conv-panel{position:fixed;top:0;left:0;bottom:0;z-index:100;width:270px}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/lib/index.min.js"></script>
 </head>
 <body>
 <header>
@@ -348,6 +350,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <div class="conv-foot">
       <button class="upg-btn" id="upgBtn" onclick="openUpgradeModal()" title="Abonnements">&#128640; Upgrade</button>
       <button class="user-btn" id="userBtn" onclick="openLoginModal()">&#128100; Connexion</button>
+      <div class="priv-row"><a href="privacy.html" target="_blank" id="privLink">Confidentialité</a><button id="delDataBtn" onclick="deleteMyData()">Supprimer mes données</button></div>
     </div>
   </div>
   <div class="chat-wrap">
@@ -1172,7 +1175,7 @@ function detectImageRequest(n,lang){
 }
 function buildImageHtml(prompt,lang){
   var url="https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt)+"?width=400&height=300&nologo=true";
-  var lbl=lang==="fr"?"Image IA :":lang==="sv"?"AI-bild:":"AI image:";
+  var lbl=lang==="fr"?"Image IA (service externe) :":lang==="sv"?"AI-bild (extern tjänst):":"AI image (external service):";
   var loading=lang==="fr"?"Génération...":lang==="sv"?"Skapar...":"Generating...";
   return "<div class='img-card'><div class='ic-prompt'>"+lbl+" "+prompt+"</div><img class='ic-img' src='"+url+"' alt='"+prompt+"' style='opacity:0' onload='this.style.opacity=1;this.nextSibling.style.display=\"none\"'><div class='ic-loading'>"+loading+"</div></div>";
 }
@@ -1199,23 +1202,14 @@ function detectTranslation(n,lang){
   return null;
 }
 function fetchTranslation(text,from,to,cb){
-  fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(text)+"&langpair="+from+"|"+to)
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.responseStatus!==200){cb(null);return;}
-      var res=d.responseData.translatedText||"";
-      // Vérifications anti-spam / anti-template :
-      // 1. Contient des placeholders %s %d = email système → ignorer
-      if(/%[sd]/.test(res)){cb(null);return;}
-      // 2. Résultat beaucoup trop long par rapport à l'original → mauvaise traduction
-      if(res.length>text.length*6+80){cb(null);return;}
-      // 3. Identique à l'original = pas traduit
-      if(res.toLowerCase().trim()===text.toLowerCase().trim()){cb(null);return;}
-      // 4. Contient des mots suspects (template d'email)
-      if(/sincerely|dear sir|click here|unsubscribe/i.test(res)){cb(null);return;}
-      cb(res);
-    })
-    .catch(function(){cb(null);});
+  // Traduction par notre propre modele : le texte de l'enfant n'est plus envoye a un site externe
+  var names={fr:"French",sv:"Swedish",en:"English",es:"Spanish",de:"German",it:"Italian",pt:"Portuguese",ja:"Japanese",zh:"Chinese",ar:"Arabic",ru:"Russian",da:"Danish"};
+  callMistral("You are a translator. Translate the user's text from "+(names[from]||from)+" to "+(names[to]||to)+". Reply with the translation only: no quotes, no explanation.",[{role:"user",content:text}],function(res){
+    if(!res){cb(null);return;}
+    res=res.split("\n")[0].replace(/^["«\s]+|["»\s]+$/g,"");
+    if(!res||res.toLowerCase()===text.toLowerCase().trim()||res.length>text.length*6+80){cb(null);return;}
+    cb(res);
+  });
 }
 function buildTranslationHtml(original,result,toLang){
   return "<div class='tr-card'><div class='tr-from'>"+original+"</div><div class='tr-result'>"+result+"</div></div>";
@@ -1724,16 +1718,31 @@ function toggleConvPanel(){
   if(p&&window.innerWidth>640&&!closed)p.classList.add("open");
 })();
 var _sidebarTxt={
-  fr:{title:"💬 Chats récents",nw:"➕ Nouveau",empty:"Aucune conversation<br>sauvegardée"},
-  sv:{title:"💬 Senaste chattar",nw:"➕ Ny",empty:"Inga sparade<br>konversationer"},
-  en:{title:"💬 Recent chats",nw:"➕ New",empty:"No saved<br>conversations"}
+  fr:{title:"💬 Chats récents",nw:"➕ Nouveau",empty:"Aucune conversation<br>sauvegardée",priv:"Confidentialité",del:"Supprimer mes données"},
+  sv:{title:"💬 Senaste chattar",nw:"➕ Ny",empty:"Inga sparade<br>konversationer",priv:"Integritet",del:"Radera mina data"},
+  en:{title:"💬 Recent chats",nw:"➕ New",empty:"No saved<br>conversations",priv:"Privacy",del:"Delete my data"}
 };
 function _updateSidebarText(l){
   var t=_sidebarTxt[l]||_sidebarTxt.en;
   var a=document.getElementById("convTitle");if(a)a.textContent=t.title;
   var n=document.getElementById("convNewBtn");if(n)n.textContent=t.nw;
+  var pl=document.getElementById("privLink");if(pl)pl.textContent=t.priv;
+  var dd=document.getElementById("delDataBtn");if(dd)dd.textContent=t.del;
   if(typeof renderUserBar==="function")renderUserBar();
   renderConvList();
+}
+// ── SUPPRIMER MES DONNEES ──
+function deleteMyData(){
+  var q={fr:"Supprimer toutes tes données sur cet appareil (historique, score, profil) ?",sv:"Radera alla dina data på den här enheten (historik, poäng, profil)?",en:"Delete all your data on this device (history, score, profile)?"};
+  if(!confirm(q[currentLang]||q.en))return;
+  try{
+    if(typeof FIREBASE_URL!=="undefined"&&FIREBASE_URL){
+      if(xnUser){var _k=xnUser.name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,40);fetch(FIREBASE_URL+"/xearnes/leaderboard/"+_k+".json",{method:"DELETE"}).catch(function(){});}
+      fetch(FIREBASE_URL+"/xearnes/presence/"+_sessionId+".json",{method:"DELETE"}).catch(function(){});
+    }
+  }catch(e){}
+  try{var ks=[];for(var i=0;i<localStorage.length;i++)ks.push(localStorage.key(i));ks.forEach(function(k){if(k&&k.indexOf("xn_")===0)localStorage.removeItem(k);});}catch(e){}
+  setTimeout(function(){location.reload();},500);
 }
 // ── MÉMOIRE DE CONVERSATION ──
 function addToConvHistory(role,text){
@@ -2189,6 +2198,8 @@ function _pollRunpod(jobId,cb,tries){
 // ── MÉMOIRE LONGUE (Pro+) ──
 var _xnMemory={};
 try{_xnMemory=JSON.parse(localStorage.getItem("xn_long_memory")||"{}");}catch(e){}
+// Purge des anciennes donnees personnelles deja memorisees
+if(_xnMemory.name||_xnMemory.age||_xnMemory.city){delete _xnMemory.name;delete _xnMemory.age;delete _xnMemory.city;try{localStorage.setItem("xn_long_memory",JSON.stringify(_xnMemory));}catch(e){}}
 function _saveMemoryFact(key,value){
   _xnMemory[key]=value;
   try{localStorage.setItem("xn_long_memory",JSON.stringify(_xnMemory));}catch(e){}
@@ -2196,9 +2207,7 @@ function _saveMemoryFact(key,value){
 function _extractMemoryFromMessage(text){
   var t=text.toLowerCase();
   var m;
-  if((m=t.match(/je m.appelle\s+([a-zàéèêëîïôùûüç]{2,20})/i)))_saveMemoryFact("name",m[1]);
-  if((m=t.match(/j.ai\s+(\d{1,2})\s+ans/i)))_saveMemoryFact("age",m[1]+" ans");
-  if((m=t.match(/j.habite\s+(?:à|a|en|au)?\s*([a-zàéèêëîïôùûüç\s]{2,30})/i)))_saveMemoryFact("city",m[1].trim());
+  // Prenom, age et ville ne sont plus memorises (donnees personnelles d'enfants) : seulement les centres d'interet
   if(t.indexOf("j'aime")!==-1||t.indexOf("j aime")!==-1){
     var likes=_xnMemory.likes||[];
     var subjects=["football","musique","minecraft","roblox","manga","anime","basketball","tennis","natation","cuisine","dessin","lecture","maths","science","histoire"];
@@ -2211,9 +2220,6 @@ function _buildMemoryPrompt(){
   var facts=Object.keys(_xnMemory);
   if(facts.length===0)return"";
   var lines=["MÉMOIRE UTILISATEUR (souviens-toi toujours de ces infos) :"];
-  if(_xnMemory.name)lines.push("- Prénom : "+_xnMemory.name);
-  if(_xnMemory.age)lines.push("- Âge : "+_xnMemory.age);
-  if(_xnMemory.city)lines.push("- Ville : "+_xnMemory.city);
   if(_xnMemory.likes&&_xnMemory.likes.length)lines.push("- Aime : "+_xnMemory.likes.join(", "));
   return"\n\n"+lines.join("\n");
 }
@@ -2662,11 +2668,21 @@ function checkSafetyWithHaiku(input,lang,cb){
   // Filtre local suffisant — pas besoin d'un appel API supplémentaire
   cb(false);
 }
+var _crisisRe=/(me tuer|veux mourir|envie de mourir|me suicider|suicide|me faire du mal|plus envie de vivre|vill do|ta mitt liv|ta livet av mig|skada mig sjalv|sjalvmord|kill myself|want to die|hurt myself|end my life|self harm)/;
+var _crisisReply={
+  fr:"Je suis vraiment désolé que tu ressentes ça 💙 Tu n'es pas seul(e). Parle tout de suite à un adulte de confiance (un parent, un enseignant). En France, tu peux appeler gratuitement le 119 (enfance en danger) ou le 3114 (prévention du suicide), jour et nuit. Si tu es en danger, appelle le 112.",
+  sv:"Jag är så ledsen att du känner så 💙 Du är inte ensam. Prata med en vuxen du litar på just nu. I Sverige kan du ringa BRIS på 116 111 (gratis) eller Självmordslinjen på 90101. Är du i fara, ring 112.",
+  en:"I'm really sorry you feel this way 💙 You are not alone. Please talk to a trusted adult right now. If you are in danger, call your local emergency number (112 in Europe). In many European countries children can call the helpline 116 111."
+};
+function detectCrisis(n,lang){return _crisisRe.test(n)?(_crisisReply[lang]||_crisisReply.en):null;}
 function getReply(input,lang,cb,onChunk){
   // Point de passage unique : quelle que soit la route (blague, histoire, jeu...), une réponse vide/null ne s'affiche jamais ("null" dans le chat).
   var _cbRaw=cb;cb=function(r){_cbRaw((r===null||r===undefined||r==="")?_modelFailReply(lang):r);};
   var n=normalize(input.trim().toLowerCase());
   n=fixTypos(n,lang);
+  // 💙 Detresse / pensees de se faire du mal : reponse bienveillante avec numeros d'aide (avant tout le reste)
+  var _crisis=detectCrisis(n,lang);
+  if(_crisis)return cb(_crisis);
   // 🎮 CHEAT CODES
   var _cheatRes=detectCheat(input,lang);
   if(_cheatRes)return cb(_cheatRes);
@@ -4197,8 +4213,8 @@ function stopAlwaysOn(){
 function loadUserCount(){}
 function init(){
   _updateTierBadge();
-  if(!_xnEmail){setTimeout(openEmailModal,1500);}
-  else{checkSubscription(_xnEmail,null);}
+  // Plus de popup email automatique : l'email est facultatif et reserve aux adultes/parents (abonnement)
+  if(_xnEmail){checkSubscription(_xnEmail,null);}
   // Streak
   (function(){
     var today=new Date().toISOString().slice(0,10);
@@ -5297,7 +5313,7 @@ function updatePresence(remove){
     return;
   }
   // Écrire notre présence
-  var myData={ts:Date.now(),name:xnUser?xnUser.name:null};
+  var myData={ts:Date.now(),name:null}; // session anonyme : le pseudo n'est plus envoye
   fetch(myUrl,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(myData)})
     .then(function(){return fetch(FIREBASE_URL+"/xearnes/presence.json");})
     .then(function(r){return r.json();})
@@ -5549,7 +5565,7 @@ window.addEventListener("load",init);
   <div style="background:#141414;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:360px;width:90%;text-align:center">
     <div style="font-size:2rem;margin-bottom:8px">✉️</div>
     <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:8px">Connecte-toi à Xearnes</h2>
-    <p style="color:#a8a29a;font-size:.85rem;margin-bottom:18px">Entre ton email pour accéder à ton abonnement et garder ton profil.</p>
+    <p style="color:#a8a29a;font-size:.85rem;margin-bottom:18px">Réservé aux adultes et aux parents. Entre ton email seulement pour retrouver un abonnement déjà payé. Il n'est pas nécessaire pour discuter avec Xearnes.</p>
     <input id="emailInput" type="email" placeholder="ton@email.com" style="width:100%;background:#0a0a0a;border:1px solid #3d3218;color:#f0ede4;border-radius:8px;padding:9px 12px;font-size:.9rem;margin-bottom:8px;outline:none">
     <div id="emailErr" style="color:#f85149;font-size:.78rem;min-height:18px;margin-bottom:8px"></div>
     <button onclick="submitEmail()" style="width:100%;background:#DAA520;color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:8px">Continuer</button>
@@ -5584,7 +5600,7 @@ window.addEventListener("load",init);
         <a href="STRIPE_PRO_LINK" target="_blank" style="background:#4ea8de;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
     </div>
-    <p style="color:#a8a29a;font-size:.75rem;margin-bottom:14px">Après le paiement, reviens ici et entre ton email pour activer ton accès.</p>
+    <p style="color:#a8a29a;font-size:.75rem;margin-bottom:14px">Le paiement est réservé aux adultes et aux parents. Après le paiement, reviens ici et <a href="#" onclick="closeUpgradeModal();openEmailModal();return false" style="color:#DAA520">entre ton email</a> pour activer ton accès.</p>
     <div style="display:flex;gap:10px;justify-content:center;align-items:center">
       <a href="pricing.html" target="_blank" style="color:#DAA520;font-size:.82rem;text-decoration:none;border-bottom:1px solid rgba(218,165,32,.3)">See full comparison →</a>
       <button onclick="closeUpgradeModal()" style="background:none;border:1px solid #3d3218;color:#a8a29a;border-radius:8px;padding:8px 24px;font-weight:700;cursor:pointer;font-size:.85rem">Fermer</button>
