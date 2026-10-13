@@ -4,12 +4,14 @@
 // dans ce cas, mettre à jour OLLAMA_URL ci-dessous puis redéployer.
 
 const OLLAMA_URL = "https://saskatchewan-validation-style-essential.trycloudflare.com/api/chat";
-const OLLAMA_MODEL = "gemma3:1b";
+const OLLAMA_MODEL = "gemma3:4b"; // modèle par défaut (choix de Youssef)
+const OLLAMA_FALLBACK_MODEL = "gemma3:1b"; // secours si le premier ne répond pas
+const OLLAMA_HEADERS_TIMEOUT_MS = 45000; // si pas de début de réponse après 45 s, on bascule sur le secours
 
 // ── Niveau 1 optionnel : RunPod Serverless (GPU), avec repli sur Oracle ──
 // Actif seulement si les variables RUNPOD_ENDPOINT_ID et RUNPOD_API_KEY (secret) sont définies.
 // Sans elles, le Worker se comporte exactement comme avant (Oracle seulement).
-const RUNPOD_MODEL_DEFAULT = "mistralai/Ministral-3-14B-Instruct-2512";
+const RUNPOD_MODEL_DEFAULT = "mistralai/Ministral-3-8B-Instruct-2512"; // le plus petit modèle qui passe nos tests (choix de Youssef : plus de technologie, pas de masse)
 const RUNPOD_FIRST_TOKEN_MS = 8000; // au-delà, on bascule sur Oracle
 const RUNPOD_WAKE_EVERY_MS = 2 * 60 * 1000; // au plus un réveil toutes les 2 min
 let runpodLastWake = 0; // mémoire par instance du Worker, perdue au redémarrage (sans risque : on retombe sur Oracle)
@@ -181,31 +183,41 @@ export default {
 
     // ── Niveau 2 : Oracle (Ollama), comme avant ──
     const ollamaUrl = (env && env.OLLAMA_URL) || OLLAMA_URL;
-    const ollamaBody = {
-      model: (env && env.OLLAMA_MODEL) || OLLAMA_MODEL,
-      messages,
-      stream: wantsStream,
-      options: {
-        num_predict: 600, // plafond de longueur (le prompt demande 2-5 phrases, donc rarement atteint)
-        temperature: 0.3, // moins de réponses absurdes avec un petit modèle (1B) qu'avec la valeur par défaut ~0.8
-      },
-    };
+    const models = [(env && env.OLLAMA_MODEL) || OLLAMA_MODEL];
+    const fb = (env && env.OLLAMA_FALLBACK_MODEL) || OLLAMA_FALLBACK_MODEL;
+    if (fb && fb !== models[0]) models.push(fb); // modèle de secours, plus petit et déjà chargé en mémoire
 
-    let res;
-    try {
-      res = await fetch(ollamaUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ollamaBody),
-      });
-      if (!res.ok) {
-        return new Response(JSON.stringify({ error: "Ollama HTTP " + res.status }), {
-          status: 502, // erreur retryable côté front
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let res = null;
+    let lastErr = "";
+    for (const model of models) {
+      const ollamaBody = {
+        model,
+        messages,
+        stream: wantsStream,
+        options: {
+          num_predict: 600, // plafond de longueur (le prompt demande 2-5 phrases, donc rarement atteint)
+          temperature: 0.3, // moins de réponses absurdes avec un petit modèle qu'avec la valeur par défaut ~0.8
+        },
+      };
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), Number(env && env.OLLAMA_HEADERS_TIMEOUT_MS) || OLLAMA_HEADERS_TIMEOUT_MS);
+      try {
+        const r = await fetch(ollamaUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(ollamaBody),
+          signal: ctrl.signal,
         });
+        clearTimeout(timer);
+        if (r.ok) { res = r; break; }
+        lastErr = "Ollama HTTP " + r.status;
+      } catch (e) {
+        clearTimeout(timer);
+        lastErr = "Ollama unreachable: " + e.message;
       }
-    } catch (e) {
-      return new Response(JSON.stringify({ error: "Ollama unreachable: " + e.message }), {
+    }
+    if (!res) {
+      return new Response(JSON.stringify({ error: lastErr }), {
         status: 502, // erreur retryable côté front
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

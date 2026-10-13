@@ -2456,16 +2456,18 @@ function _stripThinking(t){
 var _bannedIdentityRe=/\b(google|gemma|meta|llama|microsoft|phi-?3\.?5?|anthropic|claude|openai|chatgpt|gpt-?\d*|mistral\s*ai|deepseek|qwen|ibm|granite|smollm|hugging\s*face|ai21|cohere|xai\b|inflection|databricks|nvidia|amazon|aws\b|falcon|stability\s*ai)\b/i;
 // 2) Détection générique : "[créé/développé/entraîné...] [par/chez/de] [Nom Propre]" où Nom Propre
 //    n'est PAS Youssef — attrape n'importe quelle entreprise, même celles qu'on ne connaît pas encore.
-var _creatorClaimRe=/\b(entra[îi]n[ée]e?|d[ée]velopp[ée]e?|cr[ée][ée]e?|con[çc]u[e]?|fabriqu[ée]e?|programm[ée]e?|con[çc]ue?)\s+(par|chez|de|au sein de)\s+(?!youssef\b)[A-ZÀ-Ýa-zà-ÿ][a-zà-ÿ]*/i;
+var _creatorClaimRe=/\b(entra[îi]n[ée]e?|d[ée]velopp[ée]e?|cr[ée][ée]e?|con[çc]u[e]?|fabriqu[ée]e?|programm[ée]e?|con[çc]ue?|skapad|skapades|tränad|tränades|utvecklad|utvecklades|byggd|byggdes|created|developed|trained|built|made|designed)\s+(par|chez|de|au sein de|av|by|at)\s+(?!youssef\b|hand\b)[A-ZÀ-Ýa-zà-ÿ][a-zà-ÿ]*/i;
 // Une phrase n'est retirée que si elle parle de l'IA elle-même (1re personne / "mon créateur") ET cite une marque ou un créateur — sinon "conçu par ma grand-mère" ou "IBM est une entreprise" disparaissaient.
-var _selfRefRe=/\b(je suis|j'ai été|j'étais|je m'appelle|moi,? je|mon (cr[ée]ateur|mod[èe]le|d[ée]veloppeur)|ma technologie|m'a (cr[ée]{1,2}|entra[îi]n[ée]|d[ée]velopp[ée]|con[çc]u|fabriqu[ée]|programm[ée])|jag är|jag heter|jag har (skapats|tränats|utvecklats)|jag blev|min (skapare|modell)|i am|i'm|i was|i have been|my (creator|model|developer|maker)|(created|trained|built|made|developed) me)(?![a-zA-ZÀ-ÿ])/i;
+var _selfRefRe=/\b(je suis|j['’]ai été|j['’]étais|je m['’]appelle|moi,? je|mon (cr[ée]ateur|mod[èe]le|d[ée]veloppeur)|ma technologie|m['’]a (cr[ée]{1,2}|entra[îi]n[ée]|d[ée]velopp[ée]|con[çc]u|fabriqu[ée]|programm[ée])|jag är|jag heter|jag har (skapats|tränats|utvecklats)|jag (blev|skapades|tränades|utvecklades|byggdes|gjordes)|min (skapare|modell|utvecklare)|i am|i['’]m|i was|i have been|my (creator|creators|model|developer|developers|maker|makers|parent company|team)|(created|trained|built|made|developed) me)(?![a-zA-ZÀ-ÿ])/i;
 function _scrubIdentity(t){
   t=String(t);
   if(!_bannedIdentityRe.test(t)&&!_creatorClaimRe.test(t))return t;
   var sentences=t.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[t];
   var kept=sentences.filter(function(s){return !(_selfRefRe.test(s)&&(_bannedIdentityRe.test(s)||_creatorClaimRe.test(s)));});
   var result=kept.join("").trim();
-  return result||"Je suis Xearnes, créé par Youssef 😊";
+  if(result)return result;
+  var _l=(typeof currentLang!=="undefined")?currentLang:"fr";
+  return _l==="sv"?"Jag är Xearnes, skapad av Youssef 😊":_l==="en"?"I'm Xearnes, created by Youssef 😊":"Je suis Xearnes, créé par Youssef 😊";
 }
 function sanitizeAI(t){
   t=_stripThinking(t).trim();
