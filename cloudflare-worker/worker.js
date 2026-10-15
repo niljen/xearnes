@@ -1,9 +1,10 @@
 // Xearnes AI Worker — Cloudflare Edge
 // Proxy vers Ollama auto-hébergé sur Oracle Cloud (Gemma 3 1B), via Cloudflare Tunnel
 // NOTE : l'URL du tunnel change si le service cloudflared redémarre côté serveur —
-// dans ce cas, mettre à jour OLLAMA_URL ci-dessous puis redéployer.
+// dans ce cas, mettre à jour le secret OLLAMA_URL (npx wrangler secret put OLLAMA_URL) puis redéployer.
+// Le tunnel ne mène plus à Ollama directement mais à une porte nginx qui n'accepte que POST /api/chat avec le secret OLLAMA_AUTH_KEY.
 
-const OLLAMA_URL = "https://saskatchewan-validation-style-essential.trycloudflare.com/api/chat";
+const OLLAMA_URL = ""; // fourni par le secret OLLAMA_URL (jamais écrit dans le dépôt public)
 const OLLAMA_MODEL = "gemma3:4b"; // modèle par défaut (choix de Youssef)
 const OLLAMA_FALLBACK_MODEL = "gemma3:1b"; // secours si le premier ne répond pas
 const OLLAMA_NONSTREAM_TIMEOUT_MS = 120000; // sans streaming, la réponse n'arrive qu'une fois terminée : on attend plus longtemps
@@ -291,6 +292,14 @@ export default {
 
     // ── Niveau 2 : Oracle (Ollama), comme avant ──
     const ollamaUrl = (env && env.OLLAMA_URL) || OLLAMA_URL;
+    if (!ollamaUrl) {
+      return new Response(JSON.stringify({ error: "Oracle not configured" }), {
+        status: 502,
+        headers: { ...corsHeaders, ...dh, "Content-Type": "application/json" },
+      });
+    }
+    const ollamaHeaders = { "Content-Type": "application/json" };
+    if (env && env.OLLAMA_AUTH_KEY) ollamaHeaders["X-Xearnes-Key"] = env.OLLAMA_AUTH_KEY;
     const models = [(env && env.OLLAMA_MODEL) || OLLAMA_MODEL];
     const fb = (env && env.OLLAMA_FALLBACK_MODEL) || OLLAMA_FALLBACK_MODEL;
     if (fb && fb !== models[0]) models.push(fb); // modèle de secours, plus petit et déjà chargé en mémoire
@@ -312,7 +321,7 @@ export default {
       try {
         const r = await fetch(ollamaUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: ollamaHeaders,
           body: JSON.stringify(ollamaBody),
           signal: ctrl.signal,
         });
