@@ -58,6 +58,33 @@ function difficultyScore(messages) {
   if (t.length < 25 && CHAT_RE.test(t)) score -= 2;
   return score;
 }
+// Questions sur l'identité de l'IA ("qui es-tu", "qui t'a créé", "quel modèle", "es-tu ChatGPT"...) : elles vont toujours sur
+// Oracle (petit modèle), jamais sur RunPod. C'est toujours le modèle qui répond lui-même : rien n'est écrit à l'avance.
+const IDENTITY_RE = new RegExp(
+  [
+    "qui es tu", "qui est tu", "tu es qui", "t es qui", "tu es quoi", "c est quoi ton nom", "comment tu t appelles", "tu t appelles comment", "presente toi", "parle moi de toi",
+    "qui t ?a (?:cree|fait|programme|entraine|developpe|invente|construit)", "qui est ton (?:createur|developpeur|inventeur)", "ton createur",
+    "tu as ete (?:cree|fait|entraine) par", "tu es (?:fait|cree|entraine|developpe|programme) par",
+    "quel(?:le)? (?:modele|ia|intelligence artificielle) (?:es tu|tu es)", "tu es quel(?:le)? (?:modele|ia)",
+    "tu es (?:chatgpt|gpt|gemma|gemini|google|openai|mistral|claude|llama|copilot|siri|alexa)",
+    "quelle (?:entreprise|societe|compagnie) (?:t a|ta|te) (?:cree|entraine|fait|developpe)",
+    "vem ar du", "vad heter du", "berätta om dig", "beratta om dig", "presentera dig",
+    "vem (?:skapade|byggde|gjorde|programmerade|tranade|utvecklade) dig", "vem har (?:skapat|byggt|gjort|tranat|utvecklat) dig", "vem ar din (?:skapare|utvecklare)",
+    "vilken (?:modell|ai) ar du", "vilket foretag (?:skapade|byggde|har tranat|tranade|har skapat|utvecklade) dig",
+    "ar du (?:chatgpt|gpt|gemma|gemini|google|openai|mistral|claude|llama|copilot|siri|alexa)", "var du gjord av",
+    "who are you", "what is your name", "what s your name", "introduce yourself", "tell me about yourself",
+    "who (?:made|created|built|trained|developed|programmed|invented) you", "who is your (?:creator|maker|developer)", "your (?:creator|maker)",
+    "(?:which|what) (?:model|ai) are you", "(?:which|what) company (?:made|created|built|trained|developed) you",
+    "are you (?:chatgpt|gpt|gemma|gemini|google|openai|mistral|claude|llama|copilot|siri|alexa)", "(?:were you|are you) (?:made|created|built|trained) by",
+  ].join("|")
+);
+function plainText(t) {
+  return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+function isIdentityQuestion(messages) {
+  const users = messages.filter((m) => m.role === "user" && typeof m.content === "string");
+  return users.length > 0 && IDENTITY_RE.test(plainText(users[users.length - 1].content));
+}
 function isHard(messages) {
   return difficultyScore(messages) >= 2;
 }
@@ -259,11 +286,12 @@ export default {
       "cfg=" + (env && env.RUNPOD_ENDPOINT_ID && env.RUNPOD_API_KEY ? 1 : 0),
       "score=" + difficultyScore(messages),
       "pii=" + (hasPersonalInfo(messages) ? 1 : 0),
+      "ident=" + (isIdentityQuestion(messages) ? 1 : 0),
     ];
     const dh = { "X-Xearnes-Route": dbg.join(",") };
 
     // ── Niveau 1 : RunPod (si configuré, question difficile, sans donnée personnelle) ──
-    if (env && env.RUNPOD_ENDPOINT_ID && env.RUNPOD_API_KEY && isHard(messages) && !hasPersonalInfo(messages)) {
+    if (env && env.RUNPOD_ENDPOINT_ID && env.RUNPOD_API_KEY && isHard(messages) && !hasPersonalInfo(messages) && !isIdentityQuestion(messages)) {
       await loadState(env);
       const warm = await runpodIsWarm(env);
       dbg.push("warm=" + (warm ? 1 : 0), "job=" + (runpod.wakeJobId ? 1 : 0));
@@ -288,7 +316,7 @@ export default {
       }
     }
 
-    if (env && env.RUNPOD_ENDPOINT_ID && isHard(messages) && !hasPersonalInfo(messages)) bump(env, ctx, "hard_questions");
+    if (env && env.RUNPOD_ENDPOINT_ID && isHard(messages) && !hasPersonalInfo(messages) && !isIdentityQuestion(messages)) bump(env, ctx, "hard_questions");
 
     // ── Niveau 2 : Oracle (Ollama), comme avant ──
     const ollamaUrl = (env && env.OLLAMA_URL) || OLLAMA_URL;
