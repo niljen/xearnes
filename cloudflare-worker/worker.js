@@ -159,15 +159,18 @@ export default {
     const score = difficultyScore(messages);
     const pii = hasPersonalInfo(messages);
     const ident = isIdentityQuestion(messages);
+    // Mode code : l'appli ajoute « MODE CODE ACTIVÉ » au prompt quand il est débloqué. Toutes les questions de code vont
+    // sur le 8B (choix de Youssef : 12/13 au banc de code, rapide et peu coûteux), quel que soit le niveau de l'abonné.
+    const codeMode = messages.some((m) => m.role === "system" && typeof m.content === "string" && m.content.includes("MODE CODE ACTIVÉ"));
 
     // Diagnostic (sans contenu des messages) : pourquoi cette réponse vient d'Oracle ou de RunPod
-    const dbg = ["tier=" + tier, "score=" + score, "pii=" + (pii ? 1 : 0), "ident=" + (ident ? 1 : 0)];
+    const dbg = ["tier=" + tier, "score=" + score, "pii=" + (pii ? 1 : 0), "ident=" + (ident ? 1 : 0), "code=" + (codeMode ? 1 : 0)];
     const dh = { "X-Xearnes-Route": dbg.join(",") };
 
     // ── Niveau 1 : RunPod, selon le niveau : Legend 20B > 14B > 8B ; Pro/Ultra 14B > 8B ; Gratuit 8B ──
     // Jamais pour une donnée personnelle ni pour une question d'identité. Les abonnés ont un seuil de difficulté plus bas.
-    const chain = (TIER_CHAIN[tier] || TIER_CHAIN.free).map((k) => podConfig(env, k)).filter(Boolean);
-    if (chain.length && !pii && !ident && score >= (tier === "free" ? 2 : 1)) {
+    const chain = (codeMode ? ["small"] : TIER_CHAIN[tier] || TIER_CHAIN.free).map((k) => podConfig(env, k)).filter(Boolean);
+    if (chain.length && !pii && !ident && (codeMode || score >= (tier === "free" ? 2 : 1))) {
       // 1. Réveiller le meilleur modèle du niveau s'il dort (budget par modèle et par jour), sans faire attendre le visiteur
       const top = chain[0];
       const stTop = await loadPod(env, top);
@@ -178,7 +181,7 @@ export default {
       for (const cfg of chain) {
         const st = cfg === top ? stTop : await loadPod(env, cfg);
         if (!(await isWarm(env, cfg, st))) continue;
-        const text = await askPod(cfg, messages, TIER_MAX_TOKENS[tier]);
+        const text = await askPod(cfg, messages, codeMode ? Math.max(TIER_MAX_TOKENS[tier], 1500) : TIER_MAX_TOKENS[tier]); // le code a besoin de place
         if (text) {
           st.warmUntil = Date.now() + cfg.idleMs;
           if (ctx && ctx.waitUntil) ctx.waitUntil(savePod(env, cfg, st));
@@ -214,7 +217,7 @@ export default {
         messages,
         stream: wantsStream,
         options: {
-          num_predict: 600, // plafond de longueur (le prompt demande 2-5 phrases, donc rarement atteint)
+          num_predict: codeMode ? 1200 : 600, // plafond de longueur (le prompt demande 2-5 phrases, donc rarement atteint ; le code est plus long)
           temperature: 0.3, // moins de réponses absurdes avec un petit modèle qu'avec la valeur par défaut ~0.8
         },
       };
