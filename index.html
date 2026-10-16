@@ -2670,6 +2670,15 @@ function checkSafetyWithHaiku(input,lang,cb){
   // Filtre local suffisant — pas besoin d'un appel API supplémentaire
   cb(false);
 }
+// 🪪 Questions sur l'identité de l'IA (qui t'a créé, quel modèle, es-tu ChatGPT/Google...) : réponse fixe, écrite à la main.
+// Le modèle n'est pas appelé : il ne peut donc ni se dire ChatGPT/OpenAI/Google, ni inventer son histoire.
+var _identityRe=/(qui t ?a (cree|fait|programme|entraine|developpe|invente|construit)|qui es tu vraiment|tu as ete (cree|fait|entraine) par|tu es (fait|cree|entraine|developpe|programme) par|qui est ton (createur|developpeur|inventeur)|ton createur|quel(le)? (modele|ia|intelligence artificielle) (es tu|tu es)|tu es quel(le)? (modele|ia)|tu es (chatgpt|gpt|gemma|gemini|google|openai|mistral|claude|llama|copilot|siri|alexa)|quelle (entreprise|societe|compagnie) (t a|ta|te) (cree|entraine|fait|developpe)|vem (skapade|byggde|gjorde|programmerade|tranade|utvecklade) dig|vem har (skapat|byggt|gjort|tranat|utvecklat) dig|vem ar din (skapare|utvecklare)|vilken (modell|ai) ar du|vilket foretag (skapade|byggde|har tranat|tranade|har skapat|utvecklade) dig|ar du (chatgpt|gpt|gemma|gemini|google|openai|mistral|claude|llama|copilot|siri|alexa)|var du gjord av|who (made|created|built|trained|developed|programmed|invented) you|who is your (creator|maker|developer)|your (creator|maker)|which (model|ai) are you|what (model|ai) are you|which company (made|created|built|trained|developed) you|what company (made|created|built|trained|developed) you|are you (chatgpt|gpt|gemma|gemini|google|openai|mistral|claude|llama|copilot|siri|alexa)|were you (made|created|built|trained) by|are you made by)/;
+var _identityReply={
+  fr:"Je suis Xearnes, l'assistant IA du projet de Youssef, un garçon de 11 ans de Malmö. 😊 Je suis une intelligence artificielle, pas une personne, et je m'appuie sur des modèles d'IA ouverts.",
+  sv:"Jag är Xearnes, AI-assistenten i Youssefs projekt, en 11-årig pojke från Malmö. 😊 Jag är en artificiell intelligens, inte en människa, och jag bygger på öppna AI-modeller.",
+  en:"I'm Xearnes, the AI assistant of Youssef's project, an 11-year-old boy from Malmö. 😊 I'm an artificial intelligence, not a person, and I'm built on open AI models."
+};
+function detectIdentityQuestion(n,lang){return _identityRe.test(n)?(_identityReply[lang]||_identityReply.en):null;}
 var _crisisRe=/(me tuer|veux mourir|envie de mourir|me suicider|suicide|me faire du mal|plus envie de vivre|vill do|ta mitt liv|ta livet av mig|skada mig sjalv|sjalvmord|kill myself|want to die|hurt myself|end my life|self harm)/;
 var _crisisReply={
   fr:"Je suis vraiment désolé que tu ressentes ça 💙 Tu n'es pas seul(e). Parle tout de suite à un adulte de confiance (un parent, un enseignant). En France, tu peux appeler gratuitement le 119 (enfance en danger) ou le 3114 (prévention du suicide), jour et nuit. Si tu es en danger, appelle le 112.",
@@ -2685,6 +2694,9 @@ function getReply(input,lang,cb,onChunk){
   // 💙 Detresse / pensees de se faire du mal : reponse bienveillante avec numeros d'aide (avant tout le reste)
   var _crisis=detectCrisis(n,lang);
   if(_crisis)return cb(_crisis);
+  // 🪪 Identité : réponse fixe (le modèle ne répond jamais à "qui t'a créé ?")
+  var _ident=detectIdentityQuestion(n,lang);
+  if(_ident)return cb(_ident);
   // 🎮 CHEAT CODES
   var _cheatRes=detectCheat(input,lang);
   if(_cheatRes)return cb(_cheatRes);
