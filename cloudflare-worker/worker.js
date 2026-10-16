@@ -10,18 +10,10 @@ const OLLAMA_FALLBACK_MODEL = "gemma3:1b"; // secours si le premier ne répond p
 const OLLAMA_NONSTREAM_TIMEOUT_MS = 120000; // sans streaming, la réponse n'arrive qu'une fois terminée : on attend plus longtemps
 const OLLAMA_HEADERS_TIMEOUT_MS = 45000; // si pas de début de réponse après 45 s, on bascule sur le secours
 
-// ── Niveau 1 optionnel : RunPod Serverless (GPU), avec repli sur Oracle ──
-// Actif seulement si les variables RUNPOD_ENDPOINT_ID et RUNPOD_API_KEY (secret) sont définies.
-// Sans elles, le Worker se comporte exactement comme avant (Oracle seulement).
-const RUNPOD_MODEL_DEFAULT = "mistralai/Ministral-3-8B-Instruct-2512"; // le plus petit modèle qui passe nos tests (choix de Youssef : plus de technologie, pas de masse)
-const RUNPOD_FIRST_TOKEN_MS = 8000; // au-delà, on bascule sur Oracle
-const RUNPOD_IDLE_MS_DEFAULT = 60000; // doit correspondre au "idle timeout" de l'endpoint RunPod (60 s)
-const RUNPOD_WAKE_EVERY_MS = 2 * 60 * 1000; // au plus un réveil toutes les 2 min
-const RUNPOD_POLL_AFTER_MS_DEFAULT = 90000; // le démarrage à froid dure ~2 min : inutile de demander avant
-const RUNPOD_DAILY_WAKES_DEFAULT = 6; // plafond de réveils par jour (budget 7 $/mois)
-// Mémoire par instance du Worker, perdue au redémarrage (sans risque : on retombe sur Oracle).
-// /health n'est PAS fiable pour savoir si le GPU est chaud : on suit nos propres réveils et réponses.
-const runpod = { wakeJobId: "", wakeAt: 0, warmUntil: 0, lastWake: 0, memWakes: {} };
+import { handleAuthRequest, handleAuthVerify, handleAuthMe, tierFromRequest } from "./auth.js";
+import { TIER_CHAIN, TIER_MAX_TOKENS, podConfig, loadPod, savePod, isWarm, maybeWake, askPod } from "./pods.js";
+
+// ── RunPod Serverless (GPU) : voir pods.js. Les modèles et leur ordre dépendent du niveau de l'abonné (auth.js). ──
 
 // Questions simples (salutations, calculs courts, blagues) : inutile de payer le GPU.
 const HARD_RE = /(?<![\p{L}])(pourquoi|comment|explique|expliquer|raconte|écris|ecris|poème|poeme|histoire|différence|difference|why|how|explain|write|story|poem|varför|hur|förklara|skriv|berätta|hvorfor|forklar)(?![\p{L}])/iu;
@@ -96,115 +88,13 @@ const ALLOWED_ORIGINS = [
 ];
 
 // Réponse complète déjà obtenue (RunPod) : même format que le chemin Oracle.
-function reply(text, wantsStream, corsHeaders, source) {
-  const h = { ...corsHeaders, "X-Xearnes-Source": source };
+function reply(text, wantsStream, corsHeaders, source, extra) {
+  const h = { ...corsHeaders, "X-Xearnes-Source": source, ...(extra || {}) };
   if (wantsStream) return new Response(text, { status: 200, headers: { ...h, "Content-Type": "text/plain; charset=utf-8" } });
   return new Response(
     JSON.stringify({ choices: [{ message: { role: "assistant", content: text }, finish_reason: "stop" }] }),
     { status: 200, headers: { ...h, "Content-Type": "application/json; charset=utf-8" } }
   );
-}
-
-function runpodBase(env) {
-  return (env.RUNPOD_BASE_URL || "https://api.runpod.ai/v2/" + env.RUNPOD_ENDPOINT_ID).replace(/\/$/, "");
-}
-
-// Demande à RunPod (route compatible OpenAI). Renvoie le texte, ou null si trop lent / en erreur / vide.
-// On attend la réponse entière côté Worker : le délai ne couvre que le premier mot, mais on ne peut
-// plus changer de niveau une fois qu'on a commencé à répondre au visiteur.
-async function tryRunpod(env, messages, wantsStream) {
-  const ctrl = new AbortController();
-  let timer = setTimeout(() => ctrl.abort(), RUNPOD_FIRST_TOKEN_MS);
-  try {
-    const r = await fetch(runpodBase(env) + "/openai/v1/chat/completions", {
-      method: "POST",
-      signal: ctrl.signal,
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.RUNPOD_API_KEY },
-      body: JSON.stringify({
-        model: env.RUNPOD_MODEL || RUNPOD_MODEL_DEFAULT,
-        stream: true,
-        temperature: 0.3,
-        max_tokens: 600,
-        messages,
-      }),
-    });
-    if (!r.ok || !r.body) return null;
-    const reader = r.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "", text = "", gotFirst = false;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const p = line.slice(5).trim();
-        if (p === "[DONE]") continue;
-        try {
-          const d = JSON.parse(p).choices?.[0]?.delta?.content;
-          if (d) {
-            text += d;
-            if (!gotFirst) { gotFirst = true; clearTimeout(timer); timer = setTimeout(() => ctrl.abort(), 30000); }
-          }
-        } catch {}
-      }
-    }
-    return /[\p{L}\p{N}]{2}/u.test(text) ? text.trim() : null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// État partagé entre toutes les instances du Worker (Cloudflare en lance plusieurs) via KV ; sans KV, mémoire locale.
-async function loadState(env) {
-  if (env && env.WAKE_KV) {
-    try {
-      const raw = await env.WAKE_KV.get("runpod_state");
-      if (raw) Object.assign(runpod, JSON.parse(raw));
-    } catch {}
-  }
-}
-async function saveState(env) {
-  if (env && env.WAKE_KV) {
-    try {
-      await env.WAKE_KV.put(
-        "runpod_state",
-        JSON.stringify({ wakeJobId: runpod.wakeJobId, wakeAt: runpod.wakeAt, warmUntil: runpod.warmUntil, lastWake: runpod.lastWake }),
-        { expirationTtl: 3600 }
-      );
-    } catch {}
-  }
-}
-
-// Le GPU est-il chaud ? Oui s'il vient de répondre (idle timeout), ou si notre dernier réveil est terminé
-// depuis moins longtemps que l'idle timeout. On interroge /status (gratuit) du job de réveil.
-async function runpodIsWarm(env) {
-  const now = Date.now();
-  if (now < runpod.warmUntil) return true;
-  if (!runpod.wakeJobId) return false;
-  const pollAfter = Number(env.RUNPOD_POLL_AFTER_MS) || RUNPOD_POLL_AFTER_MS_DEFAULT;
-  if (now - runpod.wakeAt < pollAfter) return false;
-  try {
-    const r = await fetch(runpodBase(env) + "/status/" + runpod.wakeJobId, {
-      headers: { Authorization: "Bearer " + env.RUNPOD_API_KEY },
-      signal: AbortSignal.timeout(2000),
-    });
-    const j = await r.json();
-    if (j.status === "COMPLETED") {
-      const idle = Number(env.RUNPOD_IDLE_MS) || RUNPOD_IDLE_MS_DEFAULT;
-      const doneAt = runpod.wakeAt + (j.delayTime || 0) + (j.executionTime || 0);
-      runpod.wakeJobId = "";
-      runpod.warmUntil = doneAt + idle;
-      await saveState(env);
-      return Date.now() < runpod.warmUntil;
-    }
-    if (j.status === "FAILED" || j.status === "CANCELLED" || j.status === "TIMED_OUT") { runpod.wakeJobId = ""; await saveState(env); }
-  } catch {}
-  return false;
 }
 
 // Compteurs de statistiques (sans contenu des messages) : combien de réponses du GPU, d'échecs, de questions difficiles restées sur Oracle.
@@ -217,58 +107,41 @@ function bump(env, ctx, name) {
   if (ctx && ctx.waitUntil) ctx.waitUntil(p);
 }
 
-// Plafond de réveils par jour : Cloudflare KV si disponible (partagé entre toutes les instances), sinon mémoire locale.
-async function wakeBudgetLeft(env) {
-  const cap = Number(env.RUNPOD_DAILY_WAKES) || RUNPOD_DAILY_WAKES_DEFAULT;
-  const day = new Date().toISOString().slice(0, 10);
-  if (env.WAKE_KV) {
-    try {
-      const n = Number(await env.WAKE_KV.get("wakes:" + day)) || 0;
-      if (n >= cap) return false;
-      await env.WAKE_KV.put("wakes:" + day, String(n + 1), { expirationTtl: 172800 });
-      return true;
-    } catch {
-      return false; // dans le doute on ne réveille pas
-    }
-  }
-  const n = runpod.memWakes[day] || 0;
-  if (n >= cap) return false;
-  runpod.memWakes = { [day]: n + 1 };
-  return true;
-}
-
-// Réveille un worker froid sans attendre : une toute petite requête, ignorée par le visiteur. Garde l'identifiant du job.
-async function wakeRunpod(env) {
-  try {
-    const r = await fetch(runpodBase(env) + "/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.RUNPOD_API_KEY },
-      body: JSON.stringify({ input: { prompt: "Bonjour", sampling_params: { max_tokens: 1 } } }),
-    });
-    const j = await r.json();
-    if (j && j.id) { runpod.wakeJobId = j.id; runpod.wakeAt = Date.now(); }
-  } catch {}
-  await saveState(env);
-}
-
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin") || "";
     const allowed = ALLOWED_ORIGINS.includes(origin);
     const corsHeaders = {
       "Access-Control-Allow-Origin": allowed ? origin : ALLOWED_ORIGINS[0],
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
-    }
     if (origin && !allowed) {
       return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    }
+
+    // ── Connexion par code envoyé par email (voir auth.js) ──
+    const path = new URL(request.url).pathname;
+    if (path.startsWith("/auth/")) {
+      const json = (r) => new Response(JSON.stringify(r.json), { status: r.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      try {
+        if (path === "/auth/me" && request.method === "GET") return json(await handleAuthMe(request, env));
+        if (request.method === "POST" && (path === "/auth/request" || path === "/auth/verify")) {
+          const b = await request.json().catch(() => ({}));
+          return json(path === "/auth/request" ? await handleAuthRequest(b, request, env) : await handleAuthVerify(b, env));
+        }
+      } catch {
+        return json({ status: 500, json: { error: "auth_error" } });
+      }
+      return new Response("Not found", { status: 404, headers: corsHeaders });
+    }
+
+    if (request.method !== "POST") {
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
     }
 
     let body;
@@ -281,42 +154,43 @@ export default {
     const wantsStream = body.stream === true;
     const messages = body.messages || [];
 
+    // Niveau de l'abonné : un jeton signé (obtenu avec le code reçu par email) donne le niveau lu côté serveur ; sinon gratuit.
+    const { tier } = await tierFromRequest(request, env);
+    const score = difficultyScore(messages);
+    const pii = hasPersonalInfo(messages);
+    const ident = isIdentityQuestion(messages);
+
     // Diagnostic (sans contenu des messages) : pourquoi cette réponse vient d'Oracle ou de RunPod
-    const dbg = [
-      "cfg=" + (env && env.RUNPOD_ENDPOINT_ID && env.RUNPOD_API_KEY ? 1 : 0),
-      "score=" + difficultyScore(messages),
-      "pii=" + (hasPersonalInfo(messages) ? 1 : 0),
-      "ident=" + (isIdentityQuestion(messages) ? 1 : 0),
-    ];
+    const dbg = ["tier=" + tier, "score=" + score, "pii=" + (pii ? 1 : 0), "ident=" + (ident ? 1 : 0)];
     const dh = { "X-Xearnes-Route": dbg.join(",") };
 
-    // ── Niveau 1 : RunPod (si configuré, question difficile, sans donnée personnelle) ──
-    if (env && env.RUNPOD_ENDPOINT_ID && env.RUNPOD_API_KEY && isHard(messages) && !hasPersonalInfo(messages) && !isIdentityQuestion(messages)) {
-      await loadState(env);
-      const warm = await runpodIsWarm(env);
-      dbg.push("warm=" + (warm ? 1 : 0), "job=" + (runpod.wakeJobId ? 1 : 0));
-      if (warm) {
-        const text = await tryRunpod(env, messages, wantsStream);
-        if (text) {
-          runpod.warmUntil = Date.now() + (Number(env.RUNPOD_IDLE_MS) || RUNPOD_IDLE_MS_DEFAULT);
-          if (ctx && ctx.waitUntil) ctx.waitUntil(saveState(env));
-          bump(env, ctx, "runpod_answers");
-          return reply(text, wantsStream, corsHeaders, "runpod");
-        }
-        bump(env, ctx, "runpod_failures");
-        runpod.warmUntil = 0; // n'a pas répondu à temps : on ne le croit plus chaud
-        if (ctx && ctx.waitUntil) ctx.waitUntil(saveState(env));
-      } else if (!runpod.wakeJobId && Date.now() - runpod.lastWake > RUNPOD_WAKE_EVERY_MS && (await wakeBudgetLeft(env))) {
-        dbg.push("wake=sent");
-        bump(env, ctx, "wakes_sent");
-        runpod.lastWake = Date.now();
-        await saveState(env); // les autres instances voient tout de suite qu'un réveil est en cours
-        const wake = wakeRunpod(env);
-        if (ctx && ctx.waitUntil) ctx.waitUntil(wake);
+    // ── Niveau 1 : RunPod, selon le niveau : Legend 20B > 14B > 8B ; Pro/Ultra 14B > 8B ; Gratuit 8B ──
+    // Jamais pour une donnée personnelle ni pour une question d'identité. Les abonnés ont un seuil de difficulté plus bas.
+    const chain = (TIER_CHAIN[tier] || TIER_CHAIN.free).map((k) => podConfig(env, k)).filter(Boolean);
+    if (chain.length && !pii && !ident && score >= (tier === "free" ? 2 : 1)) {
+      // 1. Réveiller le meilleur modèle du niveau s'il dort (budget par modèle et par jour), sans faire attendre le visiteur
+      const top = chain[0];
+      const stTop = await loadPod(env, top);
+      if (!(await isWarm(env, top, stTop))) {
+        if (await maybeWake(env, top, stTop, ctx)) { dbg.push("wake=" + top.name); bump(env, ctx, "wakes_sent:" + top.name); }
       }
+      // 2. Répondre avec le premier modèle chaud de la chaîne
+      for (const cfg of chain) {
+        const st = cfg === top ? stTop : await loadPod(env, cfg);
+        if (!(await isWarm(env, cfg, st))) continue;
+        const text = await askPod(cfg, messages, TIER_MAX_TOKENS[tier]);
+        if (text) {
+          st.warmUntil = Date.now() + cfg.idleMs;
+          if (ctx && ctx.waitUntil) ctx.waitUntil(savePod(env, cfg, st));
+          bump(env, ctx, "answers:" + cfg.name);
+          return reply(text, wantsStream, corsHeaders, "runpod", { "X-Xearnes-Pod": cfg.name, "X-Xearnes-Tier": tier });
+        }
+        bump(env, ctx, "failures:" + cfg.name);
+        st.warmUntil = 0; // n'a pas répondu à temps : on ne le croit plus chaud
+        if (ctx && ctx.waitUntil) ctx.waitUntil(savePod(env, cfg, st));
+      }
+      bump(env, ctx, "hard_on_oracle");
     }
-
-    if (env && env.RUNPOD_ENDPOINT_ID && isHard(messages) && !hasPersonalInfo(messages) && !isIdentityQuestion(messages)) bump(env, ctx, "hard_questions");
 
     // ── Niveau 2 : Oracle (Ollama), comme avant ──
     const ollamaUrl = (env && env.OLLAMA_URL) || OLLAMA_URL;
