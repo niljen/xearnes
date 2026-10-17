@@ -108,7 +108,7 @@ Qui décide : **Youssef** (chef de projet) choisit les offres et les prix. **Pap
 |---|---|---|---|
 | IA plus puissante : Pro « intelligente », Ultra « très puissante », Legend « la plus puissante » | pricing + fenêtre d'abonnement | L'appli envoie `mistral-large/medium/small-latest` selon le niveau, mais le Worker **ignore ce champ** et répond toujours avec `gemma3:4b` sur Oracle (ou le 8B RunPod pour les questions difficiles). Un abonné reçoit donc la même IA qu'un utilisateur gratuit. | ❌ non livré |
 | Réponses plus longues (Ultra, Legend) | code (`max_tokens` 6000 contre 2500) | Le Worker plafonne à 600 jetons pour tout le monde. | ❌ non livré |
-| Mode code | pricing | Le mode code existe, avec limites de longueur par niveau ; le modèle est le même pour tous. | ⚠️ partiel |
+| Mode code | pricing | **Ouvert à tous, y compris au niveau gratuit** (décision de Youssef, 2026-10-17) : retiré des listes Pro/Ultra/Legend, ajouté au gratuit. Il utilise le 8B pour tous les niveaux. Ce n'est donc plus un avantage payant. | ✅ aligné |
 | Mémoire longue | pricing | Active pour Pro et plus, mais depuis le 12 oct. elle ne retient que les centres d'intérêt (plus le prénom, l'âge ni la ville). | ⚠️ réduit |
 | Images par jour : 5 / 20 / illimitées | pricing | **Retiré de la page des prix** (décision de Youssef, 2026-10-16) : la génération d'images est abandonnée pour l'instant. Aucune image n'a jamais été générée ; une demande « dessine… » renvoie seulement une description écrite par le modèle. | ✅ retiré |
 | Conversations enregistrées : 5 / 20 / 50 / illimitées | pricing | Fonctionne (dans le navigateur, donc modifiable par l'utilisateur). | ✅ (côté navigateur) |
