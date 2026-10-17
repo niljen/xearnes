@@ -1734,6 +1734,24 @@ function _updateSidebarText(l){
   if(typeof renderUserBar==="function")renderUserBar();
   renderConvList();
 }
+// ── SALUTATIONS DU CODE MODE : affichées à la place de l'accueil habituel, seulement quand le bouton Code mode est allumé ──
+var _codeGreetings={
+  en:["Ready to start a project, {name}?","Code mode is on. What are we building today?","Let's write some code, {name}.","New project? Tell me the idea, I'll help with the code.","Stuck on a bug? Paste it here.","Time to build something cool, {name}.","Compiler warmed up. What's the plan?","Hello, {name}. Pick a language, pick an idea, let's go.","Code mode online. Awaiting your first line, {name}."],
+  fr:["Prêt à lancer un projet, {name} ?","Code mode activé. On construit quoi aujourd'hui ?","On écrit du code, {name} ?","Nouveau projet ? Raconte-moi ton idée, je t'aide avec le code.","Un bug qui résiste ? Colle-le ici.","C'est l'heure de créer quelque chose de génial, {name}.","Le compilateur est chaud. Quel est le plan ?","Salut {name}. Choisis un langage, choisis une idée, c'est parti.","Code mode en ligne. J'attends ta première ligne, {name}."],
+  sv:["Redo att starta ett projekt, {name}?","Code mode är på. Vad ska vi bygga idag?","Dags att skriva kod, {name}.","Nytt projekt? Berätta idén, så hjälper jag dig med koden.","Har du fastnat på en bugg? Klistra in den här.","Dags att bygga något häftigt, {name}.","Kompilatorn är varm. Vad är planen?","Hej {name}. Välj ett språk, välj en idé, nu kör vi.","Code mode online. Väntar på din första rad, {name}."]
+};
+function getCodeWelcome(lang){
+  var arr=_codeGreetings[lang]||_codeGreetings.en;
+  var s=arr[Math.floor(Math.random()*arr.length)];
+  if(userName)return s.replace(/\{name\}/g,userName);
+  // Sans prénom : on retire {name} proprement
+  s=s.replace(/\s?\{name\}/g,"").replace(/\s+([!,.?])/g,"$1").replace(/,\s*([.?!])/g,"$1").replace(/^[\s!,.]+/,"").replace(/^./,function(c){return c.toUpperCase();});
+  return lang==="fr"?s.replace(/(\S)([!?])/g,"$1 $2"):s;
+}
+function _refreshWelcomeText(){
+  var d=document.getElementById("welcomeDesc");
+  if(d)d.textContent=_codeModeOn?getCodeWelcome(currentLang):getDailyWelcome(currentLang);
+}
 // ── BOUTON CODE MODE (en haut) : force le mode code pour toutes les questions tant qu'il est allumé ──
 var _codeModeOn=false;
 try{_codeModeOn=localStorage.getItem("xn_codemode")==="1";}catch(e){}
@@ -1750,6 +1768,7 @@ function toggleCodeMode(){
   _codeModeOn=!_codeModeOn;
   try{localStorage.setItem("xn_codemode",_codeModeOn?"1":"0");}catch(e){}
   updateCodeBtn();
+  _refreshWelcomeText();
   var inp=document.getElementById("userInput");if(inp)inp.focus();
 }
 // ── SUPPRIMER MES DONNEES ──
@@ -3970,7 +3989,7 @@ function setLang(l,manual){
   document.getElementById("userInput").placeholder=cfg.placeholder;
   if(typeof updateCodeBtn==="function")updateCodeBtn();
   document.getElementById("welcomeTitle").textContent=cfg.welcomeTitle;
-  document.getElementById("welcomeDesc").textContent=getDailyWelcome(l);
+  document.getElementById("welcomeDesc").textContent=_codeModeOn?getCodeWelcome(l):getDailyWelcome(l);
   _updateSidebarText(l);
   buildChips();
   populateVoiceSelect();
