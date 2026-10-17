@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "xearnes",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8787"
+      ],
+      "port": 8787
+    },
+    {
+      "name": "xearnes-tmp",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8790",
+        "--directory",
+        "C:/Users/nilje/AppData/Local/Temp/xearnes_preview"
+      ],
+      "port": 8790
+    }
+  ]
+}

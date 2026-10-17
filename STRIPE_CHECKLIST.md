@@ -112,7 +112,7 @@ Qui décide : **Youssef** (chef de projet) choisit les offres et les prix. **Pap
 | Mémoire longue | pricing | Active pour Pro et plus, mais depuis le 12 oct. elle ne retient que les centres d'intérêt (plus le prénom, l'âge ni la ville). | ⚠️ réduit |
 | Images par jour : 5 / 20 / illimitées | pricing | **Retiré de la page des prix** (décision de Youssef, 2026-10-16) : la génération d'images est abandonnée pour l'instant. Aucune image n'a jamais été générée ; une demande « dessine… » renvoie seulement une description écrite par le modèle. | ✅ retiré |
 | Conversations enregistrées : 5 / 20 / 50 / illimitées | pricing | Fonctionne (dans le navigateur, donc modifiable par l'utilisateur). | ✅ (côté navigateur) |
-| Thèmes exclusifs : 3 / 6 / tous | pricing | Le sélecteur de couleur a été retiré de l'en-tête le 12 oct. : **plus aucun moyen de choisir un thème**. | ❌ non livré |
+| Thèmes exclusifs : 3 / 6 / tous | pricing | **Corrigé le 2026-10-17** : le sélecteur est revenu dans « Réglages » (panneau dans la barre latérale). Le code a 6 thèmes réservés : Pro 2, Ultra 4 (les 2 de Pro + 2), Legend les 6. La page des prix dit maintenant 2 / 4 / 6. | ✅ aligné |
 | Graphiques avancés (Ultra, Legend) | pricing | Fonctionne (côté navigateur). | ✅ |
 | Défis secrets (Ultra, Legend) | pricing | Présents, liés au niveau (côté navigateur). | ✅ |
 | Badges Pro / Ultra / Legend | pricing | Ils sont donnés sans message dans le chat, visibles dans le panneau des niveaux. | ✅ |
@@ -121,3 +121,12 @@ Qui décide : **Youssef** (chef de projet) choisit les offres et les prix. **Pap
 | Texte en pied de page : « Créé par Youssef, 11 ans, Malmö » | pricing | Décision déjà prise de le garder, notée ici pour mémoire. | — |
 
 **Conséquence :** avant de passer Stripe en mode réel, soit on livre ces promesses, soit on réduit la page à ce qui existe.
+
+
+### Ajouts du 2026-10-17 (avantages des abonnés, côté appli)
+- **Réglages** (barre latérale) : thèmes, ton (drôle, sérieux, court), nom et avatar de son Xearnes, préférences de code (langage et niveau), voix, export. Réservé à Pro et plus : ton, nom et avatar, préférences de code, export.
+- **Bouton « Plus de détails »** sous les réponses longues (Pro et plus) : réponse plus longue (jusqu'à 1200 jetons de place).
+- **Recherche** dans toutes les conversations (Pro et plus).
+- **Legend :** le mode code utilise un modèle plus fort (20B).
+- **Attention :** tant que la connexion par code envoyé par email n'est pas branchée dans l'appli, le niveau est lu dans le navigateur : ces avantages ne sont pas encore protégés côté serveur (sauf le choix des modèles).
+- La meilleure voix de l'appareil est déjà choisie automatiquement pour tout le monde : ce n'est pas un avantage payant.

@@ -302,6 +302,30 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .ws-chip:hover{background:rgba(218,165,32,.22)}
 .ws-chip span{color:var(--text2)}
 @media(max-width:640px){.ws-panel{position:fixed;top:0;right:0;bottom:0;left:0;z-index:120;width:100%}}
+.set-btn{width:100%;background:none;border:1px solid var(--border);border-radius:10px;padding:8px 10px;color:var(--text2);font-size:.8rem;font-weight:700;cursor:pointer;text-align:left}
+.set-btn:hover{color:var(--accent);border-color:var(--accent)}
+.conv-search{padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.conv-search input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-size:.78rem;outline:none}
+.conv-search input:focus{border-color:var(--accent)}
+.st-panel{width:400px;background:var(--card);border-left:1px solid var(--border);display:none;flex-direction:column;flex-shrink:0;overflow:hidden}
+.st-panel.open{display:flex}
+.st-body{overflow-y:auto;padding:10px 12px 20px;flex:1}
+.st-sec{margin-bottom:16px}
+.st-sec h4{margin:0 0 7px;font-size:.8rem;color:var(--accent);display:flex;align-items:center;gap:8px}
+.st-lock{font-size:.66rem;font-weight:700;color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:1px 7px;cursor:pointer}
+.st-row{display:flex;flex-wrap:wrap;gap:6px}
+.st-opt{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:9px;padding:5px 10px;font-size:.76rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.st-opt:hover{border-color:var(--accent);color:var(--accent)}
+.st-opt.on{background:rgba(218,165,32,.18);border-color:var(--accent);color:var(--accent)}
+.st-opt.locked{opacity:.55}
+.st-dot{width:12px;height:12px;border-radius:50%;background:var(--dot);display:inline-block;border:1px solid rgba(255,255,255,.3)}
+.st-sec label{display:block;font-size:.7rem;color:var(--text2);margin:6px 0 3px}
+.st-sec input[type=text],.st-sec select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-size:.8rem;outline:none}
+.st-note{font-size:.7rem;color:var(--text2);margin-top:5px}
+.msg.bot[data-av]::before{content:attr(data-av);display:block;font-size:.72rem;font-weight:700;color:var(--accent);margin-bottom:3px}
+.detail-btn{display:inline-block;margin:6px 6px 0 0;background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:2px 9px;font-size:.7rem;font-weight:600;cursor:pointer}
+.detail-btn:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:640px){.st-panel{position:fixed;top:0;right:0;bottom:0;left:0;z-index:125;width:100%}}
 .priv-row{display:flex;justify-content:space-between;gap:8px;font-size:.68rem}
 .priv-row a,.priv-row button{color:var(--text2);background:none;border:none;cursor:pointer;text-decoration:underline;font-size:.68rem;padding:0}
 .priv-row a:hover,.priv-row button:hover{color:var(--accent)}
@@ -372,9 +396,11 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <span class="conv-ph-title" id="convTitle">&#128172; Chats récents</span>
       <button class="conv-new" id="convNewBtn" onclick="newConversation()">&#10133; Nouveau</button>
     </div>
+    <div class="conv-search"><input id="convSearch" type="text" placeholder="🔍 Rechercher…" oninput="renderConvList()" onclick="stSearchClick()" autocomplete="off"></div>
     <div class="conv-list" id="convList"><div class="conv-empty">&#128172;<br>Aucune conversation<br>sauvegardée</div></div>
     <div class="conv-foot">
       <button class="upg-btn" id="upgBtn" onclick="openUpgradeModal()" title="Abonnements">&#128640; Upgrade</button>
+      <button class="set-btn" id="setBtn" onclick="stToggle()">⚙ Réglages</button>
       <button class="user-btn" id="userBtn" onclick="openLoginModal()">&#128100; Connexion</button>
       <div class="priv-row"><a href="privacy.html" target="_blank" id="privLink">Confidentialité</a><button id="delDataBtn" onclick="deleteMyData()">Supprimer mes données</button></div>
     </div>
@@ -400,6 +426,10 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Parler">&#127908;</button>
       <button class="send-btn" id="sendBtn" onclick="sendMsg()">Skicka</button>
     </div>
+  </div>
+  <div class="st-panel" id="stPanel">
+    <div class="ws-head"><span id="stTitle">⚙ Réglages</span><span><button onclick="stClose()">✕</button></span></div>
+    <div class="st-body" id="stBody"></div>
   </div>
   <div class="ws-panel" id="wsPanel">
     <div class="ws-head"><span id="wsTitle">📁 Fichiers</span><span><button id="wsNewBtn" onclick="wsNew()">＋</button><button onclick="wsClose()">✕</button></span></div>
@@ -1668,10 +1698,12 @@ function _xnMaybeTitle(id){
 function renderConvList(){
   var list=document.getElementById("convList");
   if(!list)return;
+  var _qi=document.getElementById("convSearch"),_q=(_qi&&_stCan(1)?_qi.value:"").trim().toLowerCase();
   if(savedConversations.length===0){list.innerHTML='<div class="conv-empty">&#128172;<br>'+(_sidebarTxt[currentLang]||_sidebarTxt.en).empty+'</div>';return;}
   var html="";
   for(var i=0;i<savedConversations.length;i++){
     var c=savedConversations[i];
+    if(_q&&!_stMatch(c,_q))continue;
     var isActive=c.id===currentConvId;
     var d=new Date(c.updatedAt);
     var dateStr=d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
@@ -1681,6 +1713,7 @@ function renderConvList(){
       +'<button class="ci-del" onclick="event.stopPropagation();deleteConv('+c.id+')" title="Supprimer">&#128465;</button>'
       +'</div>';
   }
+  if(!html&&_q)html='<div class="conv-empty">'+_stT().noMatch+'</div>';
   list.innerHTML=html;
 }
 function clearChatMsgs(){
@@ -1758,8 +1791,131 @@ function _updateSidebarText(l){
   var n=document.getElementById("convNewBtn");if(n)n.textContent=t.nw;
   var pl=document.getElementById("privLink");if(pl)pl.textContent=t.priv;
   var dd=document.getElementById("delDataBtn");if(dd)dd.textContent=t.del;
+  if(typeof stRefreshLabels==="function")stRefreshLabels();
   if(typeof renderUserBar==="function")renderUserBar();
   renderConvList();
+}
+// ══ RÉGLAGES : thèmes, ton, nom et avatar, préférences de code, voix, export + recherche des conversations ══
+function _lsGet(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}
+function _lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+var _xnTone=_lsGet("xn_tone"),_xnBotName=_lsGet("xn_botname"),_xnBotAv=_lsGet("xn_botav"),_xnPrefLang=_lsGet("xn_preflang"),_xnPrefLevel=_lsGet("xn_preflevel"),_detailNext=false;
+var _stTxt={
+  fr:{title:"⚙ Réglages",btn:"⚙ Réglages",theme:"🎨 Thème",tone:"🎭 Ton de Xearnes",tones:{"":"Normal",fun:"Drôle",serious:"Sérieux",short:"Court"},mine:"🪪 Ton Xearnes à toi",nameL:"Son nom",avL:"Son avatar",none:"Aucun",codeP:"💻 Préférences de code",langL:"Langage préféré",levelL:"Ton niveau",langs:{"":"Aucun",python:"Python",javascript:"JavaScript",html:"HTML et CSS"},levels:{"":"—",beginner:"Débutant",mid:"Intermédiaire",adv:"Avancé"},voice:"🔊 Voix",voiceBest:"Meilleure voix de cet appareil :",voiceTest:"Écouter",voiceMore:"Plus de réglages de voix",exp:"📤 Exporter la conversation",expTxt:"Texte (.txt)",expPdf:"PDF (imprimer)",lock:"🔒 Pro et plus",detail:"🔍 Plus de détails",detailAsk:"Explique plus en détail.",searchPh:"🔍 Rechercher…",searchLock:"🔒 Recherche (Pro et plus)",expEmpty:"Rien à exporter : la conversation est vide.",popup:"Autorise les fenêtres pop-up pour créer le PDF.",files:"Fichiers du projet",me:"Moi",noMatch:"Aucune conversation trouvée",themeNote:"Les thèmes dorés et colorés sont gratuits ; les autres sont réservés aux abonnés.",ph:"Nom de ton Xearnes",noVoice:"Aucune voix trouvée sur cet appareil."},
+  sv:{title:"⚙ Inställningar",btn:"⚙ Inställningar",theme:"🎨 Tema",tone:"🎭 Xearnes ton",tones:{"":"Normal",fun:"Rolig",serious:"Seriös",short:"Kort"},mine:"🪪 Din egen Xearnes",nameL:"Namn",avL:"Avatar",none:"Ingen",codeP:"💻 Kodinställningar",langL:"Favoritspråk",levelL:"Din nivå",langs:{"":"Inget",python:"Python",javascript:"JavaScript",html:"HTML och CSS"},levels:{"":"—",beginner:"Nybörjare",mid:"Medel",adv:"Avancerad"},voice:"🔊 Röst",voiceBest:"Bästa rösten på den här enheten:",voiceTest:"Lyssna",voiceMore:"Fler röstinställningar",exp:"📤 Exportera samtalet",expTxt:"Text (.txt)",expPdf:"PDF (skriv ut)",lock:"🔒 Pro och högre",detail:"🔍 Mer detaljer",detailAsk:"Förklara mer i detalj.",searchPh:"🔍 Sök…",searchLock:"🔒 Sök (Pro och högre)",expEmpty:"Inget att exportera: samtalet är tomt.",popup:"Tillåt popup-fönster för att skapa PDF.",files:"Projektfiler",me:"Jag",noMatch:"Inget samtal hittades",themeNote:"Guld och färgteman är gratis; de andra är för prenumeranter.",ph:"Namn på din Xearnes",noVoice:"Ingen röst hittades på den här enheten."},
+  en:{title:"⚙ Settings",btn:"⚙ Settings",theme:"🎨 Theme",tone:"🎭 Xearnes tone",tones:{"":"Normal",fun:"Funny",serious:"Serious",short:"Short"},mine:"🪪 Your own Xearnes",nameL:"Its name",avL:"Its avatar",none:"None",codeP:"💻 Code preferences",langL:"Favourite language",levelL:"Your level",langs:{"":"None",python:"Python",javascript:"JavaScript",html:"HTML and CSS"},levels:{"":"—",beginner:"Beginner",mid:"Intermediate",adv:"Advanced"},voice:"🔊 Voice",voiceBest:"Best voice on this device:",voiceTest:"Listen",voiceMore:"More voice settings",exp:"📤 Export the conversation",expTxt:"Text (.txt)",expPdf:"PDF (print)",lock:"🔒 Pro and above",detail:"🔍 More details",detailAsk:"Explain in more detail.",searchPh:"🔍 Search…",searchLock:"🔒 Search (Pro and above)",expEmpty:"Nothing to export: the conversation is empty.",popup:"Allow pop-up windows to create the PDF.",files:"Project files",me:"Me",noMatch:"No conversation found",themeNote:"Gold and colour themes are free; the others are for subscribers.",ph:"Name your Xearnes",noVoice:"No voice found on this device."}
+};
+function _stT(){return _stTxt[currentLang]||_stTxt.en;}
+function _stCan(rank){return _tierRank(_xnTier)>=rank;}
+var _stColors=[["","#DAA520"],["blue","#2980b9"],["purple","#9b59b6"],["green","#27ae60"],["red","#e74c3c"],["orange","#e67e22"],["diamond","#00d4ff"],["neon","#ff00ff"],["fire","#ff4500"],["emerald","#00e676"],["midnight","#7c4dff"],["cosmic","#FFD700"]];
+var _stAvatars=["🤖","🦊","🐉","🐱","🦄","🌟","🐼","🚀"];
+function stToggle(){var p=document.getElementById("stPanel");if(!p)return;p.classList.toggle("open");if(p.classList.contains("open"))stRender();}
+function stClose(){var p=document.getElementById("stPanel");if(p)p.classList.remove("open");}
+function stRefreshLabels(){
+  var t=_stT();
+  var b=document.getElementById("setBtn");if(b)b.textContent=t.btn;
+  var sp=document.getElementById("stPanel");if(sp&&sp.classList.contains("open"))stRender();
+  stSearchLabel();
+}
+function stSearchLabel(){var i=document.getElementById("convSearch");if(!i)return;var t=_stT();i.placeholder=_stCan(1)?t.searchPh:t.searchLock;}
+function stSearchClick(){if(!_stCan(1))openUpgradeModal();}
+function _stSec(title,locked,inner){var t=_stT();return '<div class="st-sec"><h4>'+title+(locked?' <span class="st-lock" onclick="openUpgradeModal()">'+t.lock+'</span>':'')+'</h4>'+inner+'</div>';}
+function _esc(x){return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function stRender(){
+  var body=document.getElementById("stBody");if(!body)return;
+  var t=_stT(),can=_stCan(1),cur=_lsGet("xn_color"),h="";
+  document.getElementById("stTitle").textContent=t.title;
+  // 1. Thèmes
+  var th='<div class="st-row">';
+  _stColors.forEach(function(c){
+    var need=_THEME_TIERS[c[0]],locked=need&&!_stCan(_tierRank(need));
+    th+='<button class="st-opt'+(cur===c[0]?' on':'')+(locked?' locked':'')+'" onclick="stSetTheme(\''+c[0]+'\')"><span class="st-dot" style="--dot:'+c[1]+'"></span>'+(locked?'🔒':'')+'</button>';
+  });
+  h+=_stSec(t.theme,false,th+'</div><div class="st-note">'+t.themeNote+'</div>');
+  // 2. Ton
+  var tn='<div class="st-row">';
+  ["","fun","serious","short"].forEach(function(k){tn+='<button class="st-opt'+(_xnTone===k?' on':'')+(can?'':' locked')+'" onclick="stSetTone(\''+k+'\')">'+t.tones[k]+'</button>';});
+  h+=_stSec(t.tone,!can,tn+'</div>');
+  // 3. Nom et avatar
+  var nm='<label>'+t.nameL+'</label><input type="text" id="stName" maxlength="20" placeholder="'+_esc(t.ph)+'" value="'+_esc(_xnBotName)+'" onchange="stSaveName()" onkeydown="if(event.key===\'Enter\')this.blur()"'+(can?'':' onfocus="this.blur();openUpgradeModal()"')+'><label>'+t.avL+'</label><div class="st-row">';
+  nm+='<button class="st-opt'+(_xnBotAv===""?' on':'')+'" onclick="stSetAvatar(\'\')">'+t.none+'</button>';
+  _stAvatars.forEach(function(a){nm+='<button class="st-opt'+(_xnBotAv===a?' on':'')+(can?'':' locked')+'" onclick="stSetAvatar(\''+a+'\')">'+a+'</button>';});
+  h+=_stSec(t.mine,!can,nm+'</div>');
+  // 4. Préférences de code
+  var cp='<label>'+t.langL+'</label><select onchange="stSetPref(\'lang\',this.value)"'+(can?'':' disabled')+'>';
+  Object.keys(t.langs).forEach(function(k){cp+='<option value="'+k+'"'+(_xnPrefLang===k?' selected':'')+'>'+t.langs[k]+'</option>';});
+  cp+='</select><label>'+t.levelL+'</label><select onchange="stSetPref(\'level\',this.value)"'+(can?'':' disabled')+'>';
+  Object.keys(t.levels).forEach(function(k){cp+='<option value="'+k+'"'+(_xnPrefLevel===k?' selected':'')+'>'+t.levels[k]+'</option>';});
+  h+=_stSec(t.codeP,!can,cp+'</select>');
+  // 5. Voix (la meilleure voix de l'appareil est déjà choisie automatiquement)
+  var bv=null;try{bv=getBestVoice(currentLang);}catch(e){}
+  var stars=bv?(scoreVoice(bv)>=20?"⭐⭐⭐ ":scoreVoice(bv)>=8?"⭐⭐ ":"⭐ "):"";
+  var vo='<div class="st-note">'+t.voiceBest+'</div><div style="font-size:.8rem;margin:4px 0 7px">'+(bv?stars+_esc(bv.name):t.noVoice)+'</div><div class="st-row"><button class="st-opt" onclick="stVoiceTest()">'+t.voiceTest+'</button><button class="st-opt" onclick="stClose();toggleVoicePanel()">'+t.voiceMore+'</button></div>';
+  h+=_stSec(t.voice,false,vo);
+  // 6. Export
+  h+=_stSec(t.exp,!can,'<div class="st-row"><button class="st-opt'+(can?'':' locked')+'" onclick="stExport(\'txt\')">'+t.expTxt+'</button><button class="st-opt'+(can?'':' locked')+'" onclick="stExport(\'pdf\')">'+t.expPdf+'</button></div>');
+  body.innerHTML=h;
+}
+function stSetTheme(c){setColorTheme(c);stRender();}
+function stSetTone(k){if(!_stCan(1)){openUpgradeModal();return;}_xnTone=k;_lsSet("xn_tone",k);stRender();}
+function stSaveName(){if(!_stCan(1)){openUpgradeModal();return;}var v=(document.getElementById("stName").value||"").replace(/[^\p{L}\p{N} _-]/gu,"").trim().slice(0,20);_xnBotName=v;_lsSet("xn_botname",v);document.getElementById("stName").value=v;}
+function stSetAvatar(a){if(a&&!_stCan(1)){openUpgradeModal();return;}_xnBotAv=a;_lsSet("xn_botav",a);stRender();}
+function stSetPref(kind,v){if(!_stCan(1)){openUpgradeModal();return;}if(kind==="lang"){_xnPrefLang=v;_lsSet("xn_preflang",v);}else{_xnPrefLevel=v;_lsSet("xn_preflevel",v);}}
+function stVoiceTest(){try{speakText((langs[currentLang]&&langs[currentLang].testPhrase)||"Hello!");}catch(e){}}
+// Étiquette placée avant chaque réponse de Xearnes (avatar + nom choisis, pour les abonnés)
+function _stAvatarLabel(){if(!_stCan(1))return "";var l=(_xnBotAv?_xnBotAv+" ":"")+_xnBotName;return l.trim();}
+// Consignes ajoutées au prompt : ton, nom, préférences de code, réponse détaillée
+function _stPromptExtras(codeMode){
+  var d=_detailNext;_detailNext=false;var out="";
+  if(d)out+=" MODE DÉTAILLÉ ACTIVÉ : réponds en détail, en 8 à 12 phrases, avec des exemples et des étapes si c'est utile.";
+  if(_stCan(1)){
+    if(_xnTone==="fun")out+=" Ton demandé par l'utilisateur : drôle et joyeux, avec une pointe d'humour (sans exagérer).";
+    if(_xnTone==="serious")out+=" Ton demandé par l'utilisateur : sérieux et précis.";
+    if(_xnTone==="short")out+=" Ton demandé par l'utilisateur : très court, 1 à 2 phrases.";
+    if(_xnBotName)out+=" L'utilisateur t'a donné le surnom « "+_xnBotName+" » : tu peux l'utiliser pour te présenter.";
+    if(codeMode){
+      var lv={beginner:"débutant (explique très simplement)",mid:"intermédiaire",adv:"avancé (va droit au but)"}[_xnPrefLevel]||"";
+      var lg={python:"Python",javascript:"JavaScript",html:"HTML et CSS"}[_xnPrefLang]||"";
+      if(lg||lv)out+=" Préférences de l'utilisateur pour le code :"+(lg?" langage préféré = "+lg+" (utilise-le sauf s'il demande autre chose) ;":"")+(lv?" niveau = "+lv+".":"");
+    }
+  }
+  return out;
+}
+// Bouton « Plus de détails » sous les réponses longues
+function addDetailBtn(div,text){
+  if(String(text).replace(/<[^>]*>/g," ").length<120||/ws-chip/.test(String(text)))return;
+  var b=document.createElement("button");b.className="detail-btn";b.textContent=_stT().detail+(_stCan(1)?"":" 🔒");
+  b.onclick=function(){
+    if(!_stCan(1)){openUpgradeModal();return;}
+    _detailNext=true;var inp=document.getElementById("userInput");inp.value=_stT().detailAsk;sendMsg();
+  };
+  div.appendChild(b);
+}
+// Export de la conversation (texte ou PDF via l'impression du navigateur), avec les fichiers du projet
+function _stPlain(h){return String(h).replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g," ").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&").replace(/[ \t]+/g," ").replace(/ ?\n ?/g,"\n").trim();}
+function _stConvText(){
+  var t=_stT(),out=[];
+  (convHistory||[]).forEach(function(m){out.push((m.role==="bot"?"Xearnes":t.me)+" : "+_stPlain(m.text));});
+  if(_wsFiles.length){out.push("— "+t.files+" —");_wsFiles.forEach(function(f){out.push("### "+f.name+"\n"+f.content);});}
+  return out.join("\n\n");
+}
+function stExport(kind){
+  if(!_stCan(1)){openUpgradeModal();return;}
+  var t=_stT(),txt=_stConvText();
+  if(!(convHistory||[]).length&&!_wsFiles.length){alert(t.expEmpty);return;}
+  if(kind==="txt"){
+    var blob=new Blob([txt],{type:"text/plain;charset=utf-8"}),a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);a.download="xearnes-"+new Date().toISOString().slice(0,10)+".txt";document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  }else{
+    var w=window.open("","_blank");if(!w){alert(t.popup);return;}
+    w.document.write("<!doctype html><meta charset='utf-8'><title>Xearnes</title><body style=\"font-family:system-ui,sans-serif;max-width:720px;margin:24px auto;line-height:1.5;white-space:pre-wrap;color:#111\">"+_esc(txt)+"</body>");
+    w.document.close();w.focus();setTimeout(function(){w.print();},300);
+  }
+}
+// Recherche dans les conversations (abonnés) : dans le titre et dans tous les messages
+function _stMatch(c,q){
+  if(String(c.title||"").toLowerCase().indexOf(q)!==-1)return true;
+  var ms=c.messages||[];for(var i=0;i<ms.length;i++){if(_stPlain(ms[i].text||"").toLowerCase().indexOf(q)!==-1)return true;}
+  return false;
 }
 // ══ ESPACE FICHIERS (Code mode) : le code n'est plus écrit dans le chat mais dans des fichiers ══
 var _wsFiles=[],_wsCurrent="",_wsCapture=false,_wsPreviewing=false;
@@ -1793,6 +1949,7 @@ function _wsStore(info,code){
   if(!f){if(_wsFiles.length>=30)_wsFiles.shift();f={name:name};_wsFiles.push(f);}
   f.content=code;f.updated=Date.now();
   _wsCurrent=name;_wsPersist();_wsPreviewing=false;wsRender();wsUpdateBtn();
+  try{if(!_xnPrefLang){var _ex=name.split(".").pop().toLowerCase(),_pl={py:"python",js:"javascript",html:"html",css:"html"}[_ex];if(_pl){_xnPrefLang=_pl;_lsSet("xn_preflang",_pl);}}}catch(e){}
   var p=document.getElementById("wsPanel");if(p&&!p.classList.contains("open"))p.classList.add("open");
   return {name:name,created:created};
 }
@@ -2737,6 +2894,7 @@ function callClaude(question,lang,cb,_attempt,onChunk,groundingFacts){
   var sysPrompt=_xnSystemPrompt(lang);
   sysPrompt+=_buildMemoryPrompt();
   if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris chaque fichier de code dans un bloc markdown avec trois accents graves, en mettant le langage puis le nom du fichier juste après les accents graves, par exemple ```python main.py ou ```html index.html. N'écris le code que dans ces blocs : il apparaîtra dans l'espace Fichiers, pas dans le chat. Dans ta réponse, explique en quelques phrases ce que fait le code, pour qu'un débutant comprenne. Donne des fichiers complets qui marchent, jamais des morceaux incomplets ; si tu modifies un fichier existant, réécris-le en entier avec le même nom."+_wsContextPrompt();
+  sysPrompt+=_stPromptExtras(codeMode);
   if(groundingFacts)sysPrompt+=" FAITS VÉRIFIÉS (source Wikipédia) À UTILISER POUR RÉPONDRE : \""+groundingFacts+"\" — Base ta réponse sur CES faits précis, reformulés avec ta propre personnalité. N'invente AUCUN autre fait, date ou détail qui n'est pas dans ce texte. Si ces faits ne suffisent pas pour répondre complètement, dis-le simplement plutôt que d'inventer.";
   var msgs=[];
   var hist=convHistory;
@@ -3484,8 +3642,10 @@ function addMsg(text,role){
   div.className="msg "+role;
   if(role==="bot"){
     div.innerHTML=botToHTML(text);
+    var _av=_stAvatarLabel();if(_av)div.setAttribute("data-av",_av);
     playBeep();
     addShareBtn(div,text);
+    addDetailBtn(div,text);
   }else{div.textContent=text;}
   chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
   return div;
