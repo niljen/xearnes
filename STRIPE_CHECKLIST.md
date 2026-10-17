@@ -124,7 +124,7 @@ Qui décide : **Youssef** (chef de projet) choisit les offres et les prix. **Pap
 
 
 ### Ajouts du 2026-10-17 (avantages des abonnés, côté appli)
-- **Réglages** (barre latérale) : thèmes, ton (drôle, sérieux, court), nom et avatar de son Xearnes, préférences de code (langage et niveau), voix, export. Réservé à Pro et plus : ton, nom et avatar, préférences de code, export.
+- **Réglages** (barre latérale) : thèmes, ton prénom (pour tous, reste sur l'appareil et n'est pas envoyé à l'IA), avatar de Xearnes, préférences de code (langage et niveau), voix, export. Réservé à Pro et plus : avatar, préférences de code, export. (Le choix du ton et du nom de Xearnes ont été retirés le 2026-10-17.)
 - **Bouton « Plus de détails »** sous les réponses longues (Pro et plus) : réponse plus longue (jusqu'à 1200 jetons de place).
 - **Recherche** dans toutes les conversations (Pro et plus).
 - **Legend :** le mode code utilise un modèle plus fort (20B).

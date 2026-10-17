@@ -1798,11 +1798,12 @@ function _updateSidebarText(l){
 // ══ RÉGLAGES : thèmes, ton, nom et avatar, préférences de code, voix, export + recherche des conversations ══
 function _lsGet(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}
 function _lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
-var _xnTone=_lsGet("xn_tone"),_xnBotName=_lsGet("xn_botname"),_xnBotAv=_lsGet("xn_botav"),_xnPrefLang=_lsGet("xn_preflang"),_xnPrefLevel=_lsGet("xn_preflevel"),_detailNext=false;
+var _xnBotAv=_lsGet("xn_botav"),_xnPrefLang=_lsGet("xn_preflang"),_xnPrefLevel=_lsGet("xn_preflevel"),_detailNext=false;
+["xn_tone","xn_botname"].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}}); // ces réglages ont été retirés
 var _stTxt={
-  fr:{title:"⚙ Réglages",btn:"⚙ Réglages",theme:"🎨 Thème",tone:"🎭 Ton de Xearnes",tones:{"":"Normal",fun:"Drôle",serious:"Sérieux",short:"Court"},mine:"🪪 Ton Xearnes à toi",nameL:"Son nom",avL:"Son avatar",none:"Aucun",codeP:"💻 Préférences de code",langL:"Langage préféré",levelL:"Ton niveau",langs:{"":"Aucun",python:"Python",javascript:"JavaScript",html:"HTML et CSS"},levels:{"":"—",beginner:"Débutant",mid:"Intermédiaire",adv:"Avancé"},voice:"🔊 Voix",voiceBest:"Meilleure voix de cet appareil :",voiceTest:"Écouter",voiceMore:"Plus de réglages de voix",exp:"📤 Exporter la conversation",expTxt:"Texte (.txt)",expPdf:"PDF (imprimer)",lock:"🔒 Pro et plus",detail:"🔍 Plus de détails",detailAsk:"Explique plus en détail.",searchPh:"🔍 Rechercher…",searchLock:"🔒 Recherche (Pro et plus)",expEmpty:"Rien à exporter : la conversation est vide.",popup:"Autorise les fenêtres pop-up pour créer le PDF.",files:"Fichiers du projet",me:"Moi",noMatch:"Aucune conversation trouvée",themeNote:"Les thèmes dorés et colorés sont gratuits ; les autres sont réservés aux abonnés.",ph:"Nom de ton Xearnes",noVoice:"Aucune voix trouvée sur cet appareil."},
-  sv:{title:"⚙ Inställningar",btn:"⚙ Inställningar",theme:"🎨 Tema",tone:"🎭 Xearnes ton",tones:{"":"Normal",fun:"Rolig",serious:"Seriös",short:"Kort"},mine:"🪪 Din egen Xearnes",nameL:"Namn",avL:"Avatar",none:"Ingen",codeP:"💻 Kodinställningar",langL:"Favoritspråk",levelL:"Din nivå",langs:{"":"Inget",python:"Python",javascript:"JavaScript",html:"HTML och CSS"},levels:{"":"—",beginner:"Nybörjare",mid:"Medel",adv:"Avancerad"},voice:"🔊 Röst",voiceBest:"Bästa rösten på den här enheten:",voiceTest:"Lyssna",voiceMore:"Fler röstinställningar",exp:"📤 Exportera samtalet",expTxt:"Text (.txt)",expPdf:"PDF (skriv ut)",lock:"🔒 Pro och högre",detail:"🔍 Mer detaljer",detailAsk:"Förklara mer i detalj.",searchPh:"🔍 Sök…",searchLock:"🔒 Sök (Pro och högre)",expEmpty:"Inget att exportera: samtalet är tomt.",popup:"Tillåt popup-fönster för att skapa PDF.",files:"Projektfiler",me:"Jag",noMatch:"Inget samtal hittades",themeNote:"Guld och färgteman är gratis; de andra är för prenumeranter.",ph:"Namn på din Xearnes",noVoice:"Ingen röst hittades på den här enheten."},
-  en:{title:"⚙ Settings",btn:"⚙ Settings",theme:"🎨 Theme",tone:"🎭 Xearnes tone",tones:{"":"Normal",fun:"Funny",serious:"Serious",short:"Short"},mine:"🪪 Your own Xearnes",nameL:"Its name",avL:"Its avatar",none:"None",codeP:"💻 Code preferences",langL:"Favourite language",levelL:"Your level",langs:{"":"None",python:"Python",javascript:"JavaScript",html:"HTML and CSS"},levels:{"":"—",beginner:"Beginner",mid:"Intermediate",adv:"Advanced"},voice:"🔊 Voice",voiceBest:"Best voice on this device:",voiceTest:"Listen",voiceMore:"More voice settings",exp:"📤 Export the conversation",expTxt:"Text (.txt)",expPdf:"PDF (print)",lock:"🔒 Pro and above",detail:"🔍 More details",detailAsk:"Explain in more detail.",searchPh:"🔍 Search…",searchLock:"🔒 Search (Pro and above)",expEmpty:"Nothing to export: the conversation is empty.",popup:"Allow pop-up windows to create the PDF.",files:"Project files",me:"Me",noMatch:"No conversation found",themeNote:"Gold and colour themes are free; the others are for subscribers.",ph:"Name your Xearnes",noVoice:"No voice found on this device."}
+  fr:{title:"⚙ Réglages",btn:"⚙ Réglages",theme:"🎨 Thème",you:"👤 Ton prénom",youPh:"Ton prénom",youNote:"Il reste sur ton appareil : il sert à te saluer, il n'est pas envoyé à l'IA.",mine:"🦊 Avatar de Xearnes",avL:"Son avatar",none:"Aucun",codeP:"💻 Préférences de code",langL:"Langage préféré",levelL:"Ton niveau",langs:{"":"Aucun",python:"Python",javascript:"JavaScript",html:"HTML et CSS"},levels:{"":"—",beginner:"Débutant",mid:"Intermédiaire",adv:"Avancé"},voice:"🔊 Voix",voiceBest:"Meilleure voix de cet appareil :",voiceTest:"Écouter",voiceMore:"Plus de réglages de voix",exp:"📤 Exporter la conversation",expTxt:"Texte (.txt)",expPdf:"PDF (imprimer)",lock:"🔒 Pro et plus",detail:"🔍 Plus de détails",detailAsk:"Explique plus en détail.",searchPh:"🔍 Rechercher…",searchLock:"🔒 Recherche (Pro et plus)",expEmpty:"Rien à exporter : la conversation est vide.",popup:"Autorise les fenêtres pop-up pour créer le PDF.",files:"Fichiers du projet",me:"Moi",noMatch:"Aucune conversation trouvée",themeNote:"Les thèmes dorés et colorés sont gratuits ; les autres sont réservés aux abonnés.",ph:"Nom de ton Xearnes",noVoice:"Aucune voix trouvée sur cet appareil."},
+  sv:{title:"⚙ Inställningar",btn:"⚙ Inställningar",theme:"🎨 Tema",you:"👤 Ditt förnamn",youPh:"Ditt förnamn",youNote:"Det stannar på din enhet: det används för att hälsa på dig och skickas inte till AI:n.",mine:"🦊 Avatar för Xearnes",avL:"Avatar",none:"Ingen",codeP:"💻 Kodinställningar",langL:"Favoritspråk",levelL:"Din nivå",langs:{"":"Inget",python:"Python",javascript:"JavaScript",html:"HTML och CSS"},levels:{"":"—",beginner:"Nybörjare",mid:"Medel",adv:"Avancerad"},voice:"🔊 Röst",voiceBest:"Bästa rösten på den här enheten:",voiceTest:"Lyssna",voiceMore:"Fler röstinställningar",exp:"📤 Exportera samtalet",expTxt:"Text (.txt)",expPdf:"PDF (skriv ut)",lock:"🔒 Pro och högre",detail:"🔍 Mer detaljer",detailAsk:"Förklara mer i detalj.",searchPh:"🔍 Sök…",searchLock:"🔒 Sök (Pro och högre)",expEmpty:"Inget att exportera: samtalet är tomt.",popup:"Tillåt popup-fönster för att skapa PDF.",files:"Projektfiler",me:"Jag",noMatch:"Inget samtal hittades",themeNote:"Guld och färgteman är gratis; de andra är för prenumeranter.",ph:"Namn på din Xearnes",noVoice:"Ingen röst hittades på den här enheten."},
+  en:{title:"⚙ Settings",btn:"⚙ Settings",theme:"🎨 Theme",you:"👤 Your first name",youPh:"Your first name",youNote:"It stays on your device: it is used to greet you and is not sent to the AI.",mine:"🦊 Xearnes avatar",avL:"Its avatar",none:"None",codeP:"💻 Code preferences",langL:"Favourite language",levelL:"Your level",langs:{"":"None",python:"Python",javascript:"JavaScript",html:"HTML and CSS"},levels:{"":"—",beginner:"Beginner",mid:"Intermediate",adv:"Advanced"},voice:"🔊 Voice",voiceBest:"Best voice on this device:",voiceTest:"Listen",voiceMore:"More voice settings",exp:"📤 Export the conversation",expTxt:"Text (.txt)",expPdf:"PDF (print)",lock:"🔒 Pro and above",detail:"🔍 More details",detailAsk:"Explain in more detail.",searchPh:"🔍 Search…",searchLock:"🔒 Search (Pro and above)",expEmpty:"Nothing to export: the conversation is empty.",popup:"Allow pop-up windows to create the PDF.",files:"Project files",me:"Me",noMatch:"No conversation found",themeNote:"Gold and colour themes are free; the others are for subscribers.",ph:"Name your Xearnes",noVoice:"No voice found on this device."}
 };
 function _stT(){return _stTxt[currentLang]||_stTxt.en;}
 function _stCan(rank){return _tierRank(_xnTier)>=rank;}
@@ -1831,13 +1832,11 @@ function stRender(){
     th+='<button class="st-opt'+(cur===c[0]?' on':'')+(locked?' locked':'')+'" onclick="stSetTheme(\''+c[0]+'\')"><span class="st-dot" style="--dot:'+c[1]+'"></span>'+(locked?'🔒':'')+'</button>';
   });
   h+=_stSec(t.theme,false,th+'</div><div class="st-note">'+t.themeNote+'</div>');
-  // 2. Ton
-  var tn='<div class="st-row">';
-  ["","fun","serious","short"].forEach(function(k){tn+='<button class="st-opt'+(_xnTone===k?' on':'')+(can?'':' locked')+'" onclick="stSetTone(\''+k+'\')">'+t.tones[k]+'</button>';});
-  h+=_stSec(t.tone,!can,tn+'</div>');
-  // 3. Nom et avatar
-  var nm='<label>'+t.nameL+'</label><input type="text" id="stName" maxlength="20" placeholder="'+_esc(t.ph)+'" value="'+_esc(_xnBotName)+'" onchange="stSaveName()" onkeydown="if(event.key===\'Enter\')this.blur()"'+(can?'':' onfocus="this.blur();openUpgradeModal()"')+'><label>'+t.avL+'</label><div class="st-row">';
-  nm+='<button class="st-opt'+(_xnBotAv===""?' on':'')+'" onclick="stSetAvatar(\'\')">'+t.none+'</button>';
+  // 2. Ton prénom (pour tous, reste sur l'appareil : sert à te saluer, n'est pas envoyé à l'IA)
+  var yn='<input type="text" id="stYou" maxlength="20" placeholder="'+_esc(t.youPh)+'" value="'+_esc(userName||"")+'" onchange="stSaveYou()" onkeydown="if(event.key===\'Enter\')this.blur()"><div class="st-note">'+t.youNote+'</div>';
+  h+=_stSec(t.you,false,yn);
+  // 3. Avatar de Xearnes (abonnés)
+  var nm='<div class="st-row"><button class="st-opt'+(_xnBotAv===""?' on':'')+'" onclick="stSetAvatar(\'\')">'+t.none+'</button>';
   _stAvatars.forEach(function(a){nm+='<button class="st-opt'+(_xnBotAv===a?' on':'')+(can?'':' locked')+'" onclick="stSetAvatar(\''+a+'\')">'+a+'</button>';});
   h+=_stSec(t.mine,!can,nm+'</div>');
   // 4. Préférences de code
@@ -1856,22 +1855,24 @@ function stRender(){
   body.innerHTML=h;
 }
 function stSetTheme(c){setColorTheme(c);stRender();}
-function stSetTone(k){if(!_stCan(1)){openUpgradeModal();return;}_xnTone=k;_lsSet("xn_tone",k);stRender();}
-function stSaveName(){if(!_stCan(1)){openUpgradeModal();return;}var v=(document.getElementById("stName").value||"").replace(/[^\p{L}\p{N} _-]/gu,"").trim().slice(0,20);_xnBotName=v;_lsSet("xn_botname",v);document.getElementById("stName").value=v;}
+function stSaveYou(){
+  var el=document.getElementById("stYou");if(!el)return;
+  var v=(el.value||"").replace(/[^\p{L}\p{N} _-]/gu,"").trim().slice(0,20);
+  userName=v;
+  if(v)_lsSet("xn_name",v);else{try{localStorage.removeItem("xn_name");}catch(e){}}
+  el.value=v;
+  if(typeof _refreshWelcomeText==="function")_refreshWelcomeText();
+}
 function stSetAvatar(a){if(a&&!_stCan(1)){openUpgradeModal();return;}_xnBotAv=a;_lsSet("xn_botav",a);stRender();}
 function stSetPref(kind,v){if(!_stCan(1)){openUpgradeModal();return;}if(kind==="lang"){_xnPrefLang=v;_lsSet("xn_preflang",v);}else{_xnPrefLevel=v;_lsSet("xn_preflevel",v);}}
 function stVoiceTest(){try{speakText((langs[currentLang]&&langs[currentLang].testPhrase)||"Hello!");}catch(e){}}
 // Étiquette placée avant chaque réponse de Xearnes (avatar + nom choisis, pour les abonnés)
-function _stAvatarLabel(){if(!_stCan(1))return "";var l=(_xnBotAv?_xnBotAv+" ":"")+_xnBotName;return l.trim();}
+function _stAvatarLabel(){return _stCan(1)?(_xnBotAv||""):"";}
 // Consignes ajoutées au prompt : ton, nom, préférences de code, réponse détaillée
 function _stPromptExtras(codeMode){
   var d=_detailNext;_detailNext=false;var out="";
   if(d)out+=" MODE DÉTAILLÉ ACTIVÉ : réponds en détail, en 8 à 12 phrases, avec des exemples et des étapes si c'est utile.";
   if(_stCan(1)){
-    if(_xnTone==="fun")out+=" Ton demandé par l'utilisateur : drôle et joyeux, avec une pointe d'humour (sans exagérer).";
-    if(_xnTone==="serious")out+=" Ton demandé par l'utilisateur : sérieux et précis.";
-    if(_xnTone==="short")out+=" Ton demandé par l'utilisateur : très court, 1 à 2 phrases.";
-    if(_xnBotName)out+=" L'utilisateur t'a donné le surnom « "+_xnBotName+" » : tu peux l'utiliser pour te présenter.";
     if(codeMode){
       var lv={beginner:"débutant (explique très simplement)",mid:"intermédiaire",adv:"avancé (va droit au but)"}[_xnPrefLevel]||"";
       var lg={python:"Python",javascript:"JavaScript",html:"HTML et CSS"}[_xnPrefLang]||"";
