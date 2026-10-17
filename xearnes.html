@@ -286,6 +286,22 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .code-btn.on{background:rgba(218,165,32,.30);box-shadow:0 0 14px rgba(218,165,32,.65);color:#fff}
 .code-btn.on span::after{content:" · ON";color:#E8C547;font-weight:800}
 @media(max-width:640px){header{padding:8px 10px;gap:6px}.logo{font-size:1.05rem;letter-spacing:1px}header img{height:1.3rem!important;margin-right:2px!important}#fullBtn{display:none}.code-btn{font-size:.72rem;padding:3px 8px 3px 6px;gap:4px;border-radius:9px}.code-btn svg{width:18px;height:18px}.code-btn.on span::after{content:""}}
+.ws-panel{width:430px;background:var(--card);border-left:1px solid var(--border);display:none;flex-direction:column;flex-shrink:0;overflow:hidden}
+.ws-panel.open{display:flex}
+.ws-head{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:.85rem;font-weight:800;color:var(--accent);flex-shrink:0}
+.ws-head button,.ws-bar button{background:rgba(218,165,32,.12);border:1px solid var(--border);color:var(--accent);border-radius:7px;padding:4px 9px;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:4px}
+.ws-head button:hover,.ws-bar button:hover{background:rgba(218,165,32,.25)}
+.ws-tabs{display:flex;gap:4px;padding:6px;overflow-x:auto;border-bottom:1px solid var(--border);flex-shrink:0}
+.ws-tab{white-space:nowrap;font-size:.72rem;padding:4px 9px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:Consolas,monospace}
+.ws-tab.on{background:rgba(218,165,32,.2);color:var(--accent);border-color:var(--accent)}
+.ws-bar{display:flex;gap:2px;padding:6px 6px 6px 2px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid var(--border)}
+#wsEditor{flex:1;width:100%;resize:none;border:none;outline:none;background:#0d1117;color:#e6edf3;font-family:Consolas,Menlo,monospace;font-size:13px;line-height:1.5;padding:12px;tab-size:2;white-space:pre;overflow:auto}
+#wsFrame{flex:1;width:100%;border:none;background:#fff;display:none}
+.ws-empty{padding:18px;color:var(--text2);font-size:.8rem;text-align:center;line-height:1.6}
+.ws-chip{display:inline-flex;align-items:center;gap:6px;margin:6px 0;padding:7px 12px;border:1px solid var(--accent);border-radius:10px;background:rgba(218,165,32,.1);color:var(--accent);font-size:.82rem;cursor:pointer}
+.ws-chip:hover{background:rgba(218,165,32,.22)}
+.ws-chip span{color:var(--text2)}
+@media(max-width:640px){.ws-panel{position:fixed;top:0;right:0;bottom:0;left:0;z-index:120;width:100%}}
 .priv-row{display:flex;justify-content:space-between;gap:8px;font-size:.68rem}
 .priv-row a,.priv-row button{color:var(--text2);background:none;border:none;cursor:pointer;text-decoration:underline;font-size:.68rem;padding:0}
 .priv-row a:hover,.priv-row button:hover{color:var(--accent)}
@@ -307,6 +323,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#E8C547" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" fill="rgba(232,197,71,.16)"/><path d="M8 20h8M12 16v4"/><path d="M9.5 8.3 7.5 10l2 1.7M14.5 8.3l2 1.7-2 1.7"/></svg>
       <span>Code mode</span>
     </button>
+    <button class="icon-btn" id="wsBtn" onclick="wsToggle()" title="Fichiers" style="display:none">📁</button>
     <button class="icon-btn" id="convBtn" onclick="toggleConvPanel()" title="Conversations">&#128172;</button>
     <span id="tierBadge" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:linear-gradient(135deg,#DAA520,#E8C547);color:#000;border-radius:20px;padding:2px 10px;font-weight:700;cursor:pointer" onclick="openUpgradeModal()" title="Ton abonnement"></span>
     <span id="internalInd" style="display:none;align-items:center;gap:4px;font-size:.7rem;background:#1a3a2a;color:#4ade80;border:1px solid #4ade80;border-radius:20px;padding:2px 8px;font-weight:700">🔬 Internal</span>
@@ -383,6 +400,16 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Parler">&#127908;</button>
       <button class="send-btn" id="sendBtn" onclick="sendMsg()">Skicka</button>
     </div>
+  </div>
+  <div class="ws-panel" id="wsPanel">
+    <div class="ws-head"><span id="wsTitle">📁 Fichiers</span><span><button id="wsNewBtn" onclick="wsNew()">＋</button><button onclick="wsClose()">✕</button></span></div>
+    <div class="ws-tabs" id="wsTabs"></div>
+    <div class="ws-bar" id="wsBar">
+      <button id="wsCopyBtn" onclick="wsCopy()">Copier</button><button id="wsDlBtn" onclick="wsDownload()">Télécharger</button><button id="wsPrevBtn" onclick="wsPreview()">▶ Aperçu</button><button id="wsDelBtn" onclick="wsDelete()">Supprimer</button>
+    </div>
+    <div class="ws-empty" id="wsEmpty"></div>
+    <textarea id="wsEditor" spellcheck="false" oninput="wsEdit()"></textarea>
+    <iframe id="wsFrame" sandbox="allow-scripts" title="Aperçu"></iframe>
   </div>
   <div class="badge-panel" id="badgePanel">
     <div class="badge-ph">
@@ -1734,6 +1761,128 @@ function _updateSidebarText(l){
   if(typeof renderUserBar==="function")renderUserBar();
   renderConvList();
 }
+// ══ ESPACE FICHIERS (Code mode) : le code n'est plus écrit dans le chat mais dans des fichiers ══
+var _wsFiles=[],_wsCurrent="",_wsCapture=false,_wsPreviewing=false;
+try{_wsFiles=JSON.parse(localStorage.getItem("xn_ws_files")||"[]");if(!Array.isArray(_wsFiles))_wsFiles=[];}catch(e){_wsFiles=[];}
+var _wsTxt={
+  fr:{title:"📁 Fichiers",copy:"Copier",copied:"Copié !",dl:"Télécharger",prev:"▶ Aperçu",edit:"✎ Code",del:"Supprimer",none:"Aucun fichier pour l'instant.<br>Allume le Code mode et demande à Xearnes d'écrire du code : il le mettra ici.",created:"créé",updated:"mis à jour",writing:"📄 Xearnes écrit le fichier…",newq:"Nom du nouveau fichier (par exemple main.py) ?",delq:"Supprimer ce fichier ?"},
+  sv:{title:"📁 Filer",copy:"Kopiera",copied:"Kopierat!",dl:"Ladda ned",prev:"▶ Förhandsvisning",edit:"✎ Kod",del:"Ta bort",none:"Inga filer ännu.<br>Slå på Code mode och be Xearnes skriva kod: den hamnar här.",created:"skapad",updated:"uppdaterad",writing:"📄 Xearnes skriver filen…",newq:"Namn på den nya filen (till exempel main.py)?",delq:"Ta bort den här filen?"},
+  en:{title:"📁 Files",copy:"Copy",copied:"Copied!",dl:"Download",prev:"▶ Preview",edit:"✎ Code",del:"Delete",none:"No files yet.<br>Turn Code mode on and ask Xearnes to write code: it will appear here.",created:"created",updated:"updated",writing:"📄 Xearnes is writing the file…",newq:"Name of the new file (for example main.py)?",delq:"Delete this file?"}
+};
+function _wsT(){return _wsTxt[currentLang]||_wsTxt.en;}
+function _wsPersist(){try{localStorage.setItem("xn_ws_files",JSON.stringify(_wsFiles));}catch(e){}}
+function _wsExt(lang){var m={python:"py",py:"py",javascript:"js",js:"js",node:"js",html:"html",css:"css",json:"json",java:"java",c:"c","c++":"cpp",cpp:"cpp",csharp:"cs","c#":"cs",php:"php",sql:"sql",bash:"sh",sh:"sh",shell:"sh",typescript:"ts",ts:"ts",ruby:"rb",go:"go",rust:"rs",lua:"lua",kotlin:"kt",swift:"swift"};return m[String(lang||"").toLowerCase()]||"txt";}
+function _wsDefaultName(lang){var e=_wsExt(lang);if(e==="html")return "index.html";if(e==="css")return "style.css";if(e==="js")return "script.js";return "main."+e;}
+function _wsCleanName(n){n=String(n||"").replace(/^[`'"\s]+|[`'"\s]+$/g,"").replace(/^.*[\\\/]/,"").replace(/[^A-Za-z0-9._-]/g,"_").slice(0,40);return /^[A-Za-z0-9_-][A-Za-z0-9._-]*\.[A-Za-z0-9]{1,5}$/.test(n)?n:"";}
+function _wsParseInfo(info){
+  // "python main.py" | "main.py" | "python" | "python title=main.py"
+  var parts=String(info||"").trim().split(/\s+/).filter(Boolean),lang="",name="";
+  parts.forEach(function(p){
+    p=p.replace(/^(title|file|filename|name)=/i,"");
+    var c=_wsCleanName(p);
+    if(c&&!name)name=c;else if(!lang&&/^[A-Za-z0-9+#-]+$/.test(p))lang=p;
+  });
+  if(!lang&&name)lang=name.split(".").pop();
+  return {lang:lang,name:name};
+}
+function _wsStore(info,code){
+  var pi=_wsParseInfo(info),name=pi.name||_wsDefaultName(pi.lang);
+  code=String(code).replace(/\s+$/,"").slice(0,60000)+"\n";
+  var f=null;for(var i=0;i<_wsFiles.length;i++){if(_wsFiles[i].name===name){f=_wsFiles[i];break;}}
+  var created=!f;
+  if(!f){if(_wsFiles.length>=30)_wsFiles.shift();f={name:name};_wsFiles.push(f);}
+  f.content=code;f.updated=Date.now();
+  _wsCurrent=name;_wsPersist();_wsPreviewing=false;wsRender();wsUpdateBtn();
+  var p=document.getElementById("wsPanel");if(p&&!p.classList.contains("open"))p.classList.add("open");
+  return {name:name,created:created};
+}
+function _wsChip(r){var t=_wsT();return "<div class='ws-chip' onclick=\"wsOpen('"+r.name+"')\">📄 <b>"+r.name+"</b> <span>· "+(r.created?t.created:t.updated)+"</span> <i>▸</i></div>";}
+// Les blocs ``` de plus d'une ligne deviennent des fichiers ; dans le chat il ne reste qu'une pastille.
+function _wsExtract(t,chips){
+  t=String(t).replace(/```([^\n`]*)\n([\s\S]*?)```/g,function(m,info,code){
+    if(code.replace(/\s+$/,"").split("\n").length<2&&!_wsParseInfo(info).name)return m; // une seule ligne sans nom de fichier : reste dans le texte
+    chips.push(_wsChip(_wsStore(info,code)));
+    return "\n\nWSCHIP"+(chips.length-1)+"\n\n";
+  });
+  // un dernier bloc jamais refermé (réponse coupée) devient quand même un fichier
+  t=t.replace(/```([^\n`]*)\n((?:(?!```)[\s\S])+)$/,function(m,info,code){
+    if(code.replace(/\s+$/,"").split("\n").length<2&&!_wsParseInfo(info).name)return m;
+    chips.push(_wsChip(_wsStore(info,code)));
+    return "\n\nWSCHIP"+(chips.length-1)+"\n\n";
+  });
+  return t;
+}
+// Pendant l'écriture (streaming) : on cache le code, on montre seulement qu'un fichier s'écrit.
+function _wsHideFences(t){
+  t=String(t).replace(/```[^\n`]*\n[\s\S]*?```/g,"📄 …");
+  return t.replace(/```[^\n`]*(?:\n[\s\S]*)?$/,_wsT().writing);
+}
+// Le modèle voit les fichiers du projet (il ne les voit plus dans le chat) : il peut les modifier.
+function _wsContextPrompt(){
+  if(!_wsFiles.length)return "";
+  var out=" FICHIERS DU PROJET (déjà créés ; pour en modifier un, réécris le fichier ENTIER avec le même nom) :",total=0;
+  for(var i=0;i<_wsFiles.length;i++){
+    var f=_wsFiles[i];
+    if(total+f.content.length>6000){out+="\n[fichier "+f.name+" trop long, non montré]";continue;}
+    total+=f.content.length;out+="\n```"+f.name+"\n"+f.content+"```";
+  }
+  return out;
+}
+function _wsFind(name){for(var i=0;i<_wsFiles.length;i++){if(_wsFiles[i].name===name)return _wsFiles[i];}return null;}
+function wsUpdateBtn(){
+  var b=document.getElementById("wsBtn");if(!b)return;
+  var show=(typeof _codeModeOn!=="undefined"&&_codeModeOn)||_wsFiles.length>0;
+  b.style.display=show?"flex":"none";b.textContent="📁"+(_wsFiles.length?" "+_wsFiles.length:"");
+}
+function wsRender(){
+  var t=_wsT(),tabs=document.getElementById("wsTabs"),ed=document.getElementById("wsEditor"),fr=document.getElementById("wsFrame"),em=document.getElementById("wsEmpty");
+  if(!tabs)return;
+  document.getElementById("wsTitle").textContent=t.title;
+  document.getElementById("wsCopyBtn").textContent=t.copy;document.getElementById("wsDlBtn").textContent=t.dl;document.getElementById("wsDelBtn").textContent=t.del;
+  tabs.innerHTML="";
+  _wsFiles.forEach(function(f){var b=document.createElement("button");b.className="ws-tab"+(f.name===_wsCurrent?" on":"");b.textContent=f.name;b.onclick=function(){wsOpen(f.name);};tabs.appendChild(b);});
+  var cur=_wsFind(_wsCurrent);if(!cur&&_wsFiles.length){cur=_wsFiles[_wsFiles.length-1];_wsCurrent=cur.name;}
+  var has=!!cur;
+  em.style.display=has?"none":"block";em.innerHTML=t.none;
+  document.getElementById("wsBar").style.display=has?"flex":"none";
+  var isHtml=has&&/\.html?$/i.test(cur.name);
+  var pb=document.getElementById("wsPrevBtn");pb.style.display=isHtml?"inline-block":"none";pb.textContent=_wsPreviewing?t.edit:t.prev;
+  if(!isHtml)_wsPreviewing=false;
+  ed.style.display=has&&!_wsPreviewing?"block":"none";
+  fr.style.display=has&&_wsPreviewing?"block":"none";
+  if(has&&!_wsPreviewing&&ed.value!==cur.content)ed.value=cur.content;
+  if(has&&_wsPreviewing)fr.srcdoc=_wsBuildPreview(cur);
+}
+function wsOpen(name){if(!_wsFind(name))return;_wsCurrent=name;_wsPreviewing=false;wsRender();var p=document.getElementById("wsPanel");if(p)p.classList.add("open");}
+function wsToggle(){var p=document.getElementById("wsPanel");if(!p)return;p.classList.toggle("open");wsRender();}
+function wsClose(){var p=document.getElementById("wsPanel");if(p)p.classList.remove("open");}
+function wsEdit(){var f=_wsFind(_wsCurrent);if(!f)return;f.content=document.getElementById("wsEditor").value;f.updated=Date.now();_wsPersist();}
+function wsCopy(){
+  var f=_wsFind(_wsCurrent);if(!f)return;var b=document.getElementById("wsCopyBtn"),t=_wsT();
+  try{navigator.clipboard.writeText(f.content).then(function(){b.textContent=t.copied;setTimeout(function(){b.textContent=t.copy;},1200);});}catch(e){document.getElementById("wsEditor").select();document.execCommand("copy");}
+}
+function wsDownload(){
+  var f=_wsFind(_wsCurrent);if(!f)return;
+  var blob=new Blob([f.content],{type:"text/plain;charset=utf-8"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=f.name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+}
+function wsDelete(){
+  if(!_wsFind(_wsCurrent)||!confirm(_wsT().delq))return;
+  _wsFiles=_wsFiles.filter(function(f){return f.name!==_wsCurrent;});_wsCurrent="";_wsPreviewing=false;_wsPersist();wsRender();wsUpdateBtn();
+}
+function wsNew(){
+  var n=_wsCleanName(prompt(_wsT().newq,"main.py")||"");if(!n)return;
+  if(!_wsFind(n)){_wsFiles.push({name:n,content:"",updated:Date.now()});_wsPersist();}
+  _wsCurrent=n;_wsPreviewing=false;wsRender();wsUpdateBtn();document.getElementById("wsEditor").focus();
+}
+function wsPreview(){_wsPreviewing=!_wsPreviewing;wsRender();}
+// Aperçu d'une page web : on glisse les fichiers CSS et JavaScript du projet dans la page, dans un cadre isolé (sans accès au site).
+function _wsBuildPreview(f){
+  var h=f.content;
+  h=h.replace(/<link[^>]*href=["']([^"']+)["'][^>]*>/gi,function(m,href){var x=_wsFind(_wsCleanName(href));return x&&/\.css$/i.test(x.name)?"<style>"+x.content+"</style>":m;});
+  h=h.replace(/<script[^>]*src=["']([^"']+)["'][^>]*>\s*<\/script>/gi,function(m,src){var x=_wsFind(_wsCleanName(src));return x&&/\.js$/i.test(x.name)?"<script>"+x.content.replace(/<\/script/gi,"<\\/script")+"<\/script>":m;});
+  return h;
+}
 // ── SALUTATIONS DU CODE MODE : affichées à la place de l'accueil habituel, seulement quand le bouton Code mode est allumé ──
 var _codeGreetings={
   en:["Ready to start a project, {name}?","Code mode is on. What are we building today?","Let's write some code, {name}.","New project? Tell me the idea, I'll help with the code.","Stuck on a bug? Paste it here.","Time to build something cool, {name}.","Compiler warmed up. What's the plan?","Hello, {name}. Pick a language, pick an idea, let's go.","Code mode online. Awaiting your first line, {name}."],
@@ -1758,6 +1907,7 @@ try{_codeModeOn=localStorage.getItem("xn_codemode")==="1";}catch(e){}
 function updateCodeBtn(){
   var b=document.getElementById("codeBtn");
   if(b){b.classList.toggle("on",_codeModeOn);b.setAttribute("aria-pressed",_codeModeOn?"true":"false");}
+  if(typeof wsUpdateBtn==="function")wsUpdateBtn();
   var inp=document.getElementById("userInput");
   if(inp){
     var msg={fr:"💻 Code mode activé : décris ce que tu veux programmer...",sv:"💻 Code mode på: beskriv vad du vill programmera...",en:"💻 Code mode on: describe what you want to build..."};
@@ -2511,6 +2661,8 @@ function _scrubIdentity(t){
 function sanitizeAI(t){
   t=_stripThinking(t).trim();
   t=_scrubIdentity(t);
+  var _wsChips=[];
+  if(_wsCapture)t=_wsExtract(t,_wsChips); // Code mode : le code va dans les fichiers, pas dans le chat
   // On met les blocs de code ```...``` de côté AVANT le nettoyage (sinon les sauts de ligne du code seraient cassés)
   var _codes=[];
   t=String(t).replace(/```[a-zA-Z0-9+#-]*\n?([\s\S]*?)```/g,function(m,c){
@@ -2530,10 +2682,11 @@ function sanitizeAI(t){
     .replace(/^#{1,3}[ \t]+(.+)/gm,"<strong>$1</strong>")
     .replace(/([^\n])\n([^\n])/g,"$1<br>$2");
   // On remet les blocs de code, échappés et stylés comme un éditeur
-  return out.replace(/CODE(\d+)/g,function(m,i){
+  out=out.replace(/CODE(\d+)/g,function(m,i){
     var c=_codes[+i].replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     return '<pre style="background:#0d1117;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:12px;overflow-x:auto;font-family:Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre;margin:8px 0;color:#e6edf3">'+c+'</pre>';
   });
+  return out.replace(/WSCHIP(\d+)/g,function(m,i){return _wsChips[+i]||"";});
 }
 // Détecte si la question parle de programmation -> on utilise Sonnet 4.6 (meilleur en code).
 // Sinon on garde Haiku (moins cher) pour toutes les questions normales.
@@ -2583,7 +2736,7 @@ function callClaude(question,lang,cb,_attempt,onChunk,groundingFacts){
   var codeMode=isCodeQuestion(question)||_codeModeOn; // le mode code est ouvert à tous, y compris au niveau gratuit (décision de Youssef)
   var sysPrompt=_xnSystemPrompt(lang);
   sysPrompt+=_buildMemoryPrompt();
-  if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris toujours le code dans des blocs markdown avec trois accents graves (```). Explique le code simplement, ligne par ligne si besoin, pour qu'un débutant comprenne. Donne du code complet qui marche, pas des morceaux incomplets.";
+  if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris chaque fichier de code dans un bloc markdown avec trois accents graves, en mettant le langage puis le nom du fichier juste après les accents graves, par exemple ```python main.py ou ```html index.html. N'écris le code que dans ces blocs : il apparaîtra dans l'espace Fichiers, pas dans le chat. Dans ta réponse, explique en quelques phrases ce que fait le code, pour qu'un débutant comprenne. Donne des fichiers complets qui marchent, jamais des morceaux incomplets ; si tu modifies un fichier existant, réécris-le en entier avec le même nom."+_wsContextPrompt();
   if(groundingFacts)sysPrompt+=" FAITS VÉRIFIÉS (source Wikipédia) À UTILISER POUR RÉPONDRE : \""+groundingFacts+"\" — Base ta réponse sur CES faits précis, reformulés avec ta propre personnalité. N'invente AUCUN autre fait, date ou détail qui n'est pas dans ce texte. Si ces faits ne suffisent pas pour répondre complètement, dis-le simplement plutôt que d'inventer.";
   var msgs=[];
   var hist=convHistory;
@@ -2624,7 +2777,9 @@ function callClaude(question,lang,cb,_attempt,onChunk,groundingFacts){
   };
   // Une réponse vide / sans lettres (ex. juste un emoji) est refaite UNE fois, puis on affiche une vraie erreur — jamais un faux "je ne suis pas sûr".
   function _tryCall(n){
+    _wsCapture=codeMode; // en Code mode, sanitizeAI range le code dans les fichiers
     callMistral(sysPrompt,msgs,function(r){
+      _wsCapture=false;
       var letters=(String(r||"").replace(/<[^>]*>/g," ").match(/[\p{L}\p{N}]/gu)||[]).length;
       if(letters>=(n>1?1:2))return cb(r);
       if(n<2)return _tryCall(n+1);
@@ -3655,6 +3810,7 @@ function sendMsg(){
     },function(partial){
       // Streaming : les mots apparaissent au fur et à mesure (raisonnement caché filtré en direct)
       var visible=_scrubIdentity(_stripThinking(partial));
+      if(_wsCapture)visible=_wsHideFences(visible); // Code mode : on ne montre pas le code qui s'écrit, seulement le fichier en cours
       if(!visible)return; // encore en train de "réfléchir" — on garde l'indicateur "..."
       if(td.classList.contains("typing")){
         td.classList.remove("typing");
