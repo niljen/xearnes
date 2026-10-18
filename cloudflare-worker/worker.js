@@ -11,6 +11,7 @@ const OLLAMA_NONSTREAM_TIMEOUT_MS = 120000; // sans streaming, la réponse n'arr
 const OLLAMA_HEADERS_TIMEOUT_MS = 45000; // si pas de début de réponse après 45 s, on bascule sur le secours
 
 import { handleAuthRequest, handleAuthVerify, handleAuthMe, tierFromRequest } from "./auth.js";
+import { handleStripeWebhook } from "./stripe.js";
 import { TIER_CHAIN, TIER_MAX_TOKENS, podConfig, loadPod, savePod, isWarm, maybeWake, askPod } from "./pods.js";
 
 // ── RunPod Serverless (GPU) : voir pods.js. Les modèles et leur ordre dépendent du niveau de l'abonné (auth.js). ──
@@ -126,6 +127,8 @@ export default {
 
     // ── Connexion par code envoyé par email (voir auth.js) ──
     const path = new URL(request.url).pathname;
+    // ── Webhook Stripe (signature vérifiée dans stripe.js) ──
+    if (path === "/stripe-webhook" && request.method === "POST") return handleStripeWebhook(request, env);
     if (path.startsWith("/auth/")) {
       const json = (r) => new Response(JSON.stringify(r.json), { status: r.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       try {
@@ -162,8 +165,8 @@ export default {
     // Mode code : l'appli ajoute « MODE CODE ACTIVÉ » au prompt quand il est débloqué. Toutes les questions de code vont
     // sur le 8B (choix de Youssef : 12/13 au banc de code, rapide et peu coûteux), quel que soit le niveau de l'abonné.
     const codeMode = messages.some((m) => m.role === "system" && typeof m.content === "string" && m.content.includes("MODE CODE ACTIVÉ"));
-    // « Plus de détails » (abonnés) : l'appli ajoute « MODE DÉTAILLÉ ACTIVÉ » ; la réponse peut être plus longue.
-    const detailMode = messages.some((m) => m.role === "system" && typeof m.content === "string" && m.content.includes("MODE DÉTAILLÉ ACTIVÉ"));
+    // « Plus de détails » (abonnés) ou document/présentation (tous) : l'appli ajoute « MODE DÉTAILLÉ ACTIVÉ » ou « MODE DOCUMENT ACTIVÉ » ; la réponse peut être plus longue.
+    const detailMode = messages.some((m) => m.role === "system" && typeof m.content === "string" && (m.content.includes("MODE DÉTAILLÉ ACTIVÉ") || m.content.includes("MODE DOCUMENT ACTIVÉ")));
 
     // Diagnostic (sans contenu des messages) : pourquoi cette réponse vient d'Oracle ou de RunPod
     const dbg = ["tier=" + tier, "score=" + score, "pii=" + (pii ? 1 : 0), "ident=" + (ident ? 1 : 0), "code=" + (codeMode ? 1 : 0)];

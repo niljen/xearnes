@@ -435,7 +435,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
     <div class="ws-head"><span id="wsTitle">📁 Fichiers</span><span><button id="wsNewBtn" onclick="wsNew()">＋</button><button onclick="wsClose()">✕</button></span></div>
     <div class="ws-tabs" id="wsTabs"></div>
     <div class="ws-bar" id="wsBar">
-      <button id="wsCopyBtn" onclick="wsCopy()">Copier</button><button id="wsDlBtn" onclick="wsDownload()">Télécharger</button><button id="wsPrevBtn" onclick="wsPreview()">▶ Aperçu</button><button id="wsDelBtn" onclick="wsDelete()">Supprimer</button>
+      <button id="wsCopyBtn" onclick="wsCopy()">Copier</button><button id="wsDlBtn" onclick="wsDownload()">Télécharger</button><button id="wsPrevBtn" onclick="wsPreview()">▶ Aperçu</button><button id="wsDelBtn" onclick="wsDelete()">Supprimer</button><button onclick="wsCodepen()">CodePen</button><button onclick="wsZip()">ZIP</button>
     </div>
     <div class="ws-empty" id="wsEmpty"></div>
     <textarea id="wsEditor" spellcheck="false" oninput="wsEdit()"></textarea>
@@ -1437,8 +1437,8 @@ function doPortfolioSummary(lang,cb){
 }
 function doStockChart(lang,cb){
   if(_tierRank(_xnTier)<2){
-    return cb(lang==="fr"?"🔒 Les graphiques bourse sont réservés aux abonnés <strong>Ultra</strong> et <strong>Legend</strong>. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
-              "🔒 Stock charts are for <strong>Ultra</strong> and <strong>Legend</strong> subscribers. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>");
+    return cb(lang==="fr"?"🔒 Les graphiques bourse sont réservés aux abonnés <strong>Super</strong> et <strong>Ultimate</strong>. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
+              "🔒 Stock charts are for <strong>Super</strong> and <strong>Ultimate</strong> subscribers. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>");
   }
   var hist=[];try{hist=JSON.parse(localStorage.getItem("xn_stock_history")||"[]");}catch(e){}
   if(hist.length<2){
@@ -1807,7 +1807,6 @@ var _stTxt={
 };
 function _stT(){return _stTxt[currentLang]||_stTxt.en;}
 function _stCan(rank){return _tierRank(_xnTier)>=rank;}
-var _stColors=[["","#DAA520"],["blue","#2980b9"],["purple","#9b59b6"],["green","#27ae60"],["red","#e74c3c"],["orange","#e67e22"],["diamond","#00d4ff"],["neon","#ff00ff"],["fire","#ff4500"],["emerald","#00e676"],["midnight","#7c4dff"],["cosmic","#FFD700"]];
 var _stAvatars=["🤖","🦊","🐉","🐱","🦄","🌟","🐼","🚀"];
 function stToggle(){var p=document.getElementById("stPanel");if(!p)return;p.classList.toggle("open");if(p.classList.contains("open"))stRender();}
 function stClose(){var p=document.getElementById("stPanel");if(p)p.classList.remove("open");}
@@ -1823,15 +1822,8 @@ function _stSec(title,locked,inner){var t=_stT();return '<div class="st-sec"><h4
 function _esc(x){return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function stRender(){
   var body=document.getElementById("stBody");if(!body)return;
-  var t=_stT(),can=_stCan(1),cur=_lsGet("xn_color"),h="";
+  var t=_stT(),can=_stCan(1),h="";
   document.getElementById("stTitle").textContent=t.title;
-  // 1. Thèmes
-  var th='<div class="st-row">';
-  _stColors.forEach(function(c){
-    var need=_THEME_TIERS[c[0]],locked=need&&!_stCan(_tierRank(need));
-    th+='<button class="st-opt'+(cur===c[0]?' on':'')+(locked?' locked':'')+'" onclick="stSetTheme(\''+c[0]+'\')"><span class="st-dot" style="--dot:'+c[1]+'"></span>'+(locked?'🔒':'')+'</button>';
-  });
-  h+=_stSec(t.theme,false,th+'</div><div class="st-note">'+t.themeNote+'</div>');
   // 2. Ton prénom (pour tous, reste sur l'appareil : sert à te saluer, n'est pas envoyé à l'IA)
   var yn='<input type="text" id="stYou" maxlength="20" placeholder="'+_esc(t.youPh)+'" value="'+_esc(userName||"")+'" onchange="stSaveYou()" onkeydown="if(event.key===\'Enter\')this.blur()"><div class="st-note">'+t.youNote+'</div>';
   h+=_stSec(t.you,false,yn);
@@ -1852,9 +1844,12 @@ function stRender(){
   h+=_stSec(t.voice,false,vo);
   // 6. Export
   h+=_stSec(t.exp,!can,'<div class="st-row"><button class="st-opt'+(can?'':' locked')+'" onclick="stExport(\'txt\')">'+t.expTxt+'</button><button class="st-opt'+(can?'':' locked')+'" onclick="stExport(\'pdf\')">'+t.expPdf+'</button></div>');
+  var lg=_lgT(),acc;
+  if(_xnToken){acc='<div class="st-note">'+_esc(_xnEmail||"")+(_tierLabel()?' · '+_tierLabel():'')+'</div><div class="st-row"><button class="st-opt" onclick="lgLogout()">'+lg.logout+'</button></div>';}
+  else{acc='<div class="st-row"><button class="st-opt" onclick="stClose();openEmailModal()">'+lg.login+'</button></div><div class="st-note">'+lg.accNote+'</div>';}
+  h=_stSec(lg.acct,false,acc)+h;
   body.innerHTML=h;
 }
-function stSetTheme(c){setColorTheme(c);stRender();}
 function stSaveYou(){
   var el=document.getElementById("stYou");if(!el)return;
   var v=(el.value||"").replace(/[^\p{L}\p{N} _-]/gu,"").trim().slice(0,20);
@@ -1911,6 +1906,245 @@ function stExport(kind){
     w.document.write("<!doctype html><meta charset='utf-8'><title>Xearnes</title><body style=\"font-family:system-ui,sans-serif;max-width:720px;margin:24px auto;line-height:1.5;white-space:pre-wrap;color:#111\">"+_esc(txt)+"</body>");
     w.document.close();w.focus();setTimeout(function(){w.print();},300);
   }
+}
+// ══ OUTILS D'EXPORT : PDF, Word, PowerPoint, Gmail, agenda, CodePen, ZIP. Tout est fait sur l'appareil ; rien n'est envoyé avant un clic. ══
+var _dxTxt={
+fr:{tools:"🧰 Outils",pdf:"📄 PDF",word:"📝 Word",ppt:"📊 PowerPoint",gmail:"📧 Gmail",mail:"✉️ Autre messagerie",cal:"📅 Agenda",popup:"Autorise les fenêtres pop-up pour continuer.",noHtml:"Il n'y a pas de page web (.html) dans tes fichiers.",noFiles:"Aucun fichier à compresser.",
+ agTitle:"📅 Ajouter à l'agenda",agName:"Titre",agDate:"Date",agTime:"Heure",agDur:"Durée (minutes)",agIcs:"Télécharger (.ics)",agGoogle:"Google Agenda",cancel:"Annuler",agBad:"Choisis un titre et une date."},
+sv:{tools:"🧰 Verktyg",pdf:"📄 PDF",word:"📝 Word",ppt:"📊 PowerPoint",gmail:"📧 Gmail",mail:"✉️ Annan e-post",cal:"📅 Kalender",popup:"Tillåt popup-fönster för att fortsätta.",noHtml:"Det finns ingen webbsida (.html) bland dina filer.",noFiles:"Inga filer att packa.",
+ agTitle:"📅 Lägg till i kalendern",agName:"Titel",agDate:"Datum",agTime:"Tid",agDur:"Längd (minuter)",agIcs:"Ladda ned (.ics)",agGoogle:"Google Kalender",cancel:"Avbryt",agBad:"Välj en titel och ett datum."},
+en:{tools:"🧰 Tools",pdf:"📄 PDF",word:"📝 Word",ppt:"📊 PowerPoint",gmail:"📧 Gmail",mail:"✉️ Other email app",cal:"📅 Calendar",popup:"Allow pop-ups to continue.",noHtml:"There is no web page (.html) in your files.",noFiles:"No files to zip.",
+ agTitle:"📅 Add to calendar",agName:"Title",agDate:"Date",agTime:"Time",agDur:"Length (minutes)",agIcs:"Download (.ics)",agGoogle:"Google Calendar",cancel:"Cancel",agBad:"Choose a title and a date."}
+};
+function _dxT(){return _dxTxt[currentLang]||_dxTxt.en;}
+// Le mode document demande à l'IA une réponse bien structurée (titre, sections, puces) qu'on peut ensuite exporter.
+function _dxIntent(q){return /pr[ée]sentation|powerpoint|pptx|diaporama|\bslides?\b|expos[ée]\b|\bdocument\b|rapport|lettre|\bcv\b|\bword\b|docx|\bpdf\b|r[ée]dige|compte.?rendu|dissertation|presentasjon|\bbrev\b|dokument|bildspel/i.test(String(q||""));}
+function _dxX(s){return String(s==null?"":s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+// ── Archive ZIP (sans compression) : sert aux fichiers .docx, .pptx et au ZIP du projet ──
+var _dxCrcT=null;
+function _dxCrc(b){
+  if(!_dxCrcT){_dxCrcT=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);_dxCrcT[n]=c>>>0;}}
+  var x=0xFFFFFFFF;for(var i=0;i<b.length;i++)x=_dxCrcT[(x^b[i])&255]^(x>>>8);
+  return (x^0xFFFFFFFF)>>>0;
+}
+function _dxZip(files,type){
+  var enc=new TextEncoder(),parts=[],cd=[],off=0;
+  files.forEach(function(f){
+    var nm=enc.encode(f.name),d=typeof f.data==="string"?enc.encode(f.data):f.data,crc=_dxCrc(d);
+    var h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer),nm,d);
+    var c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);
+    c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+    cd.push(new Uint8Array(c.buffer),nm);
+    off+=30+nm.length+d.length;
+  });
+  var cdLen=0;cd.forEach(function(x){cdLen+=x.length;});
+  var e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdLen,true);e.setUint32(16,off,true);
+  return new Blob(parts.concat(cd,[new Uint8Array(e.buffer)]),{type:type||"application/zip"});
+}
+function _dxSave(blob,name){
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1500);
+}
+function _dxStamp(){return new Date().toISOString().slice(0,10);}
+// ── Lecture du texte de la réponse : titre, sections, puces ──
+function _dxPlainSrc(h){return String(h).replace(/<br\s*\/?>/gi,"\n").replace(/<\/p>/gi,"\n\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&amp;/g,"&").replace(/\r/g,"");}
+function _dxParse(text){
+  var out=[];
+  _dxPlainSrc(text).split("\n").forEach(function(l){
+    var s=l.trim();if(!s)return;
+    var m,wholeBold=/^\*\*[^*]+\*\*:?$/.test(s)||/^__[^_]+__:?$/.test(s);
+    s=s.replace(/\*\*(.*?)\*\*/g,"$1").replace(/__(.*?)__/g,"$1").replace(/`([^`]*)`/g,"$1");
+    if((m=s.match(/^(#{1,3})\s+(.*)$/)))out.push({t:m[1].length===1?"h1":"h2",s:m[2].replace(/[:\s]+$/,"")});
+    else if(wholeBold)out.push({t:"h2",s:s.replace(/[:\s]+$/,"")});
+    else if((m=s.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/)))out.push({t:"li",s:m[1]});
+    else out.push({t:"p",s:s});
+  });
+  return out;
+}
+function _dxTitle(b){
+  if(b.length&&b[0].t==="h1")return b[0].s;
+  var f=b.filter(function(x){return x.t==="h2"||x.t==="p";})[0];
+  if(!f)return "Xearnes";
+  var t=f.s.split(/[.!?]/)[0];return t.length>70?t.slice(0,67)+"…":t;
+}
+function _dxSlides(text){
+  var b=_dxParse(text),title=_dxTitle(b),i=(b.length&&b[0].t==="h1")?1:0,slides=[],cur=null;
+  function items(x){
+    if(x.t==="p"&&x.s.length>200)return x.s.match(/[^.!?]+[.!?]*/g).map(function(z){return z.trim();}).filter(Boolean);
+    return [x.s];
+  }
+  for(;i<b.length;i++){
+    var x=b[i];
+    if(x.t==="h1"||x.t==="h2"){cur={title:x.s,items:[]};slides.push(cur);continue;}
+    if(!cur){cur={title:"",items:[]};slides.push(cur);}
+    items(x).forEach(function(it){
+      if(cur.items.length>=6){cur={title:cur.title,items:[],more:true};slides.push(cur);}
+      cur.items.push(it);
+    });
+  }
+  slides=slides.filter(function(s){return s.items.length||s.title;});
+  slides.forEach(function(sl){if(!sl.title)sl.title=(sl.items[0]||"").split(/\s+/).slice(0,6).join(" ")+"…";});
+  if(!slides.length)slides.push({title:title,items:[]});
+  return {title:title,slides:slides};
+}
+// ── Word (.docx) ──
+function _dxDocx(text){
+  var b=_dxParse(text),title=_dxTitle(b),body="";
+  if(b.length&&b[0].t==="h1")b=b.slice(1);
+  function run(t,o){return '<w:r><w:rPr>'+(o.b?'<w:b/>':'')+(o.c?'<w:color w:val="'+o.c+'"/>':'')+(o.sz?'<w:sz w:val="'+o.sz+'"/>':'')+'</w:rPr><w:t xml:space="preserve">'+_dxX(t)+'</w:t></w:r>';}
+  function p(t,o,ppr){return '<w:p><w:pPr>'+(ppr||'<w:spacing w:after="120"/>')+'</w:pPr>'+run(t,o)+'</w:p>';}
+  body+=p(title,{b:1,c:"9A6F00",sz:44},'<w:spacing w:after="240"/>');
+  b.forEach(function(x){
+    if(x.t==="h1"||x.t==="h2")body+=p(x.s,{b:1,c:"9A6F00",sz:30},'<w:keepNext/><w:spacing w:before="240" w:after="120"/>');
+    else if(x.t==="li")body+=p("•  "+x.s,{sz:24},'<w:spacing w:after="80"/><w:ind w:left="567" w:hanging="283"/>');
+    else body+=p(x.s,{sz:24});
+  });
+  var H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  return _dxZip([
+    {name:"[Content_Types].xml",data:H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'},
+    {name:"_rels/.rels",data:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'},
+    {name:"word/document.xml",data:H+'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>'}
+  ],"application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+}
+// ── PowerPoint (.pptx) : une section = une diapositive ──
+function _dxPptx(text){
+  var d=_dxSlides(text),NS='xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
+  var H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n',REL="http://schemas.openxmlformats.org/officeDocument/2006/relationships/";
+  var GRP='<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
+  var nid=1;
+  function run(t,sz,col,b){return '<a:r><a:rPr lang="en-US" sz="'+sz+'" b="'+(b?1:0)+'" dirty="0"><a:solidFill><a:srgbClr val="'+col+'"/></a:solidFill></a:rPr><a:t>'+_dxX(t)+'</a:t></a:r>';}
+  function para(t,sz,col,b,algn,bullet){return '<a:p><a:pPr'+(bullet?' marL="342900" indent="-342900"':'')+(algn?' algn="'+algn+'"':'')+'>'+(bullet?'<a:spcBef><a:spcPts val="900"/></a:spcBef><a:buFont typeface="Arial"/><a:buChar char="&#8226;"/>':'<a:buNone/>')+'</a:pPr>'+run(t,sz,col,b)+'</a:p>';}
+  function box(name,x,y,w,h,paras,anchor){nid++;return '<p:sp><p:nvSpPr><p:cNvPr id="'+nid+'" name="'+name+'"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="'+h+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap="square" lIns="91440" tIns="45720" rIns="91440" bIns="45720" anchor="'+(anchor||"t")+'"><a:normAutofit/></a:bodyPr><a:lstStyle/>'+paras+'</p:txBody></p:sp>';}
+  function bar(x,y,w,h){nid++;return '<p:sp><p:nvSpPr><p:cNvPr id="'+nid+'" name="Bar"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="'+x+'" y="'+y+'"/><a:ext cx="'+w+'" cy="'+h+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="DAA520"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr></p:sp>';}
+  function slideXml(shapes){return H+'<p:sld '+NS+'><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree>'+GRP+shapes+'</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>';}
+  var slides=[];
+  nid=1;slides.push(slideXml(bar(0,0,12192000,180000)+box("Title",900000,2300000,10392000,1500000,para(d.title,4400,"9A6F00",true,"ctr"),"ctr")+box("Subtitle",900000,3900000,10392000,600000,para("Xearnes",2000,"5C564A",false,"ctr"))));
+  var first=true;
+  d.slides.forEach(function(sl){
+    // si la première section répète le titre sans contenu, on ne fait pas de diapositive vide
+    if(first&&!sl.items.length&&sl.title===d.title){first=false;return;}
+    first=false;
+    var tot=sl.items.join("").length,sz=tot>800?1600:tot>500?2000:2400;
+    nid=1;
+    var ps=sl.items.map(function(it){return para(it,sz,"1A1710",false,"",true);}).join("")||para(" ",sz,"1A1710",false,"",false);
+    slides.push(slideXml(bar(0,0,12192000,120000)+box("Title",600000,300000,10992000,1000000,para(sl.title,3200,"9A6F00",true,""),"ctr")+box("Content",600000,1500000,10992000,4600000,ps)+box("Footer",9400000,6300000,2200000,400000,para("Xearnes",1200,"5C564A",false,"r"))));
+  });
+  var files=[],ct='<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>';
+  var sldIds="",presRels='<Relationship Id="rId1" Type="'+REL+'slideMaster" Target="slideMasters/slideMaster1.xml"/><Relationship Id="rId2" Type="'+REL+'theme" Target="theme/theme1.xml"/>';
+  slides.forEach(function(x,i){
+    var n=i+1;
+    ct+='<Override PartName="/ppt/slides/slide'+n+'.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>';
+    sldIds+='<p:sldId id="'+(255+n)+'" r:id="rId'+(2+n)+'"/>';
+    presRels+='<Relationship Id="rId'+(2+n)+'" Type="'+REL+'slide" Target="slides/slide'+n+'.xml"/>';
+  });
+  files.push({name:"[Content_Types].xml",data:H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'+ct+'</Types>'});
+  files.push({name:"_rels/.rels",data:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+REL+'officeDocument" Target="ppt/presentation.xml"/></Relationships>'});
+  files.push({name:"ppt/presentation.xml",data:H+'<p:presentation '+NS+'><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>'+sldIds+'</p:sldIdLst><p:sldSz cx="12192000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/><p:defaultTextStyle><a:defPPr><a:defRPr lang="en-US"/></a:defPPr></p:defaultTextStyle></p:presentation>'});
+  files.push({name:"ppt/_rels/presentation.xml.rels",data:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+presRels+'</Relationships>'});
+  files.push({name:"ppt/slideMasters/slideMaster1.xml",data:H+'<p:sldMaster '+NS+'><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>'+GRP+'</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="4400"/></a:lvl1pPr></p:titleStyle><p:bodyStyle><a:lvl1pPr><a:defRPr sz="2800"/></a:lvl1pPr></p:bodyStyle><p:otherStyle><a:defPPr><a:defRPr/></a:defPPr></p:otherStyle></p:txStyles></p:sldMaster>'});
+  files.push({name:"ppt/slideMasters/_rels/slideMaster1.xml.rels",data:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+REL+'slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="'+REL+'theme" Target="../theme/theme1.xml"/></Relationships>'});
+  files.push({name:"ppt/slideLayouts/slideLayout1.xml",data:H+'<p:sldLayout '+NS+' type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>'+GRP+'</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>'});
+  files.push({name:"ppt/slideLayouts/_rels/slideLayout1.xml.rels",data:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+REL+'slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>'});
+  var fill='<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>',ln='<a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>',fx='<a:effectStyle><a:effectLst/></a:effectStyle>';
+  files.push({name:"ppt/theme/theme1.xml",data:H+'<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Xearnes"><a:themeElements><a:clrScheme name="Xearnes"><a:dk1><a:srgbClr val="1A1710"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="5C564A"/></a:dk2><a:lt2><a:srgbClr val="FAF7EF"/></a:lt2><a:accent1><a:srgbClr val="DAA520"/></a:accent1><a:accent2><a:srgbClr val="9A6F00"/></a:accent2><a:accent3><a:srgbClr val="4EA8DE"/></a:accent3><a:accent4><a:srgbClr val="8888FF"/></a:accent4><a:accent5><a:srgbClr val="27AE60"/></a:accent5><a:accent6><a:srgbClr val="E74C3C"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme><a:fontScheme name="Xearnes"><a:majorFont><a:latin typeface="Arial"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Arial"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Xearnes"><a:fillStyleLst>'+fill+fill+fill+'</a:fillStyleLst><a:lnStyleLst>'+ln+ln+ln+'</a:lnStyleLst><a:effectStyleLst>'+fx+fx+fx+'</a:effectStyleLst><a:bgFillStyleLst>'+fill+fill+fill+'</a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>'});
+  slides.forEach(function(x,i){
+    files.push({name:"ppt/slides/slide"+(i+1)+".xml",data:x});
+    files.push({name:"ppt/slides/_rels/slide"+(i+1)+".xml.rels",data:H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+REL+'slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>'});
+  });
+  return _dxZip(files,"application/vnd.openxmlformats-officedocument.presentationml.presentation");
+}
+// ── PDF : page propre + impression du navigateur (« Enregistrer en PDF ») ──
+function _dxPdf(text){
+  var b=_dxParse(text),title=_dxTitle(b),h="",inUl=false;
+  if(b.length&&b[0].t==="h1")b=b.slice(1);
+  function close(){if(inUl){h+="</ul>";inUl=false;}}
+  b.forEach(function(x){
+    if(x.t==="li"){if(!inUl){h+="<ul>";inUl=true;}h+="<li>"+_esc(x.s)+"</li>";return;}
+    close();
+    if(x.t==="h1"||x.t==="h2")h+="<h2>"+_esc(x.s)+"</h2>";else h+="<p>"+_esc(x.s)+"</p>";
+  });
+  close();
+  var w=window.open("","_blank");if(!w){alert(_dxT().popup);return;}
+  w.document.write("<!doctype html><meta charset='utf-8'><title>"+_esc(title)+"</title><style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:720px;margin:28px auto;line-height:1.55;color:#1a1710;padding:0 16px}h1{color:#9a6f00;font-size:1.8rem;margin:0 0 14px}h2{color:#9a6f00;font-size:1.2rem;margin:20px 0 6px}ul{padding-left:22px}li{margin:3px 0}.f{margin-top:30px;color:#5c564a;font-size:.8rem}</style><body><h1>"+_esc(title)+"</h1>"+h+"<div class='f'>Xearnes</div></body>");
+  w.document.close();w.focus();setTimeout(function(){w.print();},300);
+}
+// ── Gmail et autre messagerie : on ouvre un brouillon, rien n'est envoyé et Xearnes n'a aucun accès à la boîte mail ──
+function _dxMailText(text){
+  var b=_dxParse(text),title=_dxTitle(b);if(b.length&&b[0].t==="h1")b=b.slice(1);
+  var body=b.map(function(x){return x.t==="li"?"- "+x.s:x.t==="h2"||x.t==="h1"?"\n"+x.s:x.s;}).join("\n").trim();
+  return {subject:title,body:body};
+}
+function _dxGmail(text){var m=_dxMailText(text);window.open("https://mail.google.com/mail/?view=cm&fs=1&su="+encodeURIComponent(m.subject)+"&body="+encodeURIComponent(m.body.slice(0,1500)),"_blank","noopener");}
+function _dxMailto(text){var m=_dxMailText(text);location.href="mailto:?subject="+encodeURIComponent(m.subject)+"&body="+encodeURIComponent(m.body.slice(0,1500));}
+// ── Agenda : fichier .ics (marche avec tous les agendas) ou lien Google Agenda ──
+function _dxIcsEsc(s){return String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");}
+function _dxPad(n){return (n<10?"0":"")+n;}
+function _dxLocal(d){return d.getFullYear()+_dxPad(d.getMonth()+1)+_dxPad(d.getDate())+"T"+_dxPad(d.getHours())+_dxPad(d.getMinutes())+"00";}
+function _dxAgenda(prefill){
+  var t=_dxT(),old=document.getElementById("dxCal");if(old)old.remove();
+  var tm=new Date(Date.now()+86400000),ds=tm.getFullYear()+"-"+_dxPad(tm.getMonth()+1)+"-"+_dxPad(tm.getDate());
+  var o=document.createElement("div");o.id="dxCal";o.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center";
+  var inp="width:100%;background:#0a0a0a;border:1px solid #3d3218;color:#f0ede4;border-radius:8px;padding:8px 10px;font-size:.9rem;margin:3px 0 10px;box-sizing:border-box";
+  o.innerHTML='<div style="background:#141414;border:1px solid #DAA520;border-radius:16px;padding:22px;max-width:340px;width:90%;color:#f0ede4"><h3 style="color:#DAA520;margin:0 0 12px;font-size:1.05rem">'+t.agTitle+'</h3>'
+   +'<label style="font-size:.8rem;color:#a8a29a">'+t.agName+'</label><input id="dxN" maxlength="80" style="'+inp+'" value="'+_esc(prefill||"")+'">'
+   +'<label style="font-size:.8rem;color:#a8a29a">'+t.agDate+'</label><input id="dxD" type="date" style="'+inp+'" value="'+ds+'">'
+   +'<label style="font-size:.8rem;color:#a8a29a">'+t.agTime+'</label><input id="dxH" type="time" style="'+inp+'" value="15:00">'
+   +'<label style="font-size:.8rem;color:#a8a29a">'+t.agDur+'</label><input id="dxL" type="number" min="5" max="1440" style="'+inp+'" value="60">'
+   +'<div id="dxE" style="color:#f85149;font-size:.78rem;min-height:16px"></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="dxI" style="flex:1;background:#DAA520;color:#000;border:none;border-radius:8px;padding:9px;font-weight:700;cursor:pointer">'+t.agIcs+'</button><button id="dxG" style="flex:1;background:#4ea8de;color:#000;border:none;border-radius:8px;padding:9px;font-weight:700;cursor:pointer">'+t.agGoogle+'</button></div>'
+   +'<div style="text-align:center;margin-top:10px"><button id="dxX" style="background:none;border:none;color:#a8a29a;cursor:pointer;font-size:.8rem">'+t.cancel+'</button></div></div>';
+  document.body.appendChild(o);
+  function get(){
+    var n=document.getElementById("dxN").value.trim(),d=document.getElementById("dxD").value,h=document.getElementById("dxH").value||"09:00",l=Math.max(5,Math.min(1440,parseInt(document.getElementById("dxL").value,10)||60));
+    if(!n||!d){document.getElementById("dxE").textContent=t.agBad;return null;}
+    var s=new Date(d+"T"+h+":00");if(isNaN(s.getTime())){document.getElementById("dxE").textContent=t.agBad;return null;}
+    return {n:n,s:s,e:new Date(s.getTime()+l*60000)};
+  }
+  document.getElementById("dxX").onclick=function(){o.remove();};
+  document.getElementById("dxI").onclick=function(){
+    var v=get();if(!v)return;
+    var ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Xearnes//Agenda//EN","BEGIN:VEVENT","UID:"+Date.now()+"@xearnes.com","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+/,""),"DTSTART:"+_dxLocal(v.s),"DTEND:"+_dxLocal(v.e),"SUMMARY:"+_dxIcsEsc(v.n),"END:VEVENT","END:VCALENDAR"].join("\r\n")+"\r\n";
+    _dxSave(new Blob([ics],{type:"text/calendar;charset=utf-8"}),"xearnes-agenda.ics");o.remove();
+  };
+  document.getElementById("dxG").onclick=function(){
+    var v=get();if(!v)return;
+    window.open("https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(v.n)+"&dates="+_dxLocal(v.s)+"/"+_dxLocal(v.e),"_blank","noopener");o.remove();
+  };
+}
+// ── Boutons sous les réponses longues ──
+function addToolsBtn(div,text){
+  if(String(text).replace(/<[^>]*>/g," ").length<120||/ws-chip/.test(String(text)))return;
+  var t=_dxT(),b=document.createElement("button");b.className="detail-btn";b.textContent=t.tools+(_stCan(1)?"":" 🔒");
+  var m=document.createElement("div");m.style.cssText="display:none;margin-top:6px";
+  function add(label,fn){var x=document.createElement("button");x.className="detail-btn";x.style.marginRight="6px";x.style.marginBottom="4px";x.textContent=label;x.onclick=function(){if(!_stCan(1)){openUpgradeModal();return;}try{fn();}catch(e){}};m.appendChild(x);}
+  add(t.pdf,function(){_dxPdf(text);});
+  add(t.word,function(){_dxSave(_dxDocx(text),"xearnes-"+_dxStamp()+".docx");});
+  add(t.ppt,function(){_dxSave(_dxPptx(text),"xearnes-"+_dxStamp()+".pptx");});
+  add(t.gmail,function(){_dxGmail(text);});
+  add(t.mail,function(){_dxMailto(text);});
+  add(t.cal,function(){_dxAgenda(_dxTitle(_dxParse(text)));});
+  b.onclick=function(){if(!_stCan(1)){openUpgradeModal();return;}m.style.display=m.style.display==="none"?"block":"none";};
+  div.appendChild(b);div.appendChild(m);
+}
+// ── Panneau Fichiers : CodePen (page web) et ZIP (tout le projet) ──
+function wsZip(){
+  if(!_wsFiles.length){alert(_dxT().noFiles);return;}
+  _dxSave(_dxZip(_wsFiles.map(function(f){return {name:f.name,data:f.content||""};})),"xearnes-projet-"+_dxStamp()+".zip");
+}
+function wsCodepen(){
+  var t=_dxT(),page=null,css="",js="";
+  _wsFiles.forEach(function(f){if(!page&&/\.html?$/i.test(f.name))page=f;if(/\.css$/i.test(f.name))css+=f.content+"\n";if(/\.js$/i.test(f.name))js+=f.content+"\n";});
+  if(!page){alert(t.noHtml);return;}
+  var html=page.content.replace(/<link[^>]*href=["'][^"']+\.css["'][^>]*>/gi,"").replace(/<script[^>]*src=["'][^"']+\.js["'][^>]*>\s*<\/script>/gi,"");
+  var m=html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);if(m)html=m[1];
+  var f=document.createElement("form");f.method="POST";f.action="https://codepen.io/pen/define";f.target="_blank";
+  var i=document.createElement("input");i.type="hidden";i.name="data";i.value=JSON.stringify({title:"Xearnes",html:html.trim(),css:css,js:js,editors:"101"});
+  f.appendChild(i);document.body.appendChild(f);f.submit();document.body.removeChild(f);
 }
 // Recherche dans les conversations (abonnés) : dans le titre et dans tous les messages
 function _stMatch(c,q){
@@ -2423,7 +2657,7 @@ function _callRunPod(sysPrompt,msgs,cb,_attempt){
   };
   fetch(MISTRAL_URL,{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:_authHdr({"Content-Type":"application/json"}),
     body:JSON.stringify(body)
   })
   .then(function(r){return r.json();})
@@ -2458,7 +2692,7 @@ function callMistral(sysPrompt,msgs,cb,_attempt,onChunk){
   };
   fetch(MISTRAL_URL,{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:_authHdr({"Content-Type":"application/json"}),
     body:JSON.stringify(body)
   })
   .then(function(r){
@@ -2488,7 +2722,7 @@ function _callMistralStream(sysPrompt,msgs,cb,_attempt,onChunk){
   };
   fetch(MISTRAL_URL,{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:_authHdr({"Content-Type":"application/json"}),
     body:JSON.stringify(body)
   })
   .then(function(r){
@@ -2552,16 +2786,35 @@ function _saveMemoryFact(key,value){
   _xnMemory[key]=value;
   try{localStorage.setItem("xn_long_memory",JSON.stringify(_xnMemory));}catch(e){}
 }
+// Centres d'intérêt : seulement des étiquettes d'une liste fixe (jamais le texte de l'utilisateur), en français, suédois et anglais.
+var _xnHobbies=[
+  ["football",["football","foot ","fotboll","soccer"]],["musique",["musique","music","musik"]],["minecraft",["minecraft"]],["roblox",["roblox"]],["fortnite",["fortnite"]],
+  ["manga",["manga"]],["anime",["anime"]],["basketball",["basket","basketball"]],["tennis",["tennis"]],["natation",["natation","swimming","simning","nager","swim"]],
+  ["cuisine",["cuisine","cooking","matlagning","cuisiner","baking","patisserie","bakning"]],["dessin",["dessin","drawing","teckna","dessiner"]],["lecture",["lecture","reading","lasa","lire","books","livres","bocker"]],
+  ["maths",["maths","math","matte","matematik","mathematics"]],["sciences",["science","vetenskap","naturvetenskap"]],["histoire",["histoire","history","historia"]],
+  ["jeux vidéo",["jeux video","jeu video","video game","videogame","gaming","tv-spel","tvspel","datorspel","spel"]],["danse",["danse","dance","dans"]],["piano",["piano"]],["guitare",["guitare","guitar","gitarr"]],
+  ["chant",["chant","singing","sjunga"]],["vélo",["velo","cycling","bike","cykla","cykel"]],["skateboard",["skate","skateboard"]],["équitation",["equitation","horse riding","ridning","ridning"]],
+  ["chevaux",["cheval","chevaux","horses","horse","hastar","hast"]],["chiens",["chien","dogs","dog","hundar","hund"]],["chats",["chat ","chats","cats","cat ","katter","katt"]],["animaux",["animaux","animals","djur"]],
+  ["dinosaures",["dinosaure","dinosaur","dinosaurier"]],["espace",["espace","space","astronomie","astronomy","rymden","astronomi"]],["robots",["robot"]],["programmation",["programmation","coder","coding","programming","programmering","koda"]],
+  ["photographie",["photo","photography","fotografering","foto"]],["cinéma",["cinema","films","movies","film "]],["théâtre",["theatre","theater","teater"]],["pêche",["peche","fishing","fiske"]],
+  ["randonnée",["randonnee","hiking","vandring","vandra"]],["rugby",["rugby"]],["handball",["handball"]],["hockey",["hockey"]],["ski",["ski ","skiing","skidor"]],["patinage",["patinage","skating","skridsko"]],
+  ["lego",["lego"]],["échecs",["echecs","chess","schack"]],["magie",["magie","magic","magi","trolleri"]],["voitures",["voiture","cars","bilar","bil "]],["avions",["avion","planes","airplane","flygplan"]],["volleyball",["volley","volleyball"]]
+];
+var _xnLikeTrigger=/(^|[^a-z])(j ?aime|j ?adore|ma passion|mes passions|i (really |also )?(like|love|enjoy)|my favou?rite|my hobby|my hobbies|jag (gillar|alskar|tycker om)|min favorit|mitt favorit|mina favoriter)/;
+function _hobbyNorm(x){return " "+String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[’'`]/g," ").replace(/[^a-z0-9 -]+/g," ").replace(/\s+/g," ")+" ";}
 function _extractMemoryFromMessage(text){
-  var t=text.toLowerCase();
-  var m;
-  // Prenom, age et ville ne sont plus memorises (donnees personnelles d'enfants) : seulement les centres d'interet
-  if(t.indexOf("j'aime")!==-1||t.indexOf("j aime")!==-1){
-    var likes=_xnMemory.likes||[];
-    var subjects=["football","musique","minecraft","roblox","manga","anime","basketball","tennis","natation","cuisine","dessin","lecture","maths","science","histoire"];
-    subjects.forEach(function(s){if(t.indexOf(s)!==-1&&likes.indexOf(s)===-1)likes.push(s);});
-    if(likes.length>0)_saveMemoryFact("likes",likes);
-  }
+  // Prénom, âge et ville ne sont pas mémorisés (données personnelles d'enfants) : seulement des centres d'intérêt de la liste
+  var t=_hobbyNorm(text);
+  if(!_xnLikeTrigger.test(t))return;
+  var likes=(_xnMemory.likes&&_xnMemory.likes.slice)?_xnMemory.likes.slice():[],changed=false;
+  _xnHobbies.forEach(function(h){
+    if(likes.indexOf(h[0])!==-1)return;
+    for(var i=0;i<h[1].length;i++){
+      var w=h[1][i],hit=w.charAt(w.length-1)===" "?t.indexOf(" "+w)!==-1:t.indexOf(" "+w)!==-1||t.indexOf("-"+w)!==-1;
+      if(hit&&likes.length<12){likes.push(h[0]);changed=true;break;}
+    }
+  });
+  if(changed)_saveMemoryFact("likes",likes);
 }
 function _buildMemoryPrompt(){
   if(_tierRank(_xnTier)<1)return"";
@@ -2574,9 +2827,9 @@ function _buildMemoryPrompt(){
 
 // ── ABONNEMENT ──
 var _xnTier="free"; // free / pro / ultra / legend
-var _xnEmail=null;
-try{_xnEmail=localStorage.getItem("xn_email")||null;}catch(e){}
-try{var _cached=JSON.parse(localStorage.getItem("xn_sub_cache")||"null");if(_cached&&_cached.expires>Date.now()){_xnTier=_cached.tier;}}catch(e){}
+var _xnEmail=null,_xnToken=null;
+try{_xnEmail=localStorage.getItem("xn_email")||null;_xnToken=localStorage.getItem("xn_token")||null;}catch(e){}
+try{var _cached=JSON.parse(localStorage.getItem("xn_sub_cache")||"null");if(_cached&&_cached.expires>Date.now()&&_xnToken){_xnTier=_cached.tier;}}catch(e){}
 
 function _tierModel(){
   if(_xnTier==="legend")return"claude-fable-5";
@@ -2585,8 +2838,8 @@ function _tierModel(){
   return null; // free → logique normale haiku/sonnet
 }
 function _tierLabel(){
-  if(_xnTier==="legend")return"👑 Legend";
-  if(_xnTier==="ultra")return"⚡ Ultra";
+  if(_xnTier==="legend")return"👑 Ultimate";
+  if(_xnTier==="ultra")return"⚡ Super";
   if(_xnTier==="pro")return"🔷 Pro";
   return null;
 }
@@ -2597,21 +2850,40 @@ function _updateTierBadge(){
   if(lbl){el.textContent=lbl;el.style.display="inline-flex";}
   else{el.style.display="none";}
 }
+function _authHdr(h){h=h||{};if(_xnToken)h["Authorization"]="Bearer "+_xnToken;return h;}
+function _applyTier(tier){
+  _xnTier=(tier==="pro"||tier==="ultra"||tier==="legend")?tier:"free";
+  try{localStorage.setItem("xn_sub_cache",JSON.stringify({tier:_xnTier,expires:Date.now()+3600000}));}catch(e){}
+  _updateTierBadge();
+  if(_xnTier==="pro")earnBadge("member_pro");
+  if(_xnTier==="ultra"){earnBadge("member_pro");earnBadge("member_ultra");}
+  if(_xnTier==="legend"){earnBadge("member_pro");earnBadge("member_ultra");earnBadge("member_legend");}
+}
 function checkSubscription(email,cb){
-  fetch(CLAUDE_WORKER_URL+"/check-sub?email="+encodeURIComponent(email))
+  if(!_xnToken){if(cb)cb(_xnTier);return;}
+  fetch(MISTRAL_URL+"/auth/me",{headers:_authHdr()})
     .then(function(r){return r.json();})
-    .then(function(d){
-      _xnTier=d.tier||"free";
-      try{localStorage.setItem("xn_sub_cache",JSON.stringify({tier:_xnTier,expires:Date.now()+3600000}));}catch(e){}
-      _updateTierBadge();
-      if(_xnTier==="pro")earnBadge("member_pro");
-      if(_xnTier==="ultra"){earnBadge("member_pro");earnBadge("member_ultra");}
-      if(_xnTier==="legend"){earnBadge("member_pro");earnBadge("member_ultra");earnBadge("member_legend");}
-      if(cb)cb(_xnTier);
-    })
+    .then(function(d){_applyTier(d.tier);if(cb)cb(_xnTier);})
     .catch(function(){if(cb)cb(_xnTier);});
 }
-function openUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="flex";}
+var _ugTxt={
+fr:{t:"Je suis un adulte (18 ans ou plus), parent ou tuteur. Je crée le compte moi-même avec mon email et je paie moi-même. J'accepte les ",c:"conditions",e:"Coche la case pour continuer."},
+sv:{t:"Jag är vuxen (18 år eller äldre), förälder eller vårdnadshavare. Jag skapar kontot själv med min e-post och betalar själv. Jag accepterar ",c:"villkoren",e:"Kryssa i rutan för att fortsätta."},
+en:{t:"I am an adult (18 or older), a parent or a guardian. I create the account myself with my own email and I pay myself. I accept the ",c:"terms",e:"Tick the box to continue."}
+};
+function _ugRefresh(){
+  var t=_ugTxt[currentLang]||_ugTxt.en,el=document.getElementById("ugTxt");if(!el)return;
+  el.innerHTML=_esc(t.t)+'<a href="conditions.html#'+(_ugTxt[currentLang]?currentLang:"en")+'" target="_blank" style="color:#DAA520">'+_esc(t.c)+'</a>.';
+}
+function ugChange(){var e=document.getElementById("ugErr");if(e&&document.getElementById("ugChk").checked)e.textContent="";}
+function ugGate(ev){
+  var c=document.getElementById("ugChk");
+  if(c&&c.checked){try{localStorage.setItem("xn_terms_ok",String(Date.now()));}catch(e){}return true;}
+  if(ev&&ev.preventDefault)ev.preventDefault();
+  var e=document.getElementById("ugErr");if(e)e.textContent=(_ugTxt[currentLang]||_ugTxt.en).e;
+  return false;
+}
+function openUpgradeModal(){var m=document.getElementById("upgradeModal");if(m){_ugRefresh();m.style.display="flex";}}
 function closeUpgradeModal(){var m=document.getElementById("upgradeModal");if(m)m.style.display="none";}
 
 // ── FICHIERS & PHOTOS ──
@@ -2648,7 +2920,6 @@ function clearFile(){
   if(prev)prev.style.display="none";
 }
 var _shareUnlocks=[
-  {at:3, fr:"🎨 Thème Premium débloqué !",en:"🎨 Premium Theme unlocked!",sv:"🎨 Premium-tema upplåst!"},
   {at:5, fr:"💪 Coach Sport débloqué !",en:"💪 Sport Coach unlocked!",sv:"💪 Sport-coach upplåst!"},
   {at:10,fr:"🍳 Recettes Frigo débloquées !",en:"🍳 Fridge Recipes unlocked!",sv:"🍳 Kylskåpsrecept upplåst!"},
   {at:50,fr:"✦ Membre Fondateur débloqué !",en:"✦ Founding Member unlocked!",sv:"✦ Grundande Medlem upplåst!"}
@@ -2703,31 +2974,95 @@ function _shareUnlockReached(at){
   if(_xnTier==="pro"||_xnTier==="ultra"||_xnTier==="legend")return true;
   return (xnStats.sharesCount||0)>=at;
 }
+var _lgTxt={
+fr:{t:"Connecte-toi à Xearnes",i1:"Réservé aux adultes et aux parents, pour retrouver un abonnement déjà payé. Pas besoin de compte pour discuter avec Xearnes.",ph1:"ton@email.com",b1:"Recevoir un code",i2:"Un code à 6 chiffres vient d'être envoyé à ",spam:"Pense à regarder dans les courriers indésirables (spam).",ph2:"Code à 6 chiffres",b2:"Valider",back:"Changer d'adresse",skip:"Continuer sans compte",sending:"Envoi…",checking:"Vérification…",
+ bad:"Entre une adresse email valide.",e_invalid_input:"Le code doit avoir 6 chiffres.",e_wrong_code:"Code incorrect.",e_code_expired:"Le code a expiré. Demande-en un nouveau.",e_too_many_tries:"Trop d'essais. Demande un nouveau code.",e_too_many_requests:"Trop de demandes. Réessaie dans une heure.",e_net:"Impossible de joindre le serveur. Réessaie.",e_send:"L'email n'a pas pu être envoyé. Réessaie plus tard.",
+ acct:"👤 Abonnement",login:"Se connecter (abonnés)",logout:"Se déconnecter",accNote:"Pour retrouver un abonnement payé. Le niveau est vérifié par le serveur.",
+ w:{legend:"👑 Bienvenue Ultimate !",ultra:"⚡ Bienvenue Super !",pro:"🔷 Bienvenue Pro !",free:"✅ Connecté. Aucun abonnement trouvé pour cette adresse."},out:"Déconnecté."},
+sv:{t:"Logga in på Xearnes",i1:"Endast för vuxna och föräldrar, för att hitta en redan betald prenumeration. Du behöver inget konto för att chatta med Xearnes.",ph1:"din@epost.se",b1:"Få en kod",i2:"En 6-siffrig kod har skickats till ",spam:"Titta också i skräpposten (spam).",ph2:"6-siffrig kod",b2:"Bekräfta",back:"Byt adress",skip:"Fortsätt utan konto",sending:"Skickar…",checking:"Kontrollerar…",
+ bad:"Skriv en giltig e-postadress.",e_invalid_input:"Koden ska ha 6 siffror.",e_wrong_code:"Fel kod.",e_code_expired:"Koden har gått ut. Be om en ny.",e_too_many_tries:"För många försök. Be om en ny kod.",e_too_many_requests:"För många förfrågningar. Försök igen om en timme.",e_net:"Kunde inte nå servern. Försök igen.",e_send:"E-posten kunde inte skickas. Försök igen senare.",
+ acct:"👤 Prenumeration",login:"Logga in (prenumeranter)",logout:"Logga ut",accNote:"För att hitta en betald prenumeration. Nivån kontrolleras av servern.",
+ w:{legend:"👑 Välkommen Ultimate!",ultra:"⚡ Välkommen Super!",pro:"🔷 Välkommen Pro!",free:"✅ Inloggad. Ingen prenumeration hittades för den här adressen."},out:"Utloggad."},
+en:{t:"Sign in to Xearnes",i1:"For adults and parents only, to find a subscription you already paid for. You do not need an account to chat with Xearnes.",ph1:"you@email.com",b1:"Get a code",i2:"A 6-digit code was just sent to ",spam:"Check your spam folder too.",ph2:"6-digit code",b2:"Confirm",back:"Change address",skip:"Continue without an account",sending:"Sending…",checking:"Checking…",
+ bad:"Enter a valid email address.",e_invalid_input:"The code must have 6 digits.",e_wrong_code:"Wrong code.",e_code_expired:"The code has expired. Ask for a new one.",e_too_many_tries:"Too many tries. Ask for a new code.",e_too_many_requests:"Too many requests. Try again in an hour.",e_net:"Could not reach the server. Try again.",e_send:"The email could not be sent. Try again later.",
+ acct:"👤 Subscription",login:"Sign in (subscribers)",logout:"Sign out",accNote:"To find a subscription you paid for. Your plan is checked by the server.",
+ w:{legend:"👑 Welcome Ultimate!",ultra:"⚡ Welcome Super!",pro:"🔷 Welcome Pro!",free:"✅ Signed in. No subscription found for this address."},out:"Signed out."}
+};
+function _lgT(){return _lgTxt[currentLang]||_lgTxt.en;}
+var _lgStep=1,_lgMail="",_lgBusy=false;
+function _lgRender(){
+  var t=_lgT(),g=function(i){return document.getElementById(i);};
+  if(!g("lgTitle"))return;
+  g("lgTitle").textContent=t.t;
+  g("lgErr").textContent="";
+  var inp=g("lgInput");
+  if(_lgStep===1){
+    g("lgInfo").textContent=t.i1;g("lgSpam").style.display="none";g("lgBack").style.display="none";
+    inp.type="email";inp.placeholder=t.ph1;inp.value=_lgMail;inp.removeAttribute("maxlength");inp.setAttribute("inputmode","email");inp.setAttribute("autocomplete","email");
+    g("lgBtn").textContent=t.b1;g("lgSkip").textContent=t.skip;
+  }else{
+    g("lgInfo").textContent=t.i2+_lgMail+".";g("lgSpam").textContent=t.spam;g("lgSpam").style.display="block";g("lgBack").style.display="inline";g("lgBack").textContent=t.back;
+    inp.type="text";inp.placeholder=t.ph2;inp.value="";inp.setAttribute("maxlength","6");inp.setAttribute("inputmode","numeric");inp.setAttribute("autocomplete","one-time-code");
+    g("lgBtn").textContent=t.b2;g("lgSkip").textContent=t.skip;
+  }
+}
 function openEmailModal(){
-  var m=document.getElementById("emailModal");
-  if(m)m.style.display="flex";
+  var m=document.getElementById("emailModal");if(!m)return;
+  _lgStep=1;_lgRender();m.style.display="flex";
+  setTimeout(function(){var i=document.getElementById("lgInput");if(i)i.focus();},50);
 }
 function closeEmailModal(){
   var m=document.getElementById("emailModal");
   if(m)m.style.display="none";
 }
-function submitEmail(){
-  var inp=document.getElementById("emailInput");
-  var email=(inp?inp.value:"").trim().toLowerCase();
-  if(!email||email.indexOf("@")<0){
-    var err=document.getElementById("emailErr");
-    if(err)err.textContent="Entre une adresse email valide.";
-    return;
+function lgBack(){_lgStep=1;_lgRender();}
+function lgSubmit(){
+  if(_lgBusy)return;
+  var t=_lgT(),err=document.getElementById("lgErr"),btn=document.getElementById("lgBtn"),v=(document.getElementById("lgInput").value||"").trim();
+  function busy(on,label){_lgBusy=on;btn.disabled=on;btn.style.opacity=on?".6":"1";if(label)btn.textContent=label;}
+  if(_lgStep===1){
+    v=v.toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)){err.textContent=t.bad;return;}
+    busy(true,t.sending);
+    fetch(MISTRAL_URL+"/auth/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:v,lang:currentLang})})
+      .then(function(r){return r.json().then(function(d){return{s:r.status,d:d};});})
+      .then(function(x){
+        busy(false);
+        if(x.s===200){_lgMail=v;_lgStep=2;_lgRender();var i=document.getElementById("lgInput");if(i)i.focus();return;}
+        var k=x.d&&x.d.error;err.textContent=k==="invalid_email"?t.bad:k==="too_many_requests"?t.e_too_many_requests:t.e_send;
+        btn.textContent=t.b1;
+      })
+      .catch(function(){busy(false);btn.textContent=t.b1;err.textContent=t.e_net;});
+  }else{
+    if(!/^\d{6}$/.test(v)){err.textContent=t.e_invalid_input;return;}
+    busy(true,t.checking);
+    fetch(MISTRAL_URL+"/auth/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:_lgMail,code:v})})
+      .then(function(r){return r.json().then(function(d){return{s:r.status,d:d};});})
+      .then(function(x){
+        busy(false);
+        if(x.s===200&&x.d&&x.d.token){
+          _xnToken=x.d.token;_xnEmail=_lgMail;
+          try{localStorage.setItem("xn_token",_xnToken);localStorage.setItem("xn_email",_xnEmail);}catch(e){}
+          _applyTier(x.d.tier);
+          try{renderUserBar();}catch(e){}
+          try{stRefreshLabels();}catch(e){}
+          closeEmailModal();
+          addMsg(t.w[_xnTier]||t.w.free,"bot");
+          return;
+        }
+        btn.textContent=t.b2;
+        var k=x.d&&x.d.error;err.textContent=t["e_"+k]||t.e_net;
+      })
+      .catch(function(){busy(false);btn.textContent=t.b2;err.textContent=t.e_net;});
   }
-  _xnEmail=email;
-  try{localStorage.setItem("xn_email",email);}catch(e){}
+}
+function lgLogout(){
+  _xnToken=null;_xnEmail=null;
+  try{localStorage.removeItem("xn_token");localStorage.removeItem("xn_email");localStorage.removeItem("xn_sub_cache");}catch(e){}
+  _applyTier("free");
   try{renderUserBar();}catch(e){}
-  closeEmailModal();
-  checkSubscription(email,function(tier){
-    var lang=currentLang||"fr";
-    var msgs={legend:"👑 Bienvenue Legend ! Tu utilises Fable 5, le modèle le plus puissant.",ultra:"⚡ Bienvenue Ultra ! Tu utilises Opus 4.8.",pro:"🔷 Bienvenue Pro ! Tu utilises Sonnet 4.6.",free:"✅ Email enregistré ! Tu utilises Xearnes gratuitement."};
-    addMsg(msgs[tier]||msgs.free,"bot");
-  });
+  try{stRender();}catch(e){}
+  addMsg(_lgT().out,"bot");
 }
 // 🔬 INTERNAL MODE
 var _internalMode=false;
@@ -2896,6 +3231,7 @@ function callClaude(question,lang,cb,_attempt,onChunk,groundingFacts){
   sysPrompt+=_buildMemoryPrompt();
   if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris chaque fichier de code dans un bloc markdown avec trois accents graves, en mettant le langage puis le nom du fichier juste après les accents graves, par exemple ```python main.py ou ```html index.html. N'écris le code que dans ces blocs : il apparaîtra dans l'espace Fichiers, pas dans le chat. Dans ta réponse, explique en quelques phrases ce que fait le code, pour qu'un débutant comprenne. Donne des fichiers complets qui marchent, jamais des morceaux incomplets ; si tu modifies un fichier existant, réécris-le en entier avec le même nom."+_wsContextPrompt();
   sysPrompt+=_stPromptExtras(codeMode);
+  if(!codeMode&&_dxIntent(question))sysPrompt+=" MODE DOCUMENT ACTIVÉ : l'utilisateur veut un document ou une présentation. Écris directement le contenu final, sans phrase d'introduction : un titre sur la première ligne (# Titre), puis des sections (## Titre de section), chacune avec 3 à 5 puces courtes (- ...). Pour une présentation, une section = une diapositive. Ignore la limite de phrases ci-dessus. Écris dans la langue de l'utilisateur.";
   if(groundingFacts)sysPrompt+=" FAITS VÉRIFIÉS (source Wikipédia) À UTILISER POUR RÉPONDRE : \""+groundingFacts+"\" — Base ta réponse sur CES faits précis, reformulés avec ta propre personnalité. N'invente AUCUN autre fait, date ou détail qui n'est pas dans ce texte. Si ces faits ne suffisent pas pour répondre complètement, dis-le simplement plutôt que d'inventer.";
   var msgs=[];
   var hist=convHistory;
@@ -3517,10 +3853,10 @@ function _getReplyBody(input,lang,n,cb,onChunk){
   // Pendu commande
   if(detectPendu(n,lang))return cb(startPendu(lang));
   // Défis secrets (Ultra/Legend)
-  if(/d.fi secret|secret challenge|challenge secret/i.test(n)){
+  if(/d.fi secret|secret challenge|challenge secret|hemlig (utmaning|g.ta|challenge)/i.test(n)){
     if(_tierRank(_xnTier)<2){
-      return cb(lang==="fr"?"🔒 Les défis secrets sont réservés aux abonnés <strong>Ultra</strong> et <strong>Legend</strong>. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
-                "🔒 Secret challenges are for <strong>Ultra</strong> and <strong>Legend</strong> subscribers. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>");
+      return cb(lang==="fr"?"🔒 Les défis secrets sont réservés aux abonnés <strong>Super</strong> et <strong>Ultimate</strong>. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
+                "🔒 Secret challenges are for <strong>Super</strong> and <strong>Ultimate</strong> subscribers. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>");
     }
     return cb(buildSecretChallenge(lang));
   }
@@ -3647,6 +3983,7 @@ function addMsg(text,role){
     playBeep();
     addShareBtn(div,text);
     addDetailBtn(div,text);
+    addToolsBtn(div,text);
   }else{div.textContent=text;}
   chat.appendChild(div);chat.scrollTop=chat.scrollHeight;
   return div;
@@ -4573,7 +4910,7 @@ function loadUserCount(){}
 function init(){
   _updateTierBadge();
   // Plus de popup email automatique : l'email est facultatif et reserve aux adultes/parents (abonnement)
-  if(_xnEmail){checkSubscription(_xnEmail,null);}
+  if(_xnToken){checkSubscription(null,null);}
   // Streak
   (function(){
     var today=new Date().toISOString().slice(0,10);
@@ -4641,10 +4978,9 @@ function init(){
   var savedTheme=localStorage.getItem("xn_theme")||"dark";
   document.documentElement.setAttribute("data-theme",savedTheme);
   var _tb2=document.getElementById("themeBtn");if(_tb2)_tb2.textContent=savedTheme==="light"?"☽":"☀";
-  // ── Couleur sauvegardee (Feature 7) ──
-  var savedColor=localStorage.getItem("xn_color")||"";
-  if(savedColor)document.documentElement.setAttribute("data-color",savedColor);
-  var cs=document.getElementById("colorSelect");if(cs)cs.value=savedColor;
+  // Les thèmes de couleur ont été retirés : on nettoie ce qui avait été enregistré
+  try{localStorage.removeItem("xn_color");}catch(e){}
+  document.documentElement.removeAttribute("data-color");
   // ── Avatar sauvegarde (Feature 6) ──
   var savedAvatar=localStorage.getItem("xn_avatar")||"&#11088;";
   currentAvatar=savedAvatar;
@@ -4672,7 +5008,24 @@ function init(){
       togglePopup();
     }
   });
+  _xnLaunch();
 }
+// ── Paramètres d'ouverture : texte partagé depuis une autre appli, extension du navigateur, raccourcis de l'icône ──
+// Le texte est seulement placé dans la zone de saisie : rien n'est envoyé tant que l'utilisateur n'appuie pas sur Envoyer.
+function _xnLaunch(){
+  var q="",code=false,touched=false;
+  try{
+    var sp=new URLSearchParams(location.search),hp=new URLSearchParams((location.hash||"").replace(/^#/,""));
+    var parts=[hp.get("q")||sp.get("q")||"",sp.get("title")||"",sp.get("text")||"",sp.get("url")||""].filter(Boolean);
+    q=parts.join("\n").slice(0,4000);
+    code=sp.get("code")==="1"||hp.get("code")==="1";
+    touched=parts.length>0||code||sp.has("new")||sp.has("source");
+    if(touched)history.replaceState(null,"",location.pathname);
+  }catch(e){}
+  if(code&&!_codeModeOn){try{toggleCodeMode();}catch(e){}}
+  if(q){var i=document.getElementById("userInput");if(i){i.value=q;try{autoResize(i);}catch(e){}i.focus();}}
+}
+window.addEventListener("hashchange",_xnLaunch);
 // ── MINI POPUP ──
 var popupOpen=false;
 function togglePopup(){
@@ -4870,18 +5223,25 @@ function cycleAvatar(){
 // ── FEATURE 7 : THEMES COULEUR ──────────────────────
 // ── DÉFIS SECRETS ──
 var _secretChallenges={
+  sv:[
+    {q:"🧠 <strong>Hemlig mattegåta</strong> — Utan miniräknare: hur mycket är 37 × 43?",a:"1591"},
+    {q:"🌍 <strong>Hemlig geografigåta</strong> — Vad är Kazakstans huvudstad?",a:"astana"},
+    {q:"⚡ <strong>Hemlig naturvetenskapsgåta</strong> — Hur många elektroner har en syreatom?",a:"8"},
+    {q:"🎭 <strong>Hemlig kulturgåta</strong> — Vem målade Mona Lisa?",a:"leonardo da vinci",alts:["da vinci","leonardo","vinci"]},
+    {q:"🔢 <strong>Hemlig logikgåta</strong> — Talföljden: 2, 6, 18, 54... vilket tal kommer sedan?",a:"162"},
+  ],
   fr:[
     {q:"🧠 <strong>Défi Maths Secret</strong> — Sans calculatrice : combien font 37 × 43 ?",a:"1591"},
     {q:"🌍 <strong>Défi Géo Secret</strong> — Quelle est la capitale du Kazakhstan ?",a:"astana"},
     {q:"⚡ <strong>Défi Science Secret</strong> — Combien d'électrons a un atome d'oxygène ?",a:"8"},
-    {q:"🎭 <strong>Défi Culture Secret</strong> — Qui a peint la Joconde ?",a:"léonard de vinci"},
+    {q:"🎭 <strong>Défi Culture Secret</strong> — Qui a peint la Joconde ?",a:"léonard de vinci",alts:["vinci","leonard de vinci"]},
     {q:"🔢 <strong>Défi Logique Secret</strong> — La suite : 2, 6, 18, 54... quel est le prochain nombre ?",a:"162"},
   ],
   en:[
     {q:"🧠 <strong>Secret Math Challenge</strong> — No calculator: what is 37 × 43?",a:"1591"},
     {q:"🌍 <strong>Secret Geo Challenge</strong> — What is the capital of Kazakhstan?",a:"astana"},
     {q:"⚡ <strong>Secret Science Challenge</strong> — How many electrons does an oxygen atom have?",a:"8"},
-    {q:"🎭 <strong>Secret Culture Challenge</strong> — Who painted the Mona Lisa?",a:"leonardo da vinci"},
+    {q:"🎭 <strong>Secret Culture Challenge</strong> — Who painted the Mona Lisa?",a:"leonardo da vinci",alts:["da vinci","leonardo","vinci"]},
     {q:"🔢 <strong>Secret Logic Challenge</strong> — The sequence: 2, 6, 18, 54... what comes next?",a:"162"},
   ]
 };
@@ -4889,38 +5249,29 @@ var _currentSecretChallenge=null;
 function buildSecretChallenge(lang){
   var pool=_secretChallenges[lang]||_secretChallenges.en;
   _currentSecretChallenge=pool[Math.floor(Math.random()*pool.length)];
-  return "<div class='defi-card'>🔐 <strong>"+(lang==="fr"?"DÉFI SECRET":"SECRET CHALLENGE")+"</strong><br><br>"+_currentSecretChallenge.q+"<br><br><em style='font-size:.8rem;color:var(--text2)'>"+(lang==="fr"?"Réponds avec ta réponse !":"Type your answer!")+"</em></div>";
+  _currentSecretChallenge.since=Date.now();
+  return "<div class='defi-card'>🔐 <strong>"+(lang==="fr"?"DÉFI SECRET":lang==="sv"?"HEMLIG UTMANING":"SECRET CHALLENGE")+"</strong><br><br>"+_currentSecretChallenge.q+"<br><br><em style='font-size:.8rem;color:var(--text2)'>"+(lang==="fr"?"Réponds avec ta réponse !":lang==="sv"?"Skriv ditt svar!":"Type your answer!")+"</em></div>";
 }
+function _secretNorm(x){return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();}
 function checkSecretAnswer(text,lang){
-  if(!_currentSecretChallenge)return null;
-  var ans=text.toLowerCase().replace(/[^a-z0-9àéèêëîïôùûüç]/g,"").trim();
-  var correct=_currentSecretChallenge.a.toLowerCase().replace(/[^a-z0-9àéèêëîïôùûüç]/g,"").trim();
-  if(ans.indexOf(correct)!==-1||correct.indexOf(ans)!==-1){
+  var c=_currentSecretChallenge;
+  if(!c)return null;
+  if(Date.now()-(c.since||0)>10*60*1000){_currentSecretChallenge=null;return null;} // le défi expire après 10 minutes
+  var ans=_secretNorm(text);
+  if(!ans)return null; // une réponse vide ou faite de symboles ne compte jamais
+  var padded=" "+ans+" ",tokens=ans.split(" ");
+  var ok=[c.a].concat(c.alts||[]).some(function(r){
+    r=_secretNorm(r);if(!r)return false;
+    return r.indexOf(" ")===-1?tokens.indexOf(r)!==-1:padded.indexOf(" "+r+" ")!==-1; // mot entier, jamais un morceau de la réponse
+  });
+  if(ok){
     _currentSecretChallenge=null;
     addScore(50);
-    return lang==="fr"?"🎉 <strong>Bravo ! +50 points !</strong> Tu as réussi le défi secret ! 🔐✨":"🎉 <strong>Correct! +50 points!</strong> You completed the secret challenge! 🔐✨";
+    return lang==="fr"?"🎉 <strong>Bravo ! +50 points !</strong> Tu as réussi le défi secret ! 🔐✨":lang==="sv"?"🎉 <strong>Bra jobbat! +50 poäng!</strong> Du klarade den hemliga utmaningen! 🔐✨":"🎉 <strong>Correct! +50 points!</strong> You completed the secret challenge! 🔐✨";
   }
   return null;
 }
-var _THEME_TIERS={diamond:"pro",neon:"pro",fire:"ultra",emerald:"ultra",midnight:"legend",cosmic:"legend"};
 function _tierRank(t){return t==="legend"?3:t==="ultra"?2:t==="pro"?1:0;}
-function setColorTheme(c){
-  var needed=_THEME_TIERS[c];
-  if(needed&&_tierRank(_xnTier)<_tierRank(needed)){
-    var lang=currentLang||"fr";
-    var msg=lang==="fr"?"🔒 Ce thème est réservé aux abonnés <strong>"+needed.charAt(0).toUpperCase()+needed.slice(1)+"</strong> et plus. <a href='pricing.html' target='_blank' style='color:var(--accent)'>Voir les abonnements →</a>":
-            "🔒 This theme is for <strong>"+needed.charAt(0).toUpperCase()+needed.slice(1)+"</strong> subscribers and above. <a href='pricing.html' target='_blank' style='color:var(--accent)'>See plans →</a>";
-    addMsg(msg,"bot");
-    var sel=document.getElementById("colorSelect");
-    if(sel)sel.value=localStorage.getItem("xn_color")||"";
-    return;
-  }
-  if(c)document.documentElement.setAttribute("data-color",c);
-  else document.documentElement.removeAttribute("data-color");
-  localStorage.setItem("xn_color",c||"");
-  var sel=document.getElementById("colorSelect");
-  if(sel)sel.value=c||"";
-}
 // ── FEATURE 8 : PENDU ───────────────────────────────
 var penduWordBank={
   fr:["maison","jardin","soleil","riviere","musique","planete","elephant","volcan","chocolat","pyramide","requin","galaxie","chateau","fontaine","hibou"],
@@ -5465,8 +5816,8 @@ var badgeDefs={
   sharer_50:{icon:"🚀",sv:"Viral Spreader",fr:"Viral",en:"Gone Viral",desc:{sv:"Delade Xearnes 50 gånger — episkt!",fr:"50 partages — tu es viral !",en:"50 shares — you've gone viral!"}},
   sharer_100:{icon:"🌟",sv:"Xearnes Legendaren",fr:"Légende du partage",en:"Sharing Legend",desc:{sv:"100 delningar — du är en legend!",fr:"100 partages — tu es une légende !",en:"100 shares — you're a legend!"}},
   member_pro:{icon:"🔷",sv:"Pro-medlem",fr:"Membre Pro",en:"Pro Member",desc:{sv:"Pro-prenumeration aktiverad!",fr:"Abonnement Pro activé !",en:"Pro subscription activated!"}},
-  member_ultra:{icon:"⚡",sv:"Ultra-medlem",fr:"Membre Ultra",en:"Ultra Member",desc:{sv:"Ultra-prenumeration aktiverad!",fr:"Abonnement Ultra activé !",en:"Ultra subscription activated!"}},
-  member_legend:{icon:"👑",sv:"Legend",fr:"Légende",en:"Legend",desc:{sv:"Legend-prenumeration aktiverad — du är en legend!",fr:"Abonnement Legend activé — tu es une légende !",en:"Legend subscription activated — you are a legend!"}},
+  member_ultra:{icon:"⚡",sv:"Super-medlem",fr:"Membre Super",en:"Super Member",desc:{sv:"Super-prenumeration aktiverad!",fr:"Abonnement Super activé !",en:"Super subscription activated!"}},
+  member_legend:{icon:"👑",sv:"Ultimate",fr:"Ultimate",en:"Ultimate",desc:{sv:"Ultimate-prenumeration aktiverad!",fr:"Abonnement Ultimate activé !",en:"Ultimate subscription activated!"}},
   defi_first:{icon:"⚡",sv:"Utmanaren",fr:"L'Aventurier",en:"The Challenger",desc:{sv:"Första dagliga utmaningen klar!",fr:"Premier défi du jour réussi !",en:"First daily challenge done!"}},
   defi_7:{icon:"🔥",sv:"Eldsjälen",fr:"7 jours de feu",en:"7-Day Fire",desc:{sv:"7 dagliga utmaningar klarade!",fr:"7 défis du jour réussis !",en:"7 daily challenges done!"}},
   defi_30:{icon:"💫",sv:"Utmanarnas Mästare",fr:"Maître des défis",en:"Challenge Master",desc:{sv:"30 dagliga utmaningar klarade!",fr:"30 défis du jour réussis !",en:"30 daily challenges done!"}},
@@ -5569,7 +5920,6 @@ function renderBadgePanel(){
   var shares=xnStats.sharesCount||0;
   if(titleEl)titleEl.textContent="🚀 "+(lang==="sv"?"Nivåer":lang==="fr"?"Niveaux de partage":"Share Levels");
   var levels=[
-    {at:3,icon:"🎨",fr:"Thème Premium",en:"Premium Theme",sv:"Premium-tema",descFr:"Partage 3 fois pour débloquer les thèmes exclusifs.",descEn:"Share 3 times to unlock exclusive themes.",descSv:"Dela 3 gånger för att låsa upp exklusiva teman."},
     {at:5,icon:"💪",fr:"Coach Sport",en:"Sport Coach",sv:"Sportcoach",descFr:"Partage 5 fois pour débloquer le coach sportif.",descEn:"Share 5 times to unlock the sport coach.",descSv:"Dela 5 gånger för att låsa upp sportcoachen."},
     {at:10,icon:"🍳",fr:"Recettes Frigo",en:"Fridge Recipes",sv:"Kylskåpsrecept",descFr:"Partage 10 fois pour débloquer les recettes.",descEn:"Share 10 times to unlock fridge recipes.",descSv:"Dela 10 gånger för att låsa upp recept."},
     {at:50,icon:"✦",fr:"Membre Fondateur",en:"Founding Member",sv:"Grundande Medlem",descFr:"Partage 50 fois pour devenir Membre Fondateur.",descEn:"Share 50 times to become a Founding Member.",descSv:"Dela 50 gånger för att bli grundande medlem."}
@@ -5922,40 +6272,43 @@ window.addEventListener("load",init);
 <div id="emailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
   <div style="background:#141414;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:360px;width:90%;text-align:center">
     <div style="font-size:2rem;margin-bottom:8px">✉️</div>
-    <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:8px">Connecte-toi à Xearnes</h2>
-    <p style="color:#a8a29a;font-size:.85rem;margin-bottom:18px">Réservé aux adultes et aux parents. Entre ton email seulement pour retrouver un abonnement déjà payé. Il n'est pas nécessaire pour discuter avec Xearnes.</p>
-    <input id="emailInput" type="email" placeholder="ton@email.com" style="width:100%;background:#0a0a0a;border:1px solid #3d3218;color:#f0ede4;border-radius:8px;padding:9px 12px;font-size:.9rem;margin-bottom:8px;outline:none">
-    <div id="emailErr" style="color:#f85149;font-size:.78rem;min-height:18px;margin-bottom:8px"></div>
-    <button onclick="submitEmail()" style="width:100%;background:#DAA520;color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:8px">Continuer</button>
-    <button onclick="closeEmailModal()" style="background:none;border:none;color:#a8a29a;font-size:.8rem;cursor:pointer">Continuer sans compte</button>
+    <h2 id="lgTitle" style="color:#DAA520;font-size:1.1rem;margin-bottom:8px"></h2>
+    <p id="lgInfo" style="color:#a8a29a;font-size:.85rem;margin-bottom:14px"></p>
+    <p id="lgSpam" style="display:none;color:#DAA520;font-size:.78rem;margin:-6px 0 12px"></p>
+    <input id="lgInput" type="email" onkeydown="if(event.key==='Enter')lgSubmit()" style="width:100%;background:#0a0a0a;border:1px solid #3d3218;color:#f0ede4;border-radius:8px;padding:9px 12px;font-size:.9rem;margin-bottom:8px;outline:none;text-align:center">
+    <div id="lgErr" style="color:#f85149;font-size:.78rem;min-height:18px;margin-bottom:8px"></div>
+    <button id="lgBtn" onclick="lgSubmit()" style="width:100%;background:#DAA520;color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;font-size:.95rem;cursor:pointer;margin-bottom:8px"></button>
+    <div><button id="lgBack" onclick="lgBack()" style="display:none;background:none;border:none;color:#DAA520;font-size:.8rem;cursor:pointer;margin-right:12px"></button><button id="lgSkip" onclick="closeEmailModal()" style="background:none;border:none;color:#a8a29a;font-size:.8rem;cursor:pointer"></button></div>
   </div>
 </div>
 <!-- Modal upgrade -->
 <div id="upgradeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
   <div style="background:#141414;border:1px solid #DAA520;border-radius:16px;padding:28px 24px;max-width:400px;width:90%;text-align:center">
     <div style="font-size:2rem;margin-bottom:8px">🚀</div>
-    <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:16px">Passe à un abonnement Xearnes</h2>
+    <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:12px">Passe à un abonnement Xearnes</h2>
+    <label style="display:flex;gap:8px;align-items:flex-start;text-align:left;background:#0a0a0a;border:1px solid #3d3218;border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="ugChk" onchange="ugChange()" style="margin-top:3px;flex:none"><span id="ugTxt" style="font-size:.78rem;color:#f0ede4"></span></label>
+    <div id="ugErr" style="color:#f85149;font-size:.76rem;min-height:16px;margin-bottom:8px;text-align:left"></div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
       <div style="background:#0a0a0a;border:1px solid #DAA520;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
-          <div style="font-weight:700;color:#DAA520">👑 Legend — 1000 kr/mois</div>
-          <div style="font-size:.78rem;color:#a8a29a">IA la plus puissante · réponses ultra-détaillées · priorité absolue</div>
+          <div style="font-weight:700;color:#DAA520">👑 Ultimate — 500 kr/mois</div>
+          <div style="font-size:.78rem;color:#a8a29a">Notre IA la plus puissante sur les questions difficiles · les réponses les plus longues</div>
         </div>
-        <a href="STRIPE_LEGEND_LINK" target="_blank" style="background:#DAA520;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+        <a href="STRIPE_LEGEND_LINK" target="_blank" onclick="return ugGate(event)" style="background:#DAA520;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
       <div style="background:#0a0a0a;border:1px solid #8888ff;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
-          <div style="font-weight:700;color:#8888ff">⚡ Ultra — 500 kr/mois</div>
-          <div style="font-size:.78rem;color:#a8a29a">IA très avancée · réponses longues et précises · idéal pour tout</div>
+          <div style="font-weight:700;color:#8888ff">⚡ Super — 350 kr/mois</div>
+          <div style="font-size:.78rem;color:#a8a29a">IA plus forte sur les questions difficiles · réponses plus longues · défis secrets</div>
         </div>
-        <a href="STRIPE_ULTRA_LINK" target="_blank" style="background:#8888ff;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+        <a href="STRIPE_ULTRA_LINK" target="_blank" onclick="return ugGate(event)" style="background:#8888ff;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
       <div style="background:#0a0a0a;border:1px solid #4ea8de;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
           <div style="font-weight:700;color:#4ea8de">🔷 Pro — 200 kr/mois</div>
-          <div style="font-size:.78rem;color:#a8a29a">IA rapide et intelligente · parfait pour les questions du quotidien</div>
+          <div style="font-size:.78rem;color:#a8a29a">IA plus forte sur les questions difficiles · outils d'export · recherche</div>
         </div>
-        <a href="STRIPE_PRO_LINK" target="_blank" style="background:#4ea8de;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+        <a href="STRIPE_PRO_LINK" target="_blank" onclick="return ugGate(event)" style="background:#4ea8de;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
     </div>
     <p style="color:#a8a29a;font-size:.75rem;margin-bottom:14px">Le paiement est réservé aux adultes et aux parents. Après le paiement, reviens ici et <a href="#" onclick="closeUpgradeModal();openEmailModal();return false" style="color:#DAA520">entre ton email</a> pour activer ton accès.</p>

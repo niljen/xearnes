@@ -89,12 +89,24 @@ async function bumpLimit(env, key, ttl) {
 // ── Envoi du code par email (Resend). Sans configuration : l'appel échoue proprement, le code n'est jamais renvoyé au navigateur. ──
 export async function sendCodeEmail(env, to, code, lang) {
   if (!env.RESEND_API_KEY || !env.MAIL_FROM) return false;
-  const t = {
-    fr: { s: "Ton code Xearnes", b: `Ton code de connexion Xearnes : ${code}\n\nIl est valable 10 minutes. Si tu n'as rien demandé, ignore ce message.` },
-    sv: { s: "Din Xearnes-kod", b: `Din inloggningskod för Xearnes: ${code}\n\nKoden gäller i 10 minuter. Om du inte har bett om den kan du ignorera det här mejlet.` },
-    en: { s: "Your Xearnes code", b: `Your Xearnes sign-in code: ${code}\n\nIt is valid for 10 minutes. If you did not ask for it, ignore this message.` },
-  }[lang] || null;
-  const m = t || { s: "Your Xearnes code", b: `Your Xearnes sign-in code: ${code}\n\nIt is valid for 10 minutes.` };
+  const L = (s, intro, valid) => ({ s, b: `${intro} ${code}
+
+${valid}` });
+  const T = {
+    fr: L("Ton code Xearnes", "Ton code de connexion Xearnes :", "Il est valable 10 minutes. Si tu n'as rien demandé, ignore ce message."),
+    sv: L("Din Xearnes-kod", "Din inloggningskod för Xearnes:", "Koden gäller i 10 minuter. Om du inte har bett om den kan du ignorera det här mejlet."),
+    en: L("Your Xearnes code", "Your Xearnes sign-in code:", "It is valid for 10 minutes. If you did not ask for it, ignore this message."),
+    es: L("Tu código de Xearnes", "Tu código de acceso a Xearnes:", "Es válido durante 10 minutos. Si no lo has pedido, ignora este mensaje."),
+    de: L("Dein Xearnes-Code", "Dein Xearnes-Anmeldecode:", "Er ist 10 Minuten gültig. Wenn du ihn nicht angefordert hast, ignoriere diese Nachricht."),
+    it: L("Il tuo codice Xearnes", "Il tuo codice di accesso a Xearnes:", "È valido per 10 minuti. Se non l'hai richiesto, ignora questo messaggio."),
+    pt: L("O teu código Xearnes", "O teu código de acesso ao Xearnes:", "É válido durante 10 minutos. Se não o pediste, ignora esta mensagem."),
+    da: L("Din Xearnes-kode", "Din loginkode til Xearnes:", "Koden gælder i 10 minutter. Hvis du ikke har bedt om den, kan du ignorere denne mail."),
+    ja: L("Xearnes の認証コード", "Xearnes のログインコード：", "有効期限は10分です。心当たりがない場合は、このメールを無視してください。"),
+    zh: L("你的 Xearnes 验证码", "你的 Xearnes 登录验证码：", "验证码 10 分钟内有效。如果不是你本人操作，请忽略此邮件。"),
+    ar: L("رمز Xearnes الخاص بك", "رمز تسجيل الدخول إلى Xearnes:", "الرمز صالح لمدة 10 دقائق. إذا لم تطلبه، تجاهل هذه الرسالة."),
+    ru: L("Ваш код Xearnes", "Ваш код для входа в Xearnes:", "Код действует 10 минут. Если вы его не запрашивали, проигнорируйте это сообщение."),
+  };
+  const m = T[String(lang || "").slice(0, 2).toLowerCase()] || T.en;
   try {
     const r = await fetch((env.RESEND_BASE_URL || "https://api.resend.com") + "/emails", {
       method: "POST",

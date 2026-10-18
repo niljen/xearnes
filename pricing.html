@@ -85,48 +85,18 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
 
 <div class="hero">
   <h1>Choose your <span>Xearnes</span> plan</h1>
-  <p>Start for free. Upgrade anytime to unlock a more powerful AI and exclusive features.</p>
+  <p>Start for free. Upgrade for a stronger AI on harder questions, longer answers and extra features.</p>
 </div>
 
-<!-- PROMOS -->
-<div style="max-width:1080px;margin:0 auto 32px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
-
-  <div style="background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(218,165,32,.05));border:1px solid rgba(218,165,32,.4);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
-    <span style="font-size:1.6rem">👑</span>
-    <div>
-      <div style="font-weight:800;color:#DAA520;font-size:.95rem">1st subscriber — 90% off FOR LIFE on ALL tiers</div>
-      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Pro 20 kr · Ultra 50 kr · Legend 100 kr — forever, even if you upgrade</div>
-    </div>
-    <div id="firstSpots" style="margin-left:auto;background:rgba(218,165,32,.2);color:#DAA520;font-weight:800;font-size:.8rem;padding:4px 12px;border-radius:20px;white-space:nowrap">🔥 1 spot left</div>
-  </div>
-
-  <div style="background:linear-gradient(135deg,rgba(78,168,222,.1),rgba(78,168,222,.03));border:1px solid rgba(78,168,222,.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
-    <span style="font-size:1.6rem">🚀</span>
-    <div>
-      <div style="font-weight:800;color:#4ea8de;font-size:.95rem">First 10 subscribers — 50% off FOR LIFE</div>
-      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Pro 100 kr · Ultra 250 kr · Legend 500 kr — on any tier you choose</div>
-    </div>
-    <div id="tenSpots" style="margin-left:auto;background:rgba(78,168,222,.15);color:#4ea8de;font-weight:800;font-size:.8rem;padding:4px 12px;border-radius:20px;white-space:nowrap">⚡ 10 spots left</div>
-  </div>
-
-  <div style="background:linear-gradient(135deg,rgba(136,136,255,.1),rgba(136,136,255,.03));border:1px solid rgba(136,136,255,.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
-    <span style="font-size:1.6rem">⬆️</span>
-    <div>
-      <div style="font-weight:800;color:#8888ff;font-size:.95rem">Upgrade discount — 40% off when you move up</div>
-      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Pro → Ultra: 300 kr · Ultra → Legend: 600 kr · Loyalty reward for existing subscribers</div>
-    </div>
-  </div>
-
-  <div style="background:linear-gradient(135deg,rgba(74,222,128,.1),rgba(74,222,128,.03));border:1px solid rgba(74,222,128,.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px">
-    <span style="font-size:1.6rem">🛍️</span>
-    <div>
-      <div style="font-weight:800;color:#4ade80;font-size:.95rem">Black Friday — 30% off · Black Week — 20% off</div>
-      <div style="color:#a8a29a;font-size:.8rem;margin-top:2px">Also: Christmas -15% · New Year -15% · Back to school -10%</div>
-    </div>
-  </div>
-
-</div>
-
+<div style="max-width:760px;margin:0 auto 18px;padding:0 16px"><label style="display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(218,165,32,.35);border-radius:12px;padding:12px 14px;cursor:pointer"><input type="checkbox" id="adultChk" style="margin-top:3px;flex:none"><span style="font-size:.85rem">I am an adult (18 or older), a parent or a guardian. I create the account myself with my own email and I pay myself. I accept the <a href="conditions.html#en" target="_blank" style="color:var(--gold)">terms</a>.</span></label><div id="adultErr" style="color:#f85149;font-size:.8rem;min-height:18px;margin-top:6px"></div></div>
+<script>
+document.getElementById("adultChk").addEventListener("change",function(){if(this.checked)document.getElementById("adultErr").textContent="";});
+document.addEventListener("click",function(e){
+  var a=e.target.closest&&e.target.closest("a.plan-btn[href^='STRIPE_']");if(!a)return;
+  var c=document.getElementById("adultChk");
+  if(!c.checked){e.preventDefault();document.getElementById("adultErr").textContent="Tick the box to continue.";}
+});
+</script>
 <div class="grid">
 
   <!-- FREE -->
@@ -152,15 +122,16 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
     <div class="plan-period">per month</div>
     <a href="STRIPE_PRO_LINK" target="_blank" class="plan-btn plan-btn-pro">Subscribe</a>
     <div class="features">
-      <div class="feat-item">🧠 Smart AI model</div>
-      <div class="feat-item">🧩 Long memory</div>
+      <div class="feat-item">🧠 Stronger AI on harder questions</div>
+      <div class="feat-item">✍️ Longer answers</div>
+      <div class="feat-item">🧩 Remembers your favourite hobbies</div>
       <div class="feat-item">📈 Stock simulator</div>
       <div class="feat-item">💬 20 saved conversations</div>
-      <div class="feat-item">🎨 2 exclusive themes</div>
       <div class="feat-item">🔍 "More details" button</div>
       <div class="feat-item">🦊 Avatar for your Xearnes</div>
       <div class="feat-item">🧠 Code preferences memory</div>
       <div class="feat-item">📤 Export your conversations</div>
+      <div class="feat-item">🧰 Tools: PDF, Word, PowerPoint, Gmail draft, calendar</div>
       <div class="feat-item">🔎 Search all your conversations</div>
       <div class="feat-item">🔷 Pro badge</div>
     </div>
@@ -169,24 +140,25 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
   <!-- ULTRA -->
   <div class="plan ultra">
     <div class="plan-icon">⚡</div>
-    <div class="plan-name">ULTRA</div>
-    <div class="plan-price">500 kr</div>
+    <div class="plan-name">SUPER</div>
+    <div class="plan-price">350 kr</div>
     <div class="plan-period">per month</div>
     <a href="STRIPE_ULTRA_LINK" target="_blank" class="plan-btn plan-btn-ultra">Subscribe</a>
     <div class="features">
-      <div class="feat-item">🚀 Very powerful AI</div>
-      <div class="feat-item">🧩 Long memory</div>
+      <div class="feat-item">🧠 Stronger AI on harder questions</div>
+      <div class="feat-item">✍️ Even longer answers</div>
+      <div class="feat-item">🧩 Remembers your favourite hobbies</div>
       <div class="feat-item">📈 Stock simulator</div>
-      <div class="feat-item">📊 Advanced charts</div>
+      <div class="feat-item">📊 Stock portfolio chart</div>
       <div class="feat-item">💬 50 saved conversations</div>
-      <div class="feat-item">🎨 4 exclusive themes</div>
       <div class="feat-item">🔍 "More details" button</div>
       <div class="feat-item">🦊 Avatar for your Xearnes</div>
       <div class="feat-item">🧠 Code preferences memory</div>
       <div class="feat-item">📤 Export your conversations</div>
+      <div class="feat-item">🧰 Tools: PDF, Word, PowerPoint, Gmail draft, calendar</div>
       <div class="feat-item">🔎 Search all your conversations</div>
       <div class="feat-item">🔐 Secret challenges</div>
-      <div class="feat-item">⚡ Ultra badge</div>
+      <div class="feat-item">⚡ Super badge</div>
     </div>
   </div>
 
@@ -194,25 +166,26 @@ body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellips
   <div class="plan featured">
     <div class="popular-tag">⭐ MOST POWERFUL</div>
     <div class="plan-icon">👑</div>
-    <div class="plan-name">LEGEND</div>
-    <div class="plan-price" style="color:var(--gold)">1000 kr</div>
+    <div class="plan-name">ULTIMATE</div>
+    <div class="plan-price" style="color:var(--gold)">500 kr</div>
     <div class="plan-period">per month</div>
     <a href="STRIPE_LEGEND_LINK" target="_blank" class="plan-btn plan-btn-legend">Subscribe</a>
     <div class="features">
-      <div class="feat-item">👑 Most powerful AI</div>
-      <div class="feat-item">🧩 Long memory</div>
+      <div class="feat-item">👑 Our most powerful AI on harder questions</div>
+      <div class="feat-item">✍️ The longest answers</div>
+      <div class="feat-item">🧩 Remembers your favourite hobbies</div>
       <div class="feat-item">📈 Stock simulator</div>
-      <div class="feat-item">📊 Advanced charts</div>
+      <div class="feat-item">📊 Stock portfolio chart</div>
       <div class="feat-item">💬 Unlimited conversations</div>
-      <div class="feat-item">🎨 All 6 exclusive themes</div>
       <div class="feat-item">💻 Stronger model in Code mode</div>
       <div class="feat-item">🔍 "More details" button</div>
       <div class="feat-item">🦊 Avatar for your Xearnes</div>
       <div class="feat-item">🧠 Code preferences memory</div>
       <div class="feat-item">📤 Export your conversations</div>
+      <div class="feat-item">🧰 Tools: PDF, Word, PowerPoint, Gmail draft, calendar</div>
       <div class="feat-item">🔎 Search all your conversations</div>
       <div class="feat-item">🔐 Secret challenges</div>
-      <div class="feat-item">👑 Legend badge</div>
+      <div class="feat-item">👑 Ultimate badge</div>
     </div>
   </div>
 
