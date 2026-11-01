@@ -12,6 +12,7 @@ const OLLAMA_HEADERS_TIMEOUT_MS = 45000; // si pas de début de réponse après 
 
 import { handleAuthRequest, handleAuthVerify, handleAuthMe, tierFromRequest } from "./auth.js";
 import { handleStripeWebhook } from "./stripe.js";
+import { handleWorkspace } from "./workspace.js";
 import { TIER_CHAIN, TIER_MAX_TOKENS, podConfig, loadPod, savePod, isWarm, maybeWake, askPod } from "./pods.js";
 
 // ── RunPod Serverless (GPU) : voir pods.js. Les modèles et leur ordre dépendent du niveau de l'abonné (auth.js). ──
@@ -114,7 +115,7 @@ export default {
     const allowed = ALLOWED_ORIGINS.includes(origin);
     const corsHeaders = {
       "Access-Control-Allow-Origin": allowed ? origin : ALLOWED_ORIGINS[0],
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
 
@@ -129,6 +130,9 @@ export default {
     const path = new URL(request.url).pathname;
     // ── Webhook Stripe (signature vérifiée dans stripe.js) ──
     if (path === "/stripe-webhook" && request.method === "POST") return handleStripeWebhook(request, env);
+    // ── Workspace privé (liste d'adresses autorisées, voir workspace.js) ──
+    const wsRes = await handleWorkspace(request, env, ctx, corsHeaders);
+    if (wsRes) return wsRes;
     if (path.startsWith("/auth/")) {
       const json = (r) => new Response(JSON.stringify(r.json), { status: r.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       try {

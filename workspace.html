@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Xearnes Workspace</title>
+<link rel="icon" type="image/png" href="logo-192.png">
+<style>
+:root{--bg:#0a0a0a;--card:#141414;--card2:#1b1b1b;--text:#f0ede4;--text2:#a8a29a;--accent:#DAA520;--border:#3d3218;--ok:#4ade80;--bad:#f85149;--blue:#4ea8de}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.pri{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+button.dng{color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+input,select,textarea{background:#0f0f0f;border:1px solid var(--border);border-radius:8px;padding:7px 9px;width:100%}
+textarea{resize:vertical}
+h1{font-size:1.05rem;margin:0;color:var(--accent)}
+h2{font-size:.85rem;margin:0 0 6px;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.muted{color:var(--text2);font-size:.8rem}
+#login{max-width:380px;margin:12vh auto;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:16px;text-align:center}
+#login input{margin:8px 0;text-align:center}
+#login .err{color:var(--bad);min-height:18px;font-size:.8rem}
+#app{display:none;height:100%;flex-direction:column}
+header{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--border)}
+header .sp{flex:1}
+#tabs{display:none;gap:6px;padding:6px 8px;background:var(--card);border-bottom:1px solid var(--border)}
+#tabs button{flex:1}
+#tabs button.on{background:var(--accent);color:#000;border-color:var(--accent)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:240px 1fr 380px;gap:8px;padding:8px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.panel>*{flex-shrink:0}
+#editor{flex-shrink:1}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.list{display:flex;flex-direction:column;gap:3px}
+.item{padding:5px 8px;border-radius:7px;cursor:pointer;display:flex;justify-content:space-between;gap:6px;border:1px solid transparent;word-break:break-all}
+.item:hover{background:var(--card2)}
+.item.on{border-color:var(--accent);background:var(--card2)}
+#editor{flex:1;min-height:240px;font-family:ui-monospace,Consolas,monospace;font-size:13px;white-space:pre;tab-size:2}
+#feed{display:flex;flex-direction:column;gap:8px;min-height:80px}
+.msg{border-left:3px solid var(--accent);background:var(--card2);padding:6px 9px;border-radius:0 8px 8px 0}
+.msg b{display:block;font-size:.78rem;margin-bottom:2px}
+.msg pre{margin:0;white-space:pre-wrap;word-break:break-word;font:inherit}
+.msg.sys{border-color:var(--text2);color:var(--text2)}
+.msg.err{border-color:var(--bad)}
+.msg.ok{border-color:var(--ok)}
+.chg{border:1px solid var(--border);border-radius:8px;padding:6px 8px;background:var(--card2)}
+.chg pre{max-height:160px;overflow:auto;margin:6px 0 0;font:12px ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+.note{font-size:.78rem;color:var(--text2);border:1px dashed var(--border);border-radius:8px;padding:6px 8px}
+@media (max-width:900px){
+  main{grid-template-columns:1fr;padding:6px}
+  #tabs{display:flex}
+  .panel{display:none}
+  .panel.show{display:flex}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div style="font-size:2rem">🧠</div>
+  <h1>Xearnes Workspace</h1>
+  <p class="muted">Espace privé. Entre ton adresse email : tu recevras un code à 6 chiffres. Seules les adresses autorisées entrent.</p>
+  <input id="lgIn" type="email" placeholder="ton@email.com" autocomplete="email">
+  <div class="err" id="lgErr"></div>
+  <button class="pri" id="lgBtn" style="width:100%">Recevoir un code</button>
+  <p class="muted" id="lgHint" style="display:none">Regarde aussi dans les courriers indésirables (spam).</p>
+</div>
+
+<div id="app">
+  <header>
+    <h1>🧠 Workspace</h1>
+    <span class="muted" id="who"></span>
+    <span class="sp"></span>
+    <button id="logout">Se déconnecter</button>
+  </header>
+  <div id="tabs">
+    <button data-p="pFiles" class="on">Projets</button>
+    <button data-p="pEdit">Fichier</button>
+    <button data-p="pAgents">Agents</button>
+  </div>
+  <main>
+    <section class="panel show" id="pFiles">
+      <h2>Projets</h2>
+      <div class="row"><button id="newProj">＋ Projet</button><button id="delProj" class="dng">Supprimer</button></div>
+      <div class="list" id="projList"></div>
+      <h2 style="margin-top:8px">Fichiers</h2>
+      <div class="row"><button id="newFile">＋ Fichier</button><button id="upFile">Envoyer…</button><button id="zipBtn">ZIP</button></div>
+      <input id="upInput" type="file" multiple style="display:none">
+      <div class="list" id="fileList"></div>
+      <div class="note">Les fichiers sont stockés sur le serveur Oracle. Texte seulement (200 Ko par fichier, 5 Mo par projet).</div>
+    </section>
+
+    <section class="panel" id="pEdit">
+      <div class="row" style="align-items:center"><b id="curName" style="flex:1;word-break:break-all">Aucun fichier</b><button id="saveFile" class="pri">Enregistrer</button><button id="dlFile">Télécharger</button><button id="delFile" class="dng">Supprimer</button></div>
+      <textarea id="editor" spellcheck="false" placeholder="Choisis un fichier à gauche, ou demande à l'équipe d'en écrire."></textarea>
+      <div class="muted" id="saveMsg"></div>
+    </section>
+
+    <section class="panel" id="pAgents">
+      <h2>Équipe d'agents</h2>
+      <label class="muted">Équipe</label>
+      <select id="team">
+        <option value="code">Code : Planificateur, Codeur, Relecteur, Cybersécurité</option>
+        <option value="debug">Débogage : Débogueur, Codeur, Relecteur</option>
+        <option value="dataset">Datasets : Datasets, Relecteur</option>
+        <option value="audit">Audit : Cybersécurité + RGPD sur le projet</option>
+      </select>
+      <label class="muted">Modèle</label>
+      <select id="model">
+        <option value="large">Gros modèle (20B, GPU, rapide)</option>
+        <option value="mid">Modèle moyen (14B, GPU)</option>
+        <option value="small">Modèle léger (8B, GPU)</option>
+        <option value="oracle">Local sur Oracle (lent, gratuit)</option>
+        <option value="api" disabled>API (avec l'accord de ton père) : pas encore branché</option>
+      </select>
+      <label class="muted">Objectif</label>
+      <textarea id="goal" rows="3" placeholder="Ex. : écris un petit jeu du pendu en Python avec des tests."></textarea>
+      <label class="muted" id="ctxLbl">Erreur ou contexte (optionnel, pour le débogage)</label>
+      <textarea id="ctx" rows="2" placeholder="Colle ici le message d'erreur."></textarea>
+      <div class="row"><button class="pri" id="runBtn" style="flex:1">▶ Lancer l'équipe</button><button id="stopBtn" disabled>Stop</button></div>
+      <div class="note">Les agents ne lancent aucune commande et ne touchent à rien sans toi : leurs fichiers arrivent dans « Changements proposés ».</div>
+      <div id="feed"></div>
+      <h2 id="chgH" style="display:none">Changements proposés</h2>
+      <div id="changes"></div>
+      <div class="row" id="chgBar" style="display:none"><button class="pri" id="applyBtn">Appliquer la sélection</button><button id="discardBtn">Tout ignorer</button></div>
+      <h2 style="margin-top:8px">Historique</h2>
+      <div class="list" id="runList"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+var W="https://xearnes-mistral.niljen.workers.dev";
+var $=function(i){return document.getElementById(i);};
+var token="",email="",proj="",curFile="",files=[],pending=[],running=false,stopFlag=false;
+try{token=localStorage.getItem("xnw_token")||"";email=localStorage.getItem("xnw_email")||"";}catch(e){}
+
+// ───────────── réseau ─────────────
+function api(method,path,body,raw){
+  var h={};if(token)h["Authorization"]="Bearer "+token;
+  if(body!==undefined&&!raw)h["Content-Type"]="application/json";
+  if(raw)h["Content-Type"]="text/plain; charset=utf-8";
+  return fetch(W+path,{method:method,headers:h,body:body===undefined?undefined:(raw?body:JSON.stringify(body))}).then(function(r){
+    return r.text().then(function(t){var j={};try{j=JSON.parse(t);}catch(e){}return{status:r.status,json:j};});
+  });
+}
+function needLogin(){token="";try{localStorage.removeItem("xnw_token");}catch(e){}show(false);$("lgErr").textContent="Connecte-toi pour continuer.";}
+function handleAuth(r){
+  if(r.status===401){needLogin();return true;}
+  if(r.status===403){alert("Cette adresse n'a pas accès au Workspace.");needLogin();return true;}
+  return false;
+}
+var ERR={exists:"Ce nom existe déjà.",bad_project_name:"Nom de projet : lettres minuscules, chiffres, - et _ (40 max).",bad_path:"Chemin invalide (lettres, chiffres, . _ - et / ; 4 niveaux max).",file_too_large:"Fichier trop gros (200 Ko max).",project_too_large:"Projet trop gros (5 Mo max).",too_many_files:"Trop de fichiers (200 max).",not_text:"Ce fichier n'est pas du texte.",too_many_projects:"Trop de projets (30 max).",oracle_unreachable:"Le serveur Oracle ne répond pas.",too_large:"Trop gros."};
+function errText(r){return ERR[r.json&&r.json.error]||("Erreur "+r.status+(r.json&&r.json.error?" ("+r.json.error+")":""));}
+
+// ───────────── connexion (code par email) ─────────────
+var step=1,mail="";
+function show(on){$("login").style.display=on?"none":"block";$("app").style.display=on?"flex":"none";}
+$("lgBtn").onclick=function(){
+  var v=$("lgIn").value.trim(),err=$("lgErr");err.textContent="";
+  if(step===1){
+    v=v.toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)){err.textContent="Adresse invalide.";return;}
+    $("lgBtn").disabled=true;
+    fetch(W+"/auth/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:v,lang:"fr"})}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j};});}).then(function(x){
+      $("lgBtn").disabled=false;
+      if(x.s===200){mail=v;step=2;$("lgIn").value="";$("lgIn").type="text";$("lgIn").placeholder="Code à 6 chiffres";$("lgIn").maxLength=6;$("lgIn").inputMode="numeric";$("lgBtn").textContent="Valider";$("lgHint").style.display="block";}
+      else err.textContent=x.j&&x.j.error==="too_many_requests"?"Trop de demandes. Réessaie dans une heure.":"L'email n'a pas pu être envoyé.";
+    }).catch(function(){$("lgBtn").disabled=false;err.textContent="Serveur injoignable.";});
+  }else{
+    if(!/^\d{6}$/.test(v)){err.textContent="Le code a 6 chiffres.";return;}
+    $("lgBtn").disabled=true;
+    fetch(W+"/auth/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:mail,code:v})}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j};});}).then(function(x){
+      $("lgBtn").disabled=false;
+      if(x.s===200&&x.j.token){token=x.j.token;email=mail;try{localStorage.setItem("xnw_token",token);localStorage.setItem("xnw_email",email);}catch(e){}step=1;$("lgBtn").textContent="Recevoir un code";$("lgIn").type="email";$("lgIn").maxLength=254;$("lgIn").placeholder="ton@email.com";start();}
+      else err.textContent=x.j&&x.j.error==="wrong_code"?"Code incorrect.":x.j&&x.j.error==="code_expired"?"Code expiré. Recommence.":"Impossible de valider le code.";
+    }).catch(function(){$("lgBtn").disabled=false;err.textContent="Serveur injoignable.";});
+  }
+};
+$("lgIn").addEventListener("keydown",function(e){if(e.key==="Enter")$("lgBtn").click();});
+$("logout").onclick=function(){token="";email="";try{localStorage.removeItem("xnw_token");localStorage.removeItem("xnw_email");}catch(e){}step=1;show(false);};
+
+// ───────────── projets et fichiers ─────────────
+function start(){
+  api("GET","/ws/projects").then(function(r){
+    if(handleAuth(r))return;
+    if(r.status!==200){alert(errText(r));show(false);return;}
+    show(true);$("who").textContent=email;renderProjects(r.json.projects||[]);
+  }).catch(function(){alert("Serveur injoignable.");show(false);});
+}
+function renderProjects(list){
+  var box=$("projList");box.innerHTML="";
+  if(!list.length){var d=document.createElement("div");d.className="muted";d.textContent="Aucun projet : crée-en un avec ＋ Projet.";box.appendChild(d);}
+  list.forEach(function(p){
+    var d=document.createElement("div");d.className="item"+(p.name===proj?" on":"");
+    var a=document.createElement("span");a.textContent=p.name;var b=document.createElement("span");b.className="muted";b.textContent=p.files+" f.";
+    d.appendChild(a);d.appendChild(b);d.onclick=function(){openProject(p.name);};box.appendChild(d);
+  });
+}
+function refreshProjects(){return api("GET","/ws/projects").then(function(r){if(!handleAuth(r)&&r.status===200)renderProjects(r.json.projects||[]);});}
+function openProject(name){
+  proj=name;curFile="";$("editor").value="";$("curName").textContent="Aucun fichier";pending=[];renderChanges();$("feed").innerHTML="";
+  refreshProjects();loadTree();loadRuns();
+}
+function loadTree(){
+  if(!proj){files=[];renderFiles();return Promise.resolve();}
+  return api("GET","/ws/projects/"+proj+"/tree").then(function(r){if(handleAuth(r))return;files=r.json.files||[];renderFiles();});
+}
+function renderFiles(){
+  var box=$("fileList");box.innerHTML="";
+  if(!proj){var d0=document.createElement("div");d0.className="muted";d0.textContent="Choisis un projet.";box.appendChild(d0);return;}
+  if(!files.length){var d1=document.createElement("div");d1.className="muted";d1.textContent="Aucun fichier.";box.appendChild(d1);}
+  files.forEach(function(f){
+    var d=document.createElement("div");d.className="item"+(f.path===curFile?" on":"");
+    var a=document.createElement("span");a.textContent=f.path;var b=document.createElement("span");b.className="muted";b.textContent=f.size>1024?Math.round(f.size/1024)+" Ko":f.size+" o";
+    d.appendChild(a);d.appendChild(b);d.onclick=function(){openFile(f.path);};box.appendChild(d);
+  });
+}
+function openFile(path){
+  api("GET","/ws/projects/"+proj+"/file?path="+encodeURIComponent(path)).then(function(r){
+    if(handleAuth(r))return;
+    if(r.status!==200){alert(errText(r));return;}
+    curFile=path;$("curName").textContent=path;$("editor").value=r.json.content;$("saveMsg").textContent="";renderFiles();tab("pEdit");
+  });
+}
+function putFile(path,content){return api("PUT","/ws/projects/"+proj+"/file?path="+encodeURIComponent(path),content,true);}
+$("newProj").onclick=function(){
+  var n=(prompt("Nom du projet (minuscules, chiffres, - et _)","")||"").trim().toLowerCase();if(!n)return;
+  api("POST","/ws/projects",{name:n}).then(function(r){if(handleAuth(r))return;if(r.status!==201){alert(errText(r));return;}openProject(n);});
+};
+$("delProj").onclick=function(){
+  if(!proj||!confirm("Supprimer le projet « "+proj+" » et tous ses fichiers ?"))return;
+  api("DELETE","/ws/projects/"+proj).then(function(r){if(handleAuth(r))return;proj="";curFile="";$("editor").value="";files=[];renderFiles();refreshProjects();$("runList").innerHTML="";});
+};
+$("newFile").onclick=function(){
+  if(!proj){alert("Choisis d'abord un projet.");return;}
+  var p=(prompt("Chemin du fichier (ex. main.py ou src/app.js)","")||"").trim();if(!p)return;
+  putFile(p,"").then(function(r){if(handleAuth(r))return;if(r.status!==200){alert(errText(r));return;}loadTree().then(function(){openFile(p);});refreshProjects();});
+};
+$("saveFile").onclick=function(){
+  if(!proj||!curFile)return;
+  putFile(curFile,$("editor").value).then(function(r){if(handleAuth(r))return;$("saveMsg").textContent=r.status===200?"Enregistré sur Oracle.":errText(r);loadTree();});
+};
+$("delFile").onclick=function(){
+  if(!proj||!curFile||!confirm("Supprimer « "+curFile+" » ?"))return;
+  api("DELETE","/ws/projects/"+proj+"/file?path="+encodeURIComponent(curFile)).then(function(r){if(handleAuth(r))return;curFile="";$("editor").value="";$("curName").textContent="Aucun fichier";loadTree();refreshProjects();});
+};
+$("dlFile").onclick=function(){if(!curFile)return;save(new Blob([$("editor").value],{type:"text/plain;charset=utf-8"}),curFile.split("/").pop());};
+$("upFile").onclick=function(){if(!proj){alert("Choisis d'abord un projet.");return;}$("upInput").click();};
+$("upInput").onchange=function(){
+  var fs=[].slice.call(this.files||[]);this.value="";
+  fs.reduce(function(p,f){return p.then(function(){
+    return f.text().then(function(t){var name=f.name.replace(/[^A-Za-z0-9._-]/g,"_");if(!/^[A-Za-z0-9]/.test(name))name="f"+name;return putFile(name,t).then(function(r){if(r.status!==200)alert(f.name+" : "+errText(r));});});
+  });},Promise.resolve()).then(function(){loadTree();refreshProjects();});
+};
+$("zipBtn").onclick=function(){
+  if(!proj||!files.length){alert("Aucun fichier à compresser.");return;}
+  Promise.all(files.map(function(f){return api("GET","/ws/projects/"+proj+"/file?path="+encodeURIComponent(f.path)).then(function(r){return{name:f.path,data:r.status===200?r.json.content:""};});})).then(function(all){
+    save(zip(all),proj+".zip");
+  });
+};
+
+// ───────────── utilitaires : téléchargement et ZIP (sans compression) ─────────────
+function save(blob,name){var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(a.href);},1500);}
+var crcT=null;
+function crc(b){if(!crcT){crcT=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);crcT[n]=c>>>0;}}var x=0xFFFFFFFF;for(var i=0;i<b.length;i++)x=crcT[(x^b[i])&255]^(x>>>8);return(x^0xFFFFFFFF)>>>0;}
+function zip(items){
+  var enc=new TextEncoder(),parts=[],cd=[],off=0;
+  items.forEach(function(f){
+    var nm=enc.encode(f.name),d=enc.encode(f.data),c=crc(d),h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(h.buffer),nm,d);
+    var e=new DataView(new ArrayBuffer(46));
+    e.setUint32(0,0x02014b50,true);e.setUint16(4,20,true);e.setUint16(6,20,true);e.setUint16(8,0x0800,true);e.setUint16(14,0x21,true);e.setUint32(16,c,true);e.setUint32(20,d.length,true);e.setUint32(24,d.length,true);e.setUint16(28,nm.length,true);e.setUint32(42,off,true);
+    cd.push(new Uint8Array(e.buffer),nm);off+=30+nm.length+d.length;
+  });
+  var n=0;cd.forEach(function(x){n+=x.length;});
+  var z=new DataView(new ArrayBuffer(22));z.setUint32(0,0x06054b50,true);z.setUint16(8,items.length,true);z.setUint16(10,items.length,true);z.setUint32(12,n,true);z.setUint32(16,off,true);
+  return new Blob(parts.concat(cd,[new Uint8Array(z.buffer)]),{type:"application/zip"});
+}
+
+// ───────────── onglets (téléphone) ─────────────
+function tab(id){
+  [].forEach.call(document.querySelectorAll(".panel"),function(p){p.classList.toggle("show",p.id===id);});
+  [].forEach.call(document.querySelectorAll("#tabs button"),function(b){b.classList.toggle("on",b.getAttribute("data-p")===id);});
+}
+[].forEach.call(document.querySelectorAll("#tabs button"),function(b){b.onclick=function(){tab(b.getAttribute("data-p"));};});
+
+// ───────────── agents ─────────────
+var RULES="Tu fais partie d'une équipe d'agents IA qui aide Youssef à construire des projets. Réponds dans la langue de l'objectif (français par défaut). Tu ne vois que les fichiers fournis ci-dessous. Ne demande jamais de clés, de mots de passe ni de données personnelles, et n'écris jamais de secret dans le code. Sois concret et concis.";
+var FILEFMT=" Pour chaque fichier à créer ou à modifier, écris une ligne « FICHIER: chemin/relatif.ext » puis, juste en dessous, un bloc de code entouré de trois accents graves qui contient TOUT le contenu du fichier. Chemins relatifs simples (pas de .., pas de /), 4 niveaux maximum, 8 fichiers maximum.";
+var ROLES={
+  planner:{name:"Planificateur",color:"#4ea8de",sys:"Tu es le Planificateur. Découpe l'objectif en 3 à 6 étapes courtes et liste les fichiers à créer ou modifier. N'écris pas de code."},
+  coder:{name:"Codeur",color:"#DAA520",sys:"Tu es le Codeur. Écris du code complet, simple et qui marche, avec de brefs commentaires. Termine par une phrase qui dit comment l'essayer."+FILEFMT},
+  reviewer:{name:"Relecteur",color:"#a78bfa",sys:"Tu es le Relecteur. Relis les fichiers proposés. Si tout est correct, réponds seulement « OK ». Sinon donne une liste numérotée de problèmes précis (8 maximum) avec le fichier concerné et le correctif attendu. Vérifie que le code fait bien ce que l'objectif demande."},
+  security:{name:"Cybersécurité",color:"#f87171",sys:"Tu es l'agent Cybersécurité. Cherche : injections, XSS, secrets en dur, mauvaises permissions, entrées non vérifiées, dépendances risquées, fuites de données personnelles. Réponds « RAS » si rien, sinon une liste avec la gravité (haute, moyenne, basse) et la correction."},
+  debugger:{name:"Débogueur",color:"#fb923c",sys:"Tu es le Débogueur. À partir de l'erreur et du code, explique la cause probable en deux phrases, puis propose le correctif minimal."},
+  dataset:{name:"Datasets",color:"#34d399",sys:"Tu es l'agent Datasets. Crée des jeux de données au format JSONL : une ligne = un objet JSON avec les clés « instruction » et « response ». Contenu ORIGINAL uniquement : jamais de données personnelles, jamais de texte copié d'une source protégée, jamais de conversations d'utilisateurs. 20 à 40 lignes par fichier."+FILEFMT},
+  gdpr:{name:"RGPD",color:"#22d3ee",sys:"Tu es l'agent RGPD. Relis le projet et vérifie : quelles données personnelles sont collectées, base légale, consentement des mineurs, durée de conservation, transferts hors Union européenne, droits des personnes (accès, effacement), sous-traitants. Signale les risques et propose des corrections. Rappelle en une phrase que ce n'est pas un avis juridique."}
+};
+function msg(who,text,cls){
+  var d=document.createElement("div");d.className="msg"+(cls?" "+cls:"");
+  if(who){var b=document.createElement("b");b.textContent=who.name||who;if(who.color)d.style.borderColor=who.color,b.style.color=who.color;d.appendChild(b);}
+  var p=document.createElement("pre");p.textContent=text;d.appendChild(p);$("feed").appendChild(d);d.scrollIntoView({block:"nearest"});return d;
+}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+// Appel d'un modèle avec attente si le GPU démarre (2 à 4 minutes à froid)
+function ask(roleKey,messages,maxTokens){
+  var model=$("model").value,t0=Date.now(),info=null;
+  function once(){
+    if(stopFlag)return Promise.reject(new Error("stop"));
+    return api("POST","/ws-llm",{model:model,messages:messages,max_tokens:maxTokens||1800}).then(function(r){
+      if(handleAuth(r))throw new Error("auth");
+      if(r.status===429)throw new Error("Limite d'appels du jour atteinte (le plafond protège le budget). Réessaie demain.");
+      if(r.status!==200)throw new Error("Erreur "+r.status+(r.json&&r.json.error?" ("+r.json.error+")":""));
+      var j=r.json;
+      if(j.ok)return j.text;
+      if(j.status==="warming"){
+        if(Date.now()-t0>7*60*1000)throw new Error("Le GPU ne démarre pas (plafond de réveils atteint ?). Essaie « Local sur Oracle ».");
+        if(!info)info=msg("Système","Le GPU démarre (2 à 4 minutes la première fois)…","sys");
+        return sleep(8000).then(once);
+      }
+      if(j.status==="unavailable")throw new Error("Ce modèle n'est pas configuré sur le serveur.");
+      throw new Error("Le modèle n'a pas répondu. Réessaie ou change de modèle.");
+    });
+  }
+  return once().then(function(t){if(info)info.remove();return t;});
+}
+function sysFor(roleKey){return RULES+" "+ROLES[roleKey].sys;}
+function projectContext(limit){
+  limit=limit||28000;
+  var out=["Projet : "+proj,"Fichiers existants : "+(files.length?files.map(function(f){return f.path;}).join(", "):"aucun")];
+  var budget=limit;
+  return files.reduce(function(p,f){return p.then(function(){
+    if(budget<=0||f.size>16000)return;
+    return api("GET","/ws/projects/"+proj+"/file?path="+encodeURIComponent(f.path)).then(function(r){
+      if(r.status===200){var c=r.json.content.slice(0,Math.min(16000,budget));budget-=c.length;out.push("--- "+f.path+" ---\n"+c);}
+    });
+  });},Promise.resolve()).then(function(){return out.join("\n\n");});
+}
+function pendingText(){return pending.map(function(c){return "--- "+c.path+" (proposé) ---\n"+c.content;}).join("\n\n");}
+function validPath(p){
+  if(!p||p.length>200||/[\\\x00]/.test(p)||p.charAt(0)==="/")return false;
+  var s=p.split("/");if(s.length>4)return false;
+  return s.every(function(x){return /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(x)&&x!==".."&&x.slice(-1)!==".";});
+}
+function parseFiles(text){
+  var out=[],re=/FICHIER:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)\n```/g,m;
+  while((m=re.exec(text))&&out.length<8){
+    var p=m[1].trim().replace(/^[`'"*]+|[`'"*]+$/g,"").replace(/^\.\//,"");
+    if(validPath(p)&&m[2].length<=200*1024)out.push({path:p,content:m[2]+"\n"});
+  }
+  return out;
+}
+function addPending(list){
+  list.forEach(function(c){
+    var i=pending.findIndex(function(x){return x.path===c.path;});
+    var known=files.some(function(f){return f.path===c.path;});
+    var item={path:c.path,content:c.content,isNew:!known,on:true};
+    if(i>=0)pending[i]=item;else pending.push(item);
+  });
+  renderChanges();
+}
+function renderChanges(){
+  var box=$("changes");box.innerHTML="";
+  $("chgH").style.display=$("chgBar").style.display=pending.length?"":"none";
+  pending.forEach(function(c){
+    var d=document.createElement("div");d.className="chg";
+    var l=document.createElement("label");l.style.cssText="display:flex;gap:6px;align-items:center;cursor:pointer";
+    var cb=document.createElement("input");cb.type="checkbox";cb.checked=c.on;cb.style.width="auto";cb.onchange=function(){c.on=cb.checked;};
+    var s=document.createElement("span");s.textContent=c.path+(c.isNew?"  (nouveau)":"  (remplace le fichier)");
+    l.appendChild(cb);l.appendChild(s);d.appendChild(l);
+    var pre=document.createElement("pre");pre.textContent=c.content.slice(0,2500)+(c.content.length>2500?"\n…":"");d.appendChild(pre);box.appendChild(d);
+  });
+}
+$("applyBtn").onclick=function(){
+  var sel=pending.filter(function(c){return c.on;});if(!sel.length||!proj)return;
+  $("applyBtn").disabled=true;
+  sel.reduce(function(p,c){return p.then(function(){return putFile(c.path,c.content).then(function(r){if(r.status!==200)msg("Système",c.path+" : "+errText(r),"err");else msg("Système","Écrit sur Oracle : "+c.path,"ok");});});},Promise.resolve()).then(function(){
+    pending=pending.filter(function(c){return !c.on;});renderChanges();$("applyBtn").disabled=false;loadTree();refreshProjects();
+  });
+};
+$("discardBtn").onclick=function(){pending=[];renderChanges();};
+
+var step_=0;
+function run(){
+  if(running)return;
+  if(!proj){alert("Choisis ou crée un projet d'abord.");tab("pFiles");return;}
+  var goal=$("goal").value.trim(),team=$("team").value;
+  if(team!=="audit"&&!goal){alert("Écris l'objectif.");return;}
+  if($("model").value==="api"){alert("Les API ne sont pas branchées.");return;}
+  running=true;stopFlag=false;$("runBtn").disabled=true;$("stopBtn").disabled=false;$("feed").innerHTML="";pending=[];renderChanges();
+  var log=[],extra=$("ctx").value.trim();
+  function say(role,text){log.push({who:ROLES[role].name,text:text});return msg(ROLES[role],text);}
+  function call(role,user,max){
+    var w=msg("Système",ROLES[role].name+" travaille…","sys");
+    return ask(role,[{role:"system",content:sysFor(role)},{role:"user",content:user}],max).then(function(t){w.remove();say(role,t);return t;});
+  }
+  projectContext().then(function(ctx){
+    var base="Objectif : "+(goal||"Audit du projet")+"\n\n"+ctx+(extra?"\n\nErreur / contexte fourni :\n"+extra:"");
+    var flow;
+    if(team==="code"){
+      flow=call("planner",base,900).then(function(plan){
+        return call("coder",base+"\n\nPlan de l'équipe :\n"+plan,3000);
+      }).then(function(out){
+        addPending(parseFiles(out));
+        if(!pending.length)throw new Error("Le Codeur n'a pas produit de fichier au bon format. Relance, ou essaie le gros modèle.");
+        return call("reviewer","Objectif : "+goal+"\n\nFichiers proposés :\n"+pendingText(),1200);
+      }).then(function(rev){
+        if(/^\s*OK\b/i.test(rev))return;
+        return call("coder",base+"\n\nVoici ta version actuelle :\n"+pendingText()+"\n\nRemarques du relecteur à corriger :\n"+rev+"\n\nRéécris les fichiers corrigés.",3000).then(function(out){addPending(parseFiles(out));});
+      }).then(function(){return call("security","Objectif : "+goal+"\n\nFichiers proposés :\n"+pendingText(),1200);});
+    }else if(team==="debug"){
+      flow=call("debugger",base,1200).then(function(dbg){
+        return call("coder",base+"\n\nAnalyse du débogueur :\n"+dbg+"\n\nÉcris les fichiers corrigés (changement minimal).",3000);
+      }).then(function(out){
+        addPending(parseFiles(out));
+        if(!pending.length)return;
+        return call("reviewer","Objectif : "+goal+"\n\nCorrectifs proposés :\n"+pendingText(),1000);
+      });
+    }else if(team==="dataset"){
+      flow=call("dataset",base+"\n\nCrée le jeu de données demandé dans un fichier .jsonl.",3000).then(function(out){
+        addPending(parseFiles(out));
+        if(!pending.length)throw new Error("Aucun fichier de dataset au bon format. Relance l'équipe.");
+        return call("reviewer","Vérifie ce jeu de données : format JSONL valide, contenu original, AUCUNE donnée personnelle, pas de contenu dangereux.\n\n"+pendingText(),1000);
+      });
+    }else{
+      flow=call("security",base+"\n\nFais l'audit de sécurité du projet.",1500).then(function(a){
+        return call("gdpr",base+"\n\nFais la vérification RGPD du projet.",1500).then(function(b){
+          addPending([{path:"RAPPORT_AUDIT.md",content:"# Audit du projet\n\n## Cybersécurité\n\n"+a+"\n\n## RGPD (pas un avis juridique)\n\n"+b+"\n"}]);
+        });
+      });
+    }
+    return flow;
+  }).then(function(){
+    msg("Système",pending.length?"Terminé. Relis les changements proposés ci-dessous, coche ce que tu veux garder, puis « Appliquer ».":"Terminé.","ok");
+  }).catch(function(e){
+    if(e&&e.message==="stop")msg("Système","Arrêté.","sys");
+    else if(!(e&&e.message==="auth"))msg("Système",(e&&e.message)||"Erreur inconnue","err");
+  }).then(function(){
+    running=false;$("runBtn").disabled=false;$("stopBtn").disabled=true;
+    if(log.length)saveRun(goal,team,log);
+  });
+}
+$("runBtn").onclick=run;
+$("stopBtn").onclick=function(){stopFlag=true;};
+
+// historique des runs (sur Oracle)
+function saveRun(goal,team,log){
+  var id="r"+Date.now().toString(36);
+  api("PUT","/ws/projects/"+proj+"/runs/"+id,{goal:goal,team:team,model:$("model").value,time:Math.floor(Date.now()/1000),log:log.map(function(x){return{who:x.who,text:x.text.slice(0,6000)};})}).then(function(){loadRuns();});
+}
+function loadRuns(){
+  if(!proj)return;
+  api("GET","/ws/projects/"+proj+"/runs").then(function(r){
+    if(handleAuth(r))return;var box=$("runList");box.innerHTML="";
+    (r.json.runs||[]).slice(0,12).forEach(function(x){
+      var d=document.createElement("div");d.className="item";
+      var a=document.createElement("span");a.textContent=(x.goal||"(audit)")+" · "+x.team;var b=document.createElement("span");b.className="muted";b.textContent=new Date((x.time||0)*1000).toLocaleDateString("fr-FR");
+      d.appendChild(a);d.appendChild(b);
+      d.onclick=function(){
+        api("GET","/ws/projects/"+proj+"/runs/"+x.id).then(function(rr){
+          if(rr.status!==200)return;$("feed").innerHTML="";
+          (rr.json.log||[]).forEach(function(l){var role=Object.keys(ROLES).find(function(k){return ROLES[k].name===l.who;});msg(role?ROLES[role]:l.who,l.text);});
+        });
+      };
+      box.appendChild(d);
+    });
+  });
+}
+
+// mémoire des choix
+try{["team","model"].forEach(function(k){var v=localStorage.getItem("xnw_"+k);if(v&&$(k).querySelector('option[value="'+v+'"]:not([disabled])'))$(k).value=v;$(k).onchange=function(){try{localStorage.setItem("xnw_"+k,$(k).value);}catch(e){}};});}catch(e){}
+
+if(token)start();else show(false);
+})();
+</script>
+</body>
+</html>

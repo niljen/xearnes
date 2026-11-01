@@ -37,11 +37,13 @@ export async function verifyStripeSignature(body, header, secret, nowMs = Date.n
   return JSON.parse(body);
 }
 
-export function priceToTier(priceId, env) {
-  if (!priceId) return "free";
-  if (priceId === env.STRIPE_PRICE_LEGEND) return "legend";
-  if (priceId === env.STRIPE_PRICE_ULTRA) return "ultra";
-  if (priceId === env.STRIPE_PRICE_PRO) return "pro";
+// Le niveau se reconnaît à l'identifiant du prix (price_...) ou du produit (prod_...) : les deux sont dans l'événement Stripe.
+export function priceToTier(price, env) {
+  const ids = typeof price === "string" ? [price] : [price && price.id, price && typeof price.product === "string" ? price.product : price && price.product && price.product.id];
+  const is = (want) => !!want && ids.includes(want);
+  if (is(env.STRIPE_PRICE_LEGEND)) return "legend";
+  if (is(env.STRIPE_PRICE_ULTRA)) return "ultra";
+  if (is(env.STRIPE_PRICE_PRO)) return "pro";
   return "free";
 }
 
@@ -82,7 +84,7 @@ export async function handleStripeWebhook(request, env) {
       if (email) st.email = email;
     } else if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       const item = obj.items && obj.items.data && obj.items.data[0];
-      st.tier = priceToTier(item && item.price && item.price.id, env);
+      st.tier = priceToTier(item && item.price, env);
       st.status = event.type === "customer.subscription.deleted" ? "canceled" : String(obj.status || "");
       // Selon la version de l'API Stripe, la fin de période est sur l'abonnement ou sur la ligne
       const end = obj.current_period_end || (item && item.current_period_end) || 0;
