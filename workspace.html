@@ -86,11 +86,24 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:240px 1fr 380px;gap:
     <section class="panel show" id="pFiles">
       <h2>Projets</h2>
       <div class="row"><button id="newProj">＋ Projet</button><button id="delProj" class="dng">Supprimer</button></div>
+      <div class="row"><button id="memBtn">🧠 Mémoire Xearnes</button></div>
       <div class="list" id="projList"></div>
       <h2 style="margin-top:8px">Fichiers</h2>
       <div class="row"><button id="newFile">＋ Fichier</button><button id="upFile">Envoyer…</button><button id="zipBtn">ZIP</button></div>
       <input id="upInput" type="file" multiple style="display:none">
       <div class="list" id="fileList"></div>
+      <details id="gh">
+        <summary class="muted" style="cursor:pointer">GitHub</summary>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+          <input id="ghRepo" placeholder="dépôt : propriétaire/nom" autocomplete="off">
+          <div class="row"><input id="ghBranch" placeholder="branche" value="main" style="flex:1"><input id="ghDir" placeholder="dossier (option)" style="flex:1"></div>
+          <input id="ghTok" type="password" placeholder="jeton GitHub (reste sur cet appareil)" autocomplete="off">
+          <label class="muted" style="display:flex;gap:6px;align-items:center"><input id="ghRem" type="checkbox" style="width:auto"> Se souvenir du jeton sur cet appareil</label>
+          <div class="row"><button id="ghPush" class="pri">Envoyer vers GitHub</button><button id="ghPull">Importer</button><button id="ghForget">Oublier le jeton</button></div>
+          <div class="muted" id="ghMsg"></div>
+          <div class="note">Un adulte crée un jeton « fine-grained » limité à CE dépôt, permission Contents : lecture et écriture. Le jeton n'est envoyé qu'à GitHub, jamais à nos serveurs.</div>
+        </div>
+      </details>
       <div class="note">Les fichiers sont stockés sur le serveur Oracle. Texte seulement (200 Ko par fichier, 5 Mo par projet).</div>
     </section>
 
@@ -107,6 +120,8 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:240px 1fr 380px;gap:
         <option value="code">Code : Planificateur, Codeur, Relecteur, Cybersécurité</option>
         <option value="debug">Débogage : Débogueur, Codeur, Relecteur</option>
         <option value="dataset">Datasets : Datasets, Relecteur</option>
+        <option value="arch">Architecture IA : Architecte, Critique</option>
+        <option value="eco">Économie : Économiste, Critique (API conseillée)</option>
         <option value="audit">Audit : Cybersécurité + RGPD sur le projet</option>
       </select>
       <label class="muted">Modèle</label>
@@ -115,7 +130,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:240px 1fr 380px;gap:
         <option value="mid">Modèle moyen (14B, GPU)</option>
         <option value="small">Modèle léger (8B, GPU)</option>
         <option value="oracle">Local sur Oracle (lent, gratuit)</option>
-        <option value="api" disabled>API (avec l'accord de ton père) : pas encore branché</option>
+        <option value="__noapi" disabled>API : aucune clé configurée (ton père doit en créer une)</option>
       </select>
       <label class="muted">Objectif</label>
       <textarea id="goal" rows="3" placeholder="Ex. : écris un petit jeu du pendu en Python avec des tests."></textarea>
@@ -190,13 +205,13 @@ function start(){
   api("GET","/ws/projects").then(function(r){
     if(handleAuth(r))return;
     if(r.status!==200){alert(errText(r));show(false);return;}
-    show(true);$("who").textContent=email;renderProjects(r.json.projects||[]);
+    show(true);$("who").textContent=email;renderProjects(r.json.projects||[]);ensureMemory();loadConfig();
   }).catch(function(){alert("Serveur injoignable.");show(false);});
 }
 function renderProjects(list){
   var box=$("projList");box.innerHTML="";
-  if(!list.length){var d=document.createElement("div");d.className="muted";d.textContent="Aucun projet : crée-en un avec ＋ Projet.";box.appendChild(d);}
-  list.forEach(function(p){
+  if(!list.filter(function(p){return p.name!==MEM_PROJECT;}).length){var d=document.createElement("div");d.className="muted";d.textContent="Aucun projet : crée-en un avec ＋ Projet.";box.appendChild(d);}
+  list.filter(function(p){return p.name!==MEM_PROJECT;}).forEach(function(p){
     var d=document.createElement("div");d.className="item"+(p.name===proj?" on":"");
     var a=document.createElement("span");a.textContent=p.name;var b=document.createElement("span");b.className="muted";b.textContent=p.files+" f.";
     d.appendChild(a);d.appendChild(b);d.onclick=function(){openProject(p.name);};box.appendChild(d);
@@ -244,7 +259,8 @@ $("newFile").onclick=function(){
 };
 $("saveFile").onclick=function(){
   if(!proj||!curFile)return;
-  putFile(curFile,$("editor").value).then(function(r){if(handleAuth(r))return;$("saveMsg").textContent=r.status===200?"Enregistré sur Oracle.":errText(r);loadTree();});
+  var txt=$("editor").value;
+  putFile(curFile,txt).then(function(r){if(handleAuth(r))return;$("saveMsg").textContent=r.status===200?"Enregistré sur Oracle.":errText(r);if(r.status===200&&proj===MEM_PROJECT&&curFile===MEM_FILE)memText=txt;loadTree();});
 };
 $("delFile").onclick=function(){
   if(!proj||!curFile||!confirm("Supprimer « "+curFile+" » ?"))return;
@@ -301,7 +317,10 @@ var ROLES={
   security:{name:"Cybersécurité",color:"#f87171",sys:"Tu es l'agent Cybersécurité. Cherche : injections, XSS, secrets en dur, mauvaises permissions, entrées non vérifiées, dépendances risquées, fuites de données personnelles. Réponds « RAS » si rien, sinon une liste avec la gravité (haute, moyenne, basse) et la correction."},
   debugger:{name:"Débogueur",color:"#fb923c",sys:"Tu es le Débogueur. À partir de l'erreur et du code, explique la cause probable en deux phrases, puis propose le correctif minimal."},
   dataset:{name:"Datasets",color:"#34d399",sys:"Tu es l'agent Datasets. Crée des jeux de données au format JSONL : une ligne = un objet JSON avec les clés « instruction » et « response ». Contenu ORIGINAL uniquement : jamais de données personnelles, jamais de texte copié d'une source protégée, jamais de conversations d'utilisateurs. 20 à 40 lignes par fichier."+FILEFMT},
-  gdpr:{name:"RGPD",color:"#22d3ee",sys:"Tu es l'agent RGPD. Relis le projet et vérifie : quelles données personnelles sont collectées, base légale, consentement des mineurs, durée de conservation, transferts hors Union européenne, droits des personnes (accès, effacement), sous-traitants. Signale les risques et propose des corrections. Rappelle en une phrase que ce n'est pas un avis juridique."}
+  gdpr:{name:"RGPD",color:"#22d3ee",sys:"Tu es l'agent RGPD. Relis le projet et vérifie : quelles données personnelles sont collectées, base légale, consentement des mineurs, durée de conservation, transferts hors Union européenne, droits des personnes (accès, effacement), sous-traitants. Signale les risques et propose des corrections. Rappelle en une phrase que ce n'est pas un avis juridique."},
+  architect:{name:"Architecte IA",color:"#60a5fa",sys:"Tu es l'Architecte IA. Conçois l'architecture d'un système d'IA : composants, modèles possibles (taille, coût, vitesse), données nécessaires et d'où elles viennent, entraînement et évaluation, déploiement (où ça tourne), sécurité, vie privée (mineurs, RGPD) et risques. Donne des choix précis avec des ordres de grandeur chiffrés et des alternatives, puis un plan par étapes. Appuie-toi sur la mémoire Xearnes (nos contraintes réelles)."},
+  economist:{name:"Économiste",color:"#fbbf24",sys:"Tu es l'agent Économie. Analyse l'aspect économique d'un projet : coûts (serveurs, GPU, API, par utilisateur et par mois), prix et marges, seuil de rentabilité, trois scénarios (prudent, réaliste, optimiste), risques, et hypothèses clairement indiquées. Tu ne donnes JAMAIS de conseil d'investissement personnalisé, juridique ou fiscal : tu rappelles qu'un adulte compétent doit valider. Utilise les chiffres de la mémoire Xearnes quand ils existent."},
+  critic:{name:"Critique",color:"#c084fc",sys:"Tu es le Critique. Relis le travail précédent et cherche ses points faibles : hypothèses fragiles, chiffres douteux, oublis, risques, choix discutables. Donne une liste numérotée courte (8 maximum), chaque point avec une amélioration concrète. Si c'est solide, dis-le en une phrase."}
 };
 function msg(who,text,cls){
   var d=document.createElement("div");d.className="msg"+(cls?" "+cls:"");
@@ -314,9 +333,10 @@ function ask(roleKey,messages,maxTokens){
   var model=$("model").value,t0=Date.now(),info=null;
   function once(){
     if(stopFlag)return Promise.reject(new Error("stop"));
-    return api("POST","/ws-llm",{model:model,messages:messages,max_tokens:maxTokens||1800}).then(function(r){
+    return api("POST","/ws-llm",{model:model,messages:messages,max_tokens:maxTokens||1800,purpose:$("team").value}).then(function(r){
       if(handleAuth(r))throw new Error("auth");
-      if(r.status===429)throw new Error("Limite d'appels du jour atteinte (le plafond protège le budget). Réessaie demain.");
+      if(r.status===429)throw new Error(r.json&&r.json.error==="daily_api_limit"?"Plafond d'appels API du jour atteint (il protège le budget). Réessaie demain ou choisis un de nos modèles.":"Limite d'appels du jour atteinte (le plafond protège le budget). Réessaie demain.");
+      if(r.status===400&&r.json&&r.json.error==="api_not_for_datasets")throw new Error("Les API ne servent pas pour les datasets : choisis un de nos modèles.");
       if(r.status!==200)throw new Error("Erreur "+r.status+(r.json&&r.json.error?" ("+r.json.error+")":""));
       var j=r.json;
       if(j.ok)return j.text;
@@ -326,12 +346,12 @@ function ask(roleKey,messages,maxTokens){
         return sleep(8000).then(once);
       }
       if(j.status==="unavailable")throw new Error("Ce modèle n'est pas configuré sur le serveur.");
-      throw new Error("Le modèle n'a pas répondu. Réessaie ou change de modèle.");
+      throw new Error(j.error==="provider_auth"?"Le fournisseur d'API a refusé la clé (clé invalide ou sans crédit).":j.error==="provider_rate_limited"?"Le fournisseur d'API limite le débit : réessaie dans une minute.":"Le modèle n'a pas répondu. Réessaie ou change de modèle.");
     });
   }
   return once().then(function(t){if(info)info.remove();return t;});
 }
-function sysFor(roleKey){return RULES+" "+ROLES[roleKey].sys;}
+function sysFor(roleKey){return RULES+(memText?" MÉMOIRE XEARNES (contexte permanent, ne la répète pas) :\n"+memText.slice(0,8000)+"\n---\n":" ")+ROLES[roleKey].sys;}
 function projectContext(limit){
   limit=limit||28000;
   var out=["Projet : "+proj,"Fichiers existants : "+(files.length?files.map(function(f){return f.path;}).join(", "):"aucun")];
@@ -393,7 +413,9 @@ function run(){
   if(!proj){alert("Choisis ou crée un projet d'abord.");tab("pFiles");return;}
   var goal=$("goal").value.trim(),team=$("team").value;
   if(team!=="audit"&&!goal){alert("Écris l'objectif.");return;}
-  if($("model").value==="api"){alert("Les API ne sont pas branchées.");return;}
+  var mv=$("model").value;
+  if(mv==="__noapi"){alert("Aucune API n'est configurée.");return;}
+  if(team==="dataset"&&mv.indexOf("api:")===0){alert("Les API ne servent pas pour les datasets : choisis un de nos modèles.");return;}
   running=true;stopFlag=false;$("runBtn").disabled=true;$("stopBtn").disabled=false;$("feed").innerHTML="";pending=[];renderChanges();
   var log=[],extra=$("ctx").value.trim();
   function say(role,text){log.push({who:ROLES[role].name,text:text});return msg(ROLES[role],text);}
@@ -401,7 +423,7 @@ function run(){
     var w=msg("Système",ROLES[role].name+" travaille…","sys");
     return ask(role,[{role:"system",content:sysFor(role)},{role:"user",content:user}],max).then(function(t){w.remove();say(role,t);return t;});
   }
-  projectContext().then(function(ctx){
+  loadMemory().then(projectContext).then(function(ctx){
     var base="Objectif : "+(goal||"Audit du projet")+"\n\n"+ctx+(extra?"\n\nErreur / contexte fourni :\n"+extra:"");
     var flow;
     if(team==="code"){
@@ -429,6 +451,18 @@ function run(){
         if(!pending.length)throw new Error("Aucun fichier de dataset au bon format. Relance l'équipe.");
         return call("reviewer","Vérifie ce jeu de données : format JSONL valide, contenu original, AUCUNE donnée personnelle, pas de contenu dangereux.\n\n"+pendingText(),1000);
       });
+    }else if(team==="arch"){
+      flow=call("architect",base,3000).then(function(a){
+        return call("critic","Objectif : "+goal+"\n\nArchitecture proposée :\n"+a,1500).then(function(c){
+          addPending([{path:"ARCHITECTURE.md",content:"# Architecture proposée\n\n"+a+"\n\n## Critique\n\n"+c+"\n"}]);
+        });
+      });
+    }else if(team==="eco"){
+      flow=call("economist",base,3000).then(function(a){
+        return call("critic","Objectif : "+goal+"\n\nAnalyse économique proposée :\n"+a,1500).then(function(c){
+          addPending([{path:"ECONOMIE.md",content:"# Analyse économique\n\n"+a+"\n\n## Critique\n\n"+c+"\n\n(Analyse préparée par des agents IA : pas un conseil juridique, fiscal ou d'investissement.)\n"}]);
+        });
+      });
     }else{
       flow=call("security",base+"\n\nFais l'audit de sécurité du projet.",1500).then(function(a){
         return call("gdpr",base+"\n\nFais la vérification RGPD du projet.",1500).then(function(b){
@@ -449,6 +483,137 @@ function run(){
 }
 $("runBtn").onclick=run;
 $("stopBtn").onclick=function(){stopFlag=true;};
+
+// ───────────── mémoire Xearnes : ce que les agents savent du projet, toujours ajouté à leurs consignes ─────────────
+var MEM_PROJECT="memoire",MEM_FILE="xearnes.md",memText="";
+var MEM_SEED=[
+"# Mémoire Xearnes (contexte permanent des agents)",
+"",
+"## Qui et quoi",
+"Xearnes est un assistant IA créé par Youssef (11 ans, Malmö, Suède) : site xearnes.com et appli installable. Il est pensé pour les enfants et les familles : le chat gratuit n'a besoin ni d'email ni de compte ; les abonnements sont pour les adultes. Youssef est le chef du projet ; son père conseille sur la sécurité, l'économie et le droit, et fait les actions qui demandent un adulte (comptes, paiements, clés).",
+"",
+"## Principes",
+"- Vie privée d'abord (RGPD, mineurs) : pas de publicité, pas de vente de données, pas de conversations gardées sur nos serveurs, aucune donnée personnelle envoyée aux GPU.",
+"- Dans l'appli on ne montre jamais le nom des modèles. Le modèle répond lui-même (pas de réponses toutes faites, sauf le message de sécurité en cas de détresse).",
+"- Jamais de clé secrète dans le dépôt ou dans le chat : les clés vivent dans des fichiers sur l'ordinateur et dans les secrets Cloudflare.",
+"- Les API commerciales (OpenAI, Mistral, Anthropic, OpenRouter) : seulement pour le code, l'architecture et l'économie, avec le compte et l'accord d'un adulte ; jamais pour créer des datasets ni entraîner un modèle avec leurs réponses.",
+"- Pas de conseil juridique, fiscal ni d'investissement : on prépare l'analyse, un adulte compétent valide.",
+"",
+"## Architecture",
+"Site statique (GitHub Pages, xearnes.com) -> Cloudflare Worker « xearnes-mistral » (connexion par code email via Resend, choix du modèle selon le niveau, webhook Stripe, Workspace) -> modèles :",
+"- Oracle Cloud (Stockholm, ARM 4 processeurs, 23 Go, sans GPU) : petits modèles via Ollama (Gemma 3 4B et 1B), derrière un portail nginx à clé ; les questions faciles, personnelles ou d'identité restent ici.",
+"- RunPod serverless (GPU, centres de données UE, Norvège, Islande) : 8B, 14B, 20B ; démarrage à froid de 2 à 4 minutes, environ 0,07 à 0,12 dollar par démarrage, plafond de réveils par jour.",
+"Code mode : 8B pour tous, 20B pour le niveau Ultimate. Banc de code (13 tâches) : 20B 13/13, 8B 12/13, Gemma 4B 11/13, 14B 10/13.",
+"",
+"## Offre",
+"Gratuit ; Pro 200 kr ; Super 350 kr ; Ultimate 500 kr par mois (identifiants internes pro, ultra, legend). Paiement Stripe (mode test pour l'instant) ; conditions : compte créé et payé par un adulte.",
+"",
+"## Fonctions",
+"Chat en fr/sv/en, Code mode avec fichiers, outils d'export (PDF, Word, PowerPoint, Gmail, agenda), mémoire des centres d'intérêt, défis secrets, simulateur de bourse (argent fictif), appli installable.",
+"",
+"## Contraintes",
+"Budget serré (GPU à la demande), serveur Oracle avec peu de disque, un développeur de 11 ans aidé par un adulte. Mesurer avant de changer, avancer par petites étapes.",
+""].join("\n");
+function loadMemory(){
+  return api("GET","/ws/projects/"+MEM_PROJECT+"/file?path="+MEM_FILE).then(function(r){if(r.status===200)memText=r.json.content;});
+}
+function ensureMemory(){
+  api("POST","/ws/projects",{name:MEM_PROJECT}).then(function(){
+    return api("GET","/ws/projects/"+MEM_PROJECT+"/file?path="+MEM_FILE);
+  }).then(function(r){
+    if(r.status===200){memText=r.json.content;return;}
+    if(r.status===404){memText=MEM_SEED;return putFile_(MEM_PROJECT,MEM_FILE,MEM_SEED);}
+  }).catch(function(){});
+}
+function putFile_(p,path,content){return api("PUT","/ws/projects/"+p+"/file?path="+encodeURIComponent(path),content,true);}
+$("memBtn").onclick=function(){openProject(MEM_PROJECT);setTimeout(function(){openFile(MEM_FILE);},400);};
+
+// ───────────── modèles disponibles (selon la configuration du serveur) ─────────────
+function loadConfig(){
+  api("GET","/ws-config").then(function(r){
+    if(r.status!==200)return;
+    var sel=$("model"),c=r.json;
+    [].forEach.call(sel.querySelectorAll("option"),function(o){
+      if(["large","mid","small"].indexOf(o.value)>=0)o.disabled=(c.pods||[]).indexOf(o.value)<0;
+      if(o.value==="oracle")o.disabled=!c.oracle;
+      if(o.value.indexOf("api:")===0)o.remove();
+    });
+    var none=sel.querySelector('option[value="__noapi"]');
+    (c.apis||[]).forEach(function(a){var o=document.createElement("option");o.value="api:"+a.id;o.textContent="API "+a.label+" (code, architecture, économie)";sel.insertBefore(o,none);});
+    if(none)none.style.display=(c.apis||[]).length?"none":"";
+    try{var v=localStorage.getItem("xnw_model");if(v&&sel.querySelector('option[value="'+v+'"]:not([disabled])'))sel.value=v;}catch(e){}
+  });
+}
+$("team").addEventListener("change",function(){
+  var sel=$("model"),t=$("team").value;
+  if(t==="eco"){var a=sel.querySelector('option[value^="api:"]');if(a)sel.value=a.value;}
+  if(t==="dataset"&&sel.value.indexOf("api:")===0)sel.value="large";
+});
+
+// ───────────── GitHub (jeton « fine-grained » créé par un adulte ; envoyé seulement à api.github.com) ─────────────
+var ghTokMem="";
+(function(){try{$("ghRepo").value=localStorage.getItem("xnw_ghrepo")||"";$("ghBranch").value=localStorage.getItem("xnw_ghbranch")||"main";$("ghDir").value=localStorage.getItem("xnw_ghdir")||"";var t=localStorage.getItem("xnw_ghtok")||"";if(t){ghTokMem=t;$("ghTok").value="••••••••";$("ghRem").checked=true;}}catch(e){}})();
+function ghTok(){var v=$("ghTok").value;if(v&&v.indexOf("•")!==0)ghTokMem=v.trim();return ghTokMem;}
+function ghSaveSettings(){try{localStorage.setItem("xnw_ghrepo",$("ghRepo").value.trim());localStorage.setItem("xnw_ghbranch",$("ghBranch").value.trim());localStorage.setItem("xnw_ghdir",$("ghDir").value.trim());if($("ghRem").checked&&ghTok())localStorage.setItem("xnw_ghtok",ghTok());else localStorage.removeItem("xnw_ghtok");}catch(e){}}
+function ghMsg(t){$("ghMsg").textContent=t;}
+function ghApi(method,path,body){
+  var h={"Authorization":"Bearer "+ghTok(),"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};
+  if(body)h["Content-Type"]="application/json";
+  return fetch("https://api.github.com"+path,{method:method,headers:h,body:body?JSON.stringify(body):undefined}).then(function(r){return r.json().catch(function(){return{};}).then(function(j){return{status:r.status,json:j};});});
+}
+function ghCheck(){
+  var repo=$("ghRepo").value.trim(),br=$("ghBranch").value.trim()||"main",dir=$("ghDir").value.trim().replace(/^\/+|\/+$/g,"");
+  if(!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)){ghMsg("Dépôt invalide : écris propriétaire/nom.");return null;}
+  if(!/^[A-Za-z0-9._\/-]{1,100}$/.test(br)||br.indexOf("..")>=0){ghMsg("Nom de branche invalide.");return null;}
+  if(dir&&!dir.split("/").every(function(s){return /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(s)&&s!==".."&&s.slice(-1)!==".";})){ghMsg("Dossier invalide.");return null;}
+  if(!ghTok()){ghMsg("Colle ton jeton GitHub.");return null;}
+  ghSaveSettings();return{repo:repo,br:br,dir:dir};
+}
+function ghErr(r){return r.status===401?"Jeton refusé ou expiré.":r.status===403?"Accès refusé (permissions du jeton ou limite GitHub).":r.status===404?"Dépôt, branche ou fichier introuvable (ou jeton sans accès à ce dépôt).":r.status===409||r.status===422?"GitHub a refusé cette écriture ("+(r.json&&r.json.message||r.status)+").":"Erreur GitHub "+r.status+".";}
+function b64e(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64d(s){return decodeURIComponent(escape(atob(String(s).replace(/\s/g,""))));}
+$("ghForget").onclick=function(){ghTokMem="";$("ghTok").value="";$("ghRem").checked=false;try{localStorage.removeItem("xnw_ghtok");}catch(e){}ghMsg("Jeton oublié sur cet appareil.");};
+$("ghPush").onclick=function(){
+  if(!proj){ghMsg("Choisis d'abord un projet.");return;}
+  var c=ghCheck();if(!c)return;
+  if(!files.length){ghMsg("Ce projet n'a aucun fichier.");return;}
+  if(files.length>50){ghMsg("Trop de fichiers (50 max par envoi).");return;}
+  if(!confirm("Envoyer "+files.length+" fichier(s) vers "+c.repo+" (branche "+c.br+(c.dir?", dossier "+c.dir:"")+") ? Les fichiers du même nom seront remplacés.")){return;}
+  $("ghPush").disabled=true;var done=0,fail=0;
+  files.reduce(function(p,f){return p.then(function(){
+    var rp=(c.dir?c.dir+"/":"")+f.path;
+    return api("GET","/ws/projects/"+proj+"/file?path="+encodeURIComponent(f.path)).then(function(fr){
+      if(fr.status!==200){fail++;return;}
+      var ep="/repos/"+c.repo+"/contents/"+rp.split("/").map(encodeURIComponent).join("/");
+      return ghApi("GET",ep+"?ref="+encodeURIComponent(c.br)).then(function(ex){
+        var body={message:"Workspace Xearnes : "+rp,content:b64e(fr.json.content),branch:c.br};
+        if(ex.status===200&&ex.json.sha)body.sha=ex.json.sha;
+        else if(ex.status!==404){fail++;ghMsg(ghErr(ex));return;}
+        return ghApi("PUT",ep,body).then(function(w){if(w.status===200||w.status===201){done++;ghMsg("Envoyé : "+done+" / "+files.length);}else{fail++;ghMsg(ghErr(w));}});
+      });
+    });
+  });},Promise.resolve()).then(function(){ghMsg("Terminé : "+done+" envoyé(s), "+fail+" échec(s)."+(fail?" "+$("ghMsg").textContent:""));$("ghPush").disabled=false;}).catch(function(){ghMsg("GitHub injoignable.");$("ghPush").disabled=false;});
+};
+$("ghPull").onclick=function(){
+  if(!proj){ghMsg("Choisis d'abord un projet.");return;}
+  var c=ghCheck();if(!c)return;
+  ghApi("GET","/repos/"+c.repo+"/git/trees/"+encodeURIComponent(c.br)+"?recursive=1").then(function(t){
+    if(t.status!==200){ghMsg(ghErr(t));return;}
+    var ok=/\.(txt|md|py|js|ts|json|jsonl|csv|html|css|yml|yaml|toml|sh|sql|c|cpp|h|java|go|rs)$/i;
+    var pre=c.dir?c.dir+"/":"";
+    var list=(t.json.tree||[]).filter(function(e){return e.type==="blob"&&e.size<=100000&&e.path.indexOf(pre)===0&&ok.test(e.path)&&validPath(e.path.slice(pre.length));}).slice(0,60);
+    if(!list.length){ghMsg("Aucun fichier texte importable (100 Ko max chacun, 60 fichiers max).");return;}
+    if(!confirm("Importer "+list.length+" fichier(s) de "+c.repo+" dans le projet « "+proj+" » ? Les fichiers du même nom seront remplacés."+(t.json.truncated?" (liste GitHub tronquée)":"")))return;
+    $("ghPull").disabled=true;var n=0;
+    list.reduce(function(p,e){return p.then(function(){
+      return ghApi("GET","/repos/"+c.repo+"/contents/"+e.path.split("/").map(encodeURIComponent).join("/")+"?ref="+encodeURIComponent(c.br)).then(function(g){
+        if(g.status!==200||g.json.encoding!=="base64")return;
+        var txt;try{txt=b64d(g.json.content);}catch(x){return;}
+        return putFile(e.path.slice(pre.length),txt).then(function(w){if(w.status===200){n++;ghMsg("Importé : "+n+" / "+list.length);}});
+      });
+    });},Promise.resolve()).then(function(){ghMsg("Terminé : "+n+" fichier(s) importé(s).");$("ghPull").disabled=false;loadTree();refreshProjects();}).catch(function(){ghMsg("GitHub injoignable.");$("ghPull").disabled=false;});
+  }).catch(function(){ghMsg("GitHub injoignable.");});
+};
 
 // historique des runs (sur Oracle)
 function saveRun(goal,team,log){

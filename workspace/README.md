@@ -22,3 +22,12 @@ travaille sur des projets dont les fichiers sont stockés sur le serveur Oracle.
 ## Mettre à jour
 - Service Oracle : copier `server.py` puis `sudo systemctl restart xearnes-workspace`.
 - Ajouter une adresse : modifier `WS_ALLOWED` dans `cloudflare-worker/wrangler.toml`, puis `npx wrangler deploy`.
+
+## Ajouts (2026-11-01)
+- **Mémoire Xearnes** : projet réservé `memoire`, fichier `xearnes.md` (créé automatiquement avec un texte de départ). Elle est ajoutée aux consignes de TOUS les agents (8000 caractères max). Bouton « 🧠 Mémoire Xearnes » pour la lire et la modifier : les agents voient les changements au lancement suivant. Ne jamais y mettre de clé ni de donnée personnelle.
+- **Équipes Architecture IA et Économie** : Architecte ou Économiste, puis Critique ; le résultat arrive en proposition (`ARCHITECTURE.md`, `ECONOMIE.md`). L'Économiste ne donne aucun conseil d'investissement, juridique ou fiscal.
+- **API pour le code, l'architecture et l'économie** (jamais les datasets : refusé par le Worker) : fournisseurs `openai`, `mistral`, `openrouter`, `anthropic`.
+  Un fournisseur n'apparaît que si le secret `WS_KEY_<NOM>` ET la variable `WS_MODEL_<NOM>` sont configurés (clé : `npx wrangler secret put WS_KEY_OPENAI` depuis un fichier, jamais dans le chat ; modèle : variable dans wrangler.toml).
+  Plafond : `WS_API_DAILY_CALLS` appels par jour (60 par défaut). Sans compteur KV, aucun appel API n'est fait.
+  Un adulte crée le compte et la clé (idéalement avec une limite de dépense) et accepte les conditions du fournisseur.
+- **GitHub** : un jeton « fine-grained » créé par un adulte (compte GitHub à partir de 13 ans), limité à UN dépôt, permission « Contents : lecture et écriture ». Il se colle dans la page (rubrique GitHub), reste sur l'appareil et n'est envoyé qu'à api.github.com. « Envoyer » écrit les fichiers du projet dans le dépôt, « Importer » récupère les fichiers texte (100 Ko max chacun, 60 max).
