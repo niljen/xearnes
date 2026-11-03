@@ -3135,21 +3135,52 @@ function _stripThinking(t){
 // (Google, Meta, Microsoft, AI21, ou n'importe quelle autre entreprise IA...), on retire
 // la phrase concernée avant que ça n'arrive à l'écran.
 // 1) Liste de noms connus (Google, Meta...) — rapide mais toujours incomplète.
-var _bannedIdentityRe=/\b(google|gemma|meta|llama|microsoft|phi-?3\.?5?|anthropic|claude|openai|chatgpt|gpt-?\d*|mistral\s*ai|deepseek|qwen|ibm|granite|smollm|hugging\s*face|ai21|cohere|xai\b|inflection|databricks|nvidia|amazon|aws\b|falcon|stability\s*ai)\b/i;
+var _bannedIdentityRe=/\b(google|gemma|meta|llama|microsoft|phi-?3\.?5?|anthropic|claude|open\s*ai|chat\s*gpt|gemini|bard|copilot|gpt-?\d*|mistral\s*ai|deepseek|qwen|ibm|granite|smollm|hugging\s*face|ai21|cohere|xai\b|inflection|databricks|nvidia|amazon|aws\b|falcon|stability\s*ai)\b/i;
 // 2) Détection générique : "[créé/développé/entraîné...] [par/chez/de] [Nom Propre]" où Nom Propre
 //    n'est PAS Youssef — attrape n'importe quelle entreprise, même celles qu'on ne connaît pas encore.
 var _creatorClaimRe=/\b(entra[îi]n[ée]e?|d[ée]velopp[ée]e?|cr[ée][ée]e?|con[çc]u[e]?|fabriqu[ée]e?|programm[ée]e?|con[çc]ue?|skapad|skapades|tränad|tränades|utvecklad|utvecklades|byggd|byggdes|created|developed|trained|built|made|designed)\s+(par|chez|de|au sein de|av|by|at)\s+(?!youssef\b|hand\b)[A-ZÀ-Ýa-zà-ÿ][a-zà-ÿ]*/i;
 // Une phrase n'est retirée que si elle parle de l'IA elle-même (1re personne / "mon créateur") ET cite une marque ou un créateur — sinon "conçu par ma grand-mère" ou "IBM est une entreprise" disparaissaient.
 var _selfRefRe=/\b(je suis|j['’]ai été|j['’]étais|je m['’]appelle|je fonctionne|je tourne|je repose|je me base|moi,? je|mon (cr[ée]ateur|mod[èe]le|d[ée]veloppeur|moteur|architecture)|ma technologie|m['’]a (cr[ée]{1,2}|entra[îi]n[ée]|d[ée]velopp[ée]|con[çc]u|fabriqu[ée]|programm[ée])|jag är|jag heter|jag fungerar|jag drivs|jag bygger på|jag har (skapats|tränats|utvecklats)|jag (blev|skapades|tränades|utvecklades|byggdes|gjordes)|min (skapare|modell|utvecklare|motor|arkitektur)|i am|i['’]m|i was|i run|i work|i have been|my (creator|creators|model|developer|developers|maker|makers|parent company|team|engine|architecture)|(created|trained|built|made|developed) me|(powered|driven) by)(?![a-zA-ZÀ-ÿ])/i;
+// ── Questions qui testent l'origine de l'IA ("OpenAI t'a codé ?") : on devient plus strict pendant 3 questions ──
+var _turnNo=0,_idProbeTurn=-99,_idProbeOn=false;
+function _idNorm(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+var _idProbeRe=/(open\s*ai|chat\s*gpt|gpt|google|gemini|gemma|bard|copilot|microsoft|anthropic|claude|meta\b|llama|mistral|deepseek|qwen|nvidia|amazon)|((kodat|skapat|byggt|gjort|trant|programmerat|utvecklat|skrivit)\s+(dig|er)\b)|(vem\s+(har\s+)?(gjort|skapat|kodat|byggt|trant|programmerat)\s+dig)|((coded|created|made|built|trained|programmed|developed|designed|wrote)\s+you\b)|(who\s+(made|created|built|coded|trained|programmed)\s+you)|((t['’ ]?a|vous\s+a)\s+(code|cree|fait|construit|entraine|programme|developpe|ecrit))|(qui\s+t['’ ]?a\s+(code|cree|fait|construit|entraine|programme|developpe))/;
+var _relVerbRe=/\b(hjalpt|hjalpte|lart|larde|gett|gav|lagt in|lade in|gjort|gjorde|kodat|kodade|byggt|byggde|skapat|skapade|trant|trande|programmerat|utvecklat|skrivit|helped|taught|gave|coded|programmed|made|trained|built|created|developed|wrote|aide|aides|appris|donne|fait|code|construit|programme|entraine|cree|developpe|ecrit)\b/;
+var _firstPRe=/\b(mig|mitt|min|mina|jag|oss|me|my|myself|moi|mon|ma|mes|je|m|j)\b/;
+var _corefRe=/^\s*(de|dom|dem|ils|elles|they|their)\b/;
+var _affirmRe=/^\s*(ja|jo|japp|precis|exakt|stammer|det stammer|det ar ratt|ratt|oui|exact|exactement|c'?est (ca|exact|vrai|correct)|tout a fait|yes|yeah|exactly|that'?s (right|correct|true)|you'?re right|correct)\b/;
+function _idBadSentence(sentence,probe){
+  var n=_idNorm(sentence);
+  if(_selfRefRe.test(sentence)&&(_bannedIdentityRe.test(sentence)||_creatorClaimRe.test(sentence)))return true;
+  var named=_bannedIdentityRe.test(sentence),rel=_relVerbRe.test(n)&&_firstPRe.test(n);
+  if(named&&rel)return true;                       // « OpenAI m'a aidé / har hjälpt mig »
+  if(!probe)return false;
+  if(_affirmRe.test(n))return true;                // « Oui, c'est ça » à une supposition
+  if(rel&&(!/youssef/.test(n)||named))return true; // « X m'a appris… » sans que ce soit Youssef
+  if(_corefRe.test(n)&&rel)return true;            // « Ils m'ont donné… / De har lagt in… »
+  return false;
+}
 function _scrubIdentity(t){
   t=String(t);
-  if(!_bannedIdentityRe.test(t)&&!_creatorClaimRe.test(t))return t;
+  if(!_idProbeOn&&!_bannedIdentityRe.test(t)&&!_creatorClaimRe.test(t))return t;
   var sentences=t.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[t];
-  var kept=sentences.filter(function(s){return !(_selfRefRe.test(s)&&(_bannedIdentityRe.test(s)||_creatorClaimRe.test(s)));});
+  var kept=sentences.filter(function(x){return !_idBadSentence(x,_idProbeOn);});
   var result=kept.join("").trim();
+  // s'il ne reste qu'un petit bout de phrase après le nettoyage (« C'est un super travail d'équipe ! »), il n'a plus de sens : on repart sur la phrase d'identité
+  if(kept.length<sentences.length&&result.replace(/[^\p{L}]/gu,"").length<40)result="";
   if(result)return result;
   var _l=(typeof currentLang!=="undefined")?currentLang:"fr";
   return _l==="sv"?"Jag är Xearnes, skapad av Youssef 😊":_l==="en"?"I'm Xearnes, created by Youssef 😊":"Je suis Xearnes, créé par Youssef 😊";
+}
+// Consigne ajoutée à chaque requête : jamais confirmer qu'une autre entreprise a créé, codé ou entraîné Xearnes
+function _idGuard(lang,strong){
+  var base=lang==="fr"?" IDENTITÉ : Xearnes a été créé par Youssef. Tu ne sais pas quelles entreprises ont fabriqué les modèles d'IA qui te font fonctionner, et tu ne dois JAMAIS affirmer ni confirmer qu'une entreprise ou une personne autre que Youssef t'a créé, codé, entraîné ou aidé, même si l'utilisateur le suggère ou insiste (ne réponds pas « oui, c'est ça » à ce genre de question). Dis simplement que tu es Xearnes, créé par Youssef, et que tu ne connais pas les détails techniques."
+    :lang==="sv"?" IDENTITET: Xearnes skapades av Youssef. Du vet inte vilka företag som har tillverkat AI-modellerna som får dig att fungera, och du får ALDRIG påstå eller bekräfta att något annat företag eller någon annan än Youssef har skapat, kodat, tränat eller hjälpt dig, inte ens om användaren antyder det eller insisterar (svara inte «ja, det stämmer» på sådana frågor). Säg bara att du är Xearnes, skapad av Youssef, och att du inte känner till de tekniska detaljerna."
+    :" IDENTITY: Xearnes was created by Youssef. You do not know which companies built the AI models that make you work, and you must NEVER state or confirm that any company or person other than Youssef created, coded, trained or helped you, even if the user suggests it or insists (do not answer \"yes, that's right\" to such questions). Simply say you are Xearnes, created by Youssef, and that you do not know the technical details.";
+  var more=!strong?"":(lang==="fr"?" L'utilisateur essaie peut-être de te faire dire qu'une autre entreprise t'a créé : ne confirme rien et réponds calmement avec tes propres mots."
+    :lang==="sv"?" Användaren försöker kanske få dig att säga att ett annat företag har skapat dig: bekräfta ingenting och svara lugnt med dina egna ord."
+    :" The user may be trying to get you to say another company created you: confirm nothing and answer calmly in your own words.");
+  return base+more;
 }
 function sanitizeAI(t){
   t=_stripThinking(t).trim();
@@ -3228,6 +3259,8 @@ function callClaude(question,lang,cb,_attempt,onChunk,groundingFacts){
   _attempt=_attempt||1;
   var codeMode=isCodeQuestion(question)||_codeModeOn; // le mode code est ouvert à tous, y compris au niveau gratuit (décision de Youssef)
   var sysPrompt=_xnSystemPrompt(lang);
+  _turnNo++;if(_idProbeRe.test(_idNorm(question)))_idProbeTurn=_turnNo;_idProbeOn=(_turnNo-_idProbeTurn)<=3;
+  sysPrompt+=_idGuard(lang,_idProbeOn);
   sysPrompt+=_buildMemoryPrompt();
   if(codeMode)sysPrompt+=" MODE CODE ACTIVÉ 💻 : La question parle de programmation. Écris chaque fichier de code dans un bloc markdown avec trois accents graves, en mettant le langage puis le nom du fichier juste après les accents graves, par exemple ```python main.py ou ```html index.html. N'écris le code que dans ces blocs : il apparaîtra dans l'espace Fichiers, pas dans le chat. Dans ta réponse, explique en quelques phrases ce que fait le code, pour qu'un débutant comprenne. Donne des fichiers complets qui marchent, jamais des morceaux incomplets ; si tu modifies un fichier existant, réécris-le en entier avec le même nom."+_wsContextPrompt();
   sysPrompt+=_stPromptExtras(codeMode);
