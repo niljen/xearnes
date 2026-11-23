@@ -606,7 +606,8 @@ function _initialLang(){
   return "en";
 }
 var currentLang=_initialLang();
-var allVoices=[],selectedVoiceIndex=0,fullHist=[],userName=localStorage.getItem("xn_name")||"";
+var allVoices=[],selectedVoiceIndex=0,fullHist=[],userName="";
+try{userName=localStorage.getItem("xn_name")||"";}catch(e){userName="";}
 // Préférence de voix par langue (ex: _voicePrefs["fr"]="Google français")
 var _voicePrefs={};
 try{_voicePrefs=JSON.parse(localStorage.getItem("xn_voice_prefs")||"{}");}catch(e){_voicePrefs={};}
@@ -1050,6 +1051,7 @@ var smallTalk={
   ]
 };
 function detectSmallTalk(n,lang){
+  return null; // Youssef : Xearnes repond lui-meme aux salutations (plus de reponses toutes faites)
   if(n.split(" ").length>7)return null;
   var padded=" "+n+" ";
   var entries=smallTalk[lang]||[];
@@ -6351,5 +6353,6 @@ window.addEventListener("load",init);
     </div>
   </div>
 </div>
+
 </body>
 </html>
