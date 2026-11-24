@@ -2952,7 +2952,9 @@ function _ugRefresh(){
   var sub=_ugSubscribed(),mm=document.getElementById("ugManage"),pl=document.getElementById("ugPlans");
   if(mm){if(sub){var g=_ugM();mm.innerHTML='<div style="color:#a8a29a;font-size:.82rem;margin-bottom:10px">'+_esc(g.n)+'</div><a href="'+_XN_PORTAL+'" target="_blank" rel="noopener" style="display:inline-block;background:#DAA520;color:#000;border-radius:10px;padding:10px 16px;font-weight:700;text-decoration:none;font-size:.9rem">'+_esc(g.b)+'</a>';mm.style.display="block";}else{mm.style.display="none";mm.innerHTML="";}}
   var ck=document.getElementById("ugChk"),ckl=ck&&ck.closest?ck.closest("label"):null,er=document.getElementById("ugErr");
-  [pl,ckl,er].forEach(function(x){if(x)x.style.display=sub?"none":"";});
+  if(pl)pl.style.display=sub?"none":"flex";
+  if(ckl)ckl.style.display=sub?"none":"flex";
+  if(er)er.style.display=sub?"none":"block";
   var t=_ugTxt[currentLang]||_ugTxt.en,el=document.getElementById("ugTxt");if(!el)return;
   el.innerHTML=_esc(t.t)+'<a href="conditions.html#'+(_ugTxt[currentLang]?currentLang:"en")+'" target="_blank" style="color:#DAA520">'+_esc(t.c)+'</a>.';
 }
