@@ -1847,7 +1847,7 @@ function stRender(){
   // 6. Export
   h+=_stSec(t.exp,!can,'<div class="st-row"><button class="st-opt'+(can?'':' locked')+'" onclick="stExport(\'txt\')">'+t.expTxt+'</button><button class="st-opt'+(can?'':' locked')+'" onclick="stExport(\'pdf\')">'+t.expPdf+'</button></div>');
   var lg=_lgT(),acc;
-  if(_xnToken){acc='<div class="st-note">'+_esc(_xnEmail||"")+(_tierLabel()?' · '+_tierLabel():'')+'</div><div class="st-row"><button class="st-opt" onclick="lgLogout()">'+lg.logout+'</button></div>';}
+  if(_xnToken){acc='<div class="st-note">'+_esc(_xnEmail||"")+(_tierLabel()?' · '+_tierLabel():'')+'</div>'+(_ugSubscribed()?'<div class="st-row"><a class="st-opt" href="'+_XN_PORTAL+'" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block">'+_ugM().b+'</a></div>':'')+'<div class="st-row"><button class="st-opt" onclick="lgLogout()">'+lg.logout+'</button></div>';}
   else{acc='<div class="st-row"><button class="st-opt" onclick="stClose();openEmailModal()">'+lg.login+'</button></div><div class="st-note">'+lg.accNote+'</div>';}
   h=_stSec(lg.acct,false,acc)+h;
   body.innerHTML=h;
@@ -2098,7 +2098,7 @@ function _dxAgenda(prefill){
    +'<label style="font-size:.8rem;color:#a8a29a">'+t.agTime+'</label><input id="dxH" type="time" style="'+inp+'" value="15:00">'
    +'<label style="font-size:.8rem;color:#a8a29a">'+t.agDur+'</label><input id="dxL" type="number" min="5" max="1440" style="'+inp+'" value="60">'
    +'<div id="dxE" style="color:#f85149;font-size:.78rem;min-height:16px"></div>'
-   +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="dxI" style="flex:1;background:#DAA520;color:#000;border:none;border-radius:8px;padding:9px;font-weight:700;cursor:pointer">'+t.agIcs+'</button><button id="dxG" style="flex:1;background:#4ea8de;color:#000;border:none;border-radius:8px;padding:9px;font-weight:700;cursor:pointer">'+t.agGoogle+'</button></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="dxI" style="flex:1;background:#DAA520;color:#000;border:none;border-radius:8px;padding:9px;font-weight:700;cursor:pointer">'+t.agIcs+'</button><button id="dxG" style="flex:1;background:#4ea8de;color:#000;border:none;border-radius:8px;padding:9px;font-weight:700;cursor:pointer">'+t.agGoogle+'</button><button id="dxO" style="flex:1;background:#0f6cbd;color:#fff;border:none;border-radius:8px;padding:9px;font-weight:700;cursor:pointer">'+_dxL().outCal+'</button></div>'
    +'<div style="text-align:center;margin-top:10px"><button id="dxX" style="background:none;border:none;color:#a8a29a;cursor:pointer;font-size:.8rem">'+t.cancel+'</button></div></div>';
   document.body.appendChild(o);
   function get(){
@@ -2113,10 +2113,68 @@ function _dxAgenda(prefill){
     var ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Xearnes//Agenda//EN","BEGIN:VEVENT","UID:"+Date.now()+"@xearnes.com","DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+/,""),"DTSTART:"+_dxLocal(v.s),"DTEND:"+_dxLocal(v.e),"SUMMARY:"+_dxIcsEsc(v.n),"END:VEVENT","END:VCALENDAR"].join("\r\n")+"\r\n";
     _dxSave(new Blob([ics],{type:"text/calendar;charset=utf-8"}),"xearnes-agenda.ics");o.remove();
   };
+  document.getElementById("dxO").onclick=function(){
+    var v=get();if(!v)return;
+    window.open("https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject="+encodeURIComponent(v.n)+"&startdt="+encodeURIComponent(v.s.toISOString())+"&enddt="+encodeURIComponent(v.e.toISOString()),"_blank","noopener");o.remove();
+  };
   document.getElementById("dxG").onclick=function(){
     var v=get();if(!v)return;
     window.open("https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(v.n)+"&dates="+_dxLocal(v.s)+"/"+_dxLocal(v.e),"_blank","noopener");o.remove();
   };
+}
+// ── Outils de partage par lien : rien n'est envoyé, on ouvre seulement un brouillon ou une page de partage que la personne valide ──
+var _dxL2={
+fr:{outlook:"📨 Outlook",docs:"📄 Google Docs",txt:"📃 Texte (.txt)",copy:"📋 Copier",copied:"Copié !",wa:"💬 WhatsApp",tg:"✈️ Telegram",li:"💼 LinkedIn",docsHint:"Le texte est copié : colle-le dans le nouveau document (Ctrl+V).",outCal:"Outlook Agenda"},
+sv:{outlook:"📨 Outlook",docs:"📄 Google Dokument",txt:"📃 Text (.txt)",copy:"📋 Kopiera",copied:"Kopierat!",wa:"💬 WhatsApp",tg:"✈️ Telegram",li:"💼 LinkedIn",docsHint:"Texten är kopierad: klistra in den i det nya dokumentet (Ctrl+V).",outCal:"Outlook Kalender"},
+en:{outlook:"📨 Outlook",docs:"📄 Google Docs",txt:"📃 Text (.txt)",copy:"📋 Copy",copied:"Copied!",wa:"💬 WhatsApp",tg:"✈️ Telegram",li:"💼 LinkedIn",docsHint:"The text is copied: paste it into the new document (Ctrl+V).",outCal:"Outlook Calendar"}
+};
+function _dxL(){return _dxL2[currentLang]||_dxL2.en;}
+function _dxPlain(text){var b=_dxParse(text);return b.map(function(x){return x.t==="li"?"- "+x.s:x.s;}).join("\n").trim();}
+function _dxOpen(u){window.open(u,"_blank","noopener");}
+function _dxCopy(text,cb){try{navigator.clipboard.writeText(text).then(function(){cb&&cb(true);},function(){cb&&cb(false);});}catch(e){cb&&cb(false);}}
+function _dxOutlook(text){var m=_dxMailText(text);_dxOpen("https://outlook.live.com/mail/0/deeplink/compose?subject="+encodeURIComponent(m.subject)+"&body="+encodeURIComponent(m.body.slice(0,1500)));}
+function _dxDocs(text){var l=_dxL();_dxCopy(_dxPlain(text),function(){alert(l.docsHint);_dxOpen("https://docs.google.com/document/create");});}
+function _dxTxtFile(text){_dxSave(new Blob([_dxPlain(text)],{type:"text/plain;charset=utf-8"}),"xearnes-"+_dxStamp()+".txt");}
+function _dxWhatsapp(text){_dxOpen("https://wa.me/?text="+encodeURIComponent(_dxPlain(text).slice(0,1800)));}
+function _dxTelegram(text){_dxOpen("https://t.me/share/url?url="+encodeURIComponent("https://xearnes.com")+"&text="+encodeURIComponent(_dxPlain(text).slice(0,1800)));}
+function _dxLinkedin(text){_dxOpen("https://www.linkedin.com/feed/?shareActive=true&text="+encodeURIComponent(_dxPlain(text).slice(0,1200)));}
+// ── Google Docs / Slides directs : le texte est envoyé dans le Drive de la personne (droit « drive.file » : seulement les fichiers créés par Xearnes). ──
+// Il faut un identifiant client Google (public, pas secret) : à renseigner ici une fois créé dans Google Cloud. Vide = les boutons directs n'apparaissent pas.
+var _XN_GOOGLE_CLIENT_ID="";
+var _dxGTok=null,_dxGTokExp=0;
+function _dxGLoad(cb){
+  if(window.google&&google.accounts&&google.accounts.oauth2){cb(true);return;}
+  var s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;
+  s.onload=function(){cb(true);};s.onerror=function(){cb(false);};document.head.appendChild(s);
+}
+function _dxGToken(cb){
+  if(_dxGTok&&Date.now()<_dxGTokExp){cb(_dxGTok);return;}
+  _dxGLoad(function(ok){
+    if(!ok){cb(null);return;}
+    try{
+      var tc=google.accounts.oauth2.initTokenClient({client_id:_XN_GOOGLE_CLIENT_ID,scope:"https://www.googleapis.com/auth/drive.file",callback:function(r){
+        if(r&&r.access_token){_dxGTok=r.access_token;_dxGTokExp=Date.now()+(Math.max(60,(r.expires_in||3600)-60))*1000;cb(_dxGTok);}else cb(null);
+      },error_callback:function(){cb(null);}});
+      tc.requestAccessToken({prompt:""});
+    }catch(e){cb(null);}
+  });
+}
+var _dxGMsg={fr:{ok:"Document créé dans ton Google Drive.",fail:"Impossible de créer le document. Réessaie ou utilise le bouton Word / PowerPoint.",wait:"Envoi vers Google…"},sv:{ok:"Dokumentet skapades i din Google Drive.",fail:"Kunde inte skapa dokumentet. Försök igen eller använd Word / PowerPoint.",wait:"Skickar till Google…"},en:{ok:"Document created in your Google Drive.",fail:"Could not create the document. Try again or use the Word / PowerPoint button.",wait:"Sending to Google…"}};
+function _dxGSend(kind,text){
+  var m=_dxGMsg[currentLang]||_dxGMsg.en;
+  var win=window.open("about:blank","_blank");
+  _dxGToken(function(tok){
+    if(!tok){if(win)win.close();alert(m.fail);return;}
+    var isDoc=kind==="doc",blob=isDoc?_dxDocx(text):_dxPptx(text),title=_dxTitle(_dxParse(text))||"Xearnes";
+    var meta={name:title,mimeType:isDoc?"application/vnd.google-apps.document":"application/vnd.google-apps.presentation"};
+    var fd=new FormData();
+    fd.append("metadata",new Blob([JSON.stringify(meta)],{type:"application/json"}));
+    fd.append("file",blob);
+    fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",{method:"POST",headers:{Authorization:"Bearer "+tok},body:fd})
+      .then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.json();})
+      .then(function(j){if(j&&j.webViewLink){if(win)win.location.href=j.webViewLink;else window.open(j.webViewLink,"_blank");}else{if(win)win.close();alert(m.fail);}})
+      .catch(function(){if(win)win.close();alert(m.fail);});
+  });
 }
 // ── Boutons sous les réponses longues ──
 function addToolsBtn(div,text){
@@ -2130,6 +2188,19 @@ function addToolsBtn(div,text){
   add(t.gmail,function(){_dxGmail(text);});
   add(t.mail,function(){_dxMailto(text);});
   add(t.cal,function(){_dxAgenda(_dxTitle(_dxParse(text)));});
+  var l2=_dxL();
+  add(l2.outlook,function(){_dxOutlook(text);});
+  if(_XN_GOOGLE_CLIENT_ID){
+    add("📄 Google Docs",function(){_dxGSend("doc",text);});
+    add("📊 Google Slides",function(){_dxGSend("slides",text);});
+  }else{
+    add(l2.docs,function(){_dxDocs(text);});
+  }
+  add(l2.txt,function(){_dxTxtFile(text);});
+  add(l2.copy,function(){var bt=this;_dxCopy(_dxPlain(text));});
+  add(l2.wa,function(){_dxWhatsapp(text);});
+  add(l2.tg,function(){_dxTelegram(text);});
+  add(l2.li,function(){_dxLinkedin(text);});
   b.onclick=function(){if(!_stCan(1)){openUpgradeModal();return;}m.style.display=m.style.display==="none"?"block":"none";};
   div.appendChild(b);div.appendChild(m);
 }
@@ -2868,19 +2939,30 @@ function checkSubscription(email,cb){
     .then(function(d){_applyTier(d.tier);if(cb)cb(_xnTier);})
     .catch(function(){if(cb)cb(_xnTier);});
 }
+var _XN_PORTAL="https://billing.stripe.com/p/login/6oU8wO0wU4t56ox74d1ZS00";
+var _ugManage={fr:{b:"⚙️ Gérer mon abonnement",n:"Tu as déjà un abonnement. Pour changer de formule ou résilier, passe par la gestion de l'abonnement : ça évite de payer deux fois."},sv:{b:"⚙️ Hantera min prenumeration",n:"Du har redan en prenumeration. För att byta plan eller säga upp, använd hanteringen av prenumerationen: då slipper du betala dubbelt."},en:{b:"⚙️ Manage my subscription",n:"You already have a subscription. To change plan or cancel, use subscription management: it avoids paying twice."}};
+function _ugM(){return _ugManage[currentLang]||_ugManage.en;}
+function _ugSubscribed(){return !!(_xnToken&&_xnTier&&_xnTier!=="free");}
 var _ugTxt={
-fr:{t:"Je suis un adulte (18 ans ou plus), parent ou tuteur. Je crée le compte moi-même avec mon email et je paie moi-même. J'accepte les ",c:"conditions",e:"Coche la case pour continuer."},
-sv:{t:"Jag är vuxen (18 år eller äldre), förälder eller vårdnadshavare. Jag skapar kontot själv med min e-post och betalar själv. Jag accepterar ",c:"villkoren",e:"Kryssa i rutan för att fortsätta."},
-en:{t:"I am an adult (18 or older), a parent or a guardian. I create the account myself with my own email and I pay myself. I accept the ",c:"terms",e:"Tick the box to continue."}
+fr:{t:"Je suis un adulte (18 ans ou plus), parent ou tuteur. Je crée le compte moi-même avec mon email et je paie moi-même. Je demande que l'abonnement commence tout de suite (le droit de rétractation de 14 jours est décrit dans les conditions). J'accepte les ",c:"conditions",e:"Coche la case pour continuer."},
+sv:{t:"Jag är vuxen (18 år eller äldre), förälder eller vårdnadshavare. Jag skapar kontot själv med min e-post och betalar själv. Jag begär att prenumerationen startar direkt (ångerrätten på 14 dagar beskrivs i villkoren). Jag accepterar ",c:"villkoren",e:"Kryssa i rutan för att fortsätta."},
+en:{t:"I am an adult (18 or older), a parent or a guardian. I create the account myself with my own email and I pay myself. I ask for the subscription to start immediately (the 14-day right of withdrawal is described in the terms). I accept the ",c:"terms",e:"Tick the box to continue."}
 };
 function _ugRefresh(){
+  var sub=_ugSubscribed(),mm=document.getElementById("ugManage"),pl=document.getElementById("ugPlans");
+  if(mm){if(sub){var g=_ugM();mm.innerHTML='<div style="color:#a8a29a;font-size:.82rem;margin-bottom:10px">'+_esc(g.n)+'</div><a href="'+_XN_PORTAL+'" target="_blank" rel="noopener" style="display:inline-block;background:#DAA520;color:#000;border-radius:10px;padding:10px 16px;font-weight:700;text-decoration:none;font-size:.9rem">'+_esc(g.b)+'</a>';mm.style.display="block";}else{mm.style.display="none";mm.innerHTML="";}}
+  var ck=document.getElementById("ugChk"),ckl=ck&&ck.closest?ck.closest("label"):null,er=document.getElementById("ugErr");
+  [pl,ckl,er].forEach(function(x){if(x)x.style.display=sub?"none":"";});
   var t=_ugTxt[currentLang]||_ugTxt.en,el=document.getElementById("ugTxt");if(!el)return;
   el.innerHTML=_esc(t.t)+'<a href="conditions.html#'+(_ugTxt[currentLang]?currentLang:"en")+'" target="_blank" style="color:#DAA520">'+_esc(t.c)+'</a>.';
 }
 function ugChange(){var e=document.getElementById("ugErr");if(e&&document.getElementById("ugChk").checked)e.textContent="";}
-function ugGate(ev){
+function ugGate(ev,a){
   var c=document.getElementById("ugChk");
-  if(c&&c.checked){try{localStorage.setItem("xn_terms_ok",String(Date.now()));}catch(e){}return true;}
+  if(c&&c.checked){try{localStorage.setItem("xn_terms_ok",String(Date.now()));}catch(e){}
+    // Le lien de paiement ne connait pas le compte : on pre-remplit l'e-mail de connexion pour que le paiement soit relie au bon compte
+    if(a&&a.href&&_xnEmail){var b=a.getAttribute("data-base")||a.href.split("?")[0];a.setAttribute("data-base",b);a.href=b+"?prefilled_email="+encodeURIComponent(_xnEmail);}
+    return true;}
   if(ev&&ev.preventDefault)ev.preventDefault();
   var e=document.getElementById("ugErr");if(e)e.textContent=(_ugTxt[currentLang]||_ugTxt.en).e;
   return false;
@@ -6322,28 +6404,29 @@ window.addEventListener("load",init);
     <div style="font-size:2rem;margin-bottom:8px">🚀</div>
     <h2 style="color:#DAA520;font-size:1.1rem;margin-bottom:12px">Passe à un abonnement Xearnes</h2>
     <label style="display:flex;gap:8px;align-items:flex-start;text-align:left;background:#0a0a0a;border:1px solid #3d3218;border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="ugChk" onchange="ugChange()" style="margin-top:3px;flex:none"><span id="ugTxt" style="font-size:.78rem;color:#f0ede4"></span></label>
+    <div id="ugManage" style="display:none;margin-bottom:14px"></div>
     <div id="ugErr" style="color:#f85149;font-size:.76rem;min-height:16px;margin-bottom:8px;text-align:left"></div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+    <div id="ugPlans" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
       <div style="background:#0a0a0a;border:1px solid #DAA520;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
           <div style="font-weight:700;color:#DAA520">👑 Ultimate — 500 kr/mois</div>
           <div style="font-size:.78rem;color:#a8a29a">Notre IA la plus puissante sur les questions difficiles · les réponses les plus longues</div>
         </div>
-        <a href="STRIPE_LEGEND_LINK" target="_blank" onclick="return ugGate(event)" style="background:#DAA520;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+        <a href="https://buy.stripe.com/6oU8wO0wU4t56ox74d1ZS00" target="_blank" onclick="return ugGate(event,this)" style="background:#DAA520;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
       <div style="background:#0a0a0a;border:1px solid #8888ff;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
           <div style="font-weight:700;color:#8888ff">⚡ Super — 350 kr/mois</div>
           <div style="font-size:.78rem;color:#a8a29a">IA plus forte sur les questions difficiles · réponses plus longues · défis secrets</div>
         </div>
-        <a href="STRIPE_ULTRA_LINK" target="_blank" onclick="return ugGate(event)" style="background:#8888ff;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+        <a href="https://buy.stripe.com/14A7sK1AYgbN7sB1JT1ZS01" target="_blank" onclick="return ugGate(event,this)" style="background:#8888ff;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
       <div style="background:#0a0a0a;border:1px solid #4ea8de;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div style="text-align:left">
           <div style="font-weight:700;color:#4ea8de">🔷 Pro — 200 kr/mois</div>
           <div style="font-size:.78rem;color:#a8a29a">IA plus forte sur les questions difficiles · outils d'export · recherche</div>
         </div>
-        <a href="STRIPE_PRO_LINK" target="_blank" onclick="return ugGate(event)" style="background:#4ea8de;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
+        <a href="https://buy.stripe.com/eVq6oG2F2f7J7sBagp1ZS02" target="_blank" onclick="return ugGate(event,this)" style="background:#4ea8de;color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:none;white-space:nowrap">S'abonner</a>
       </div>
     </div>
     <p style="color:#a8a29a;font-size:.75rem;margin-bottom:14px">Le paiement est réservé aux adultes et aux parents. Après le paiement, reviens ici et <a href="#" onclick="closeUpgradeModal();openEmailModal();return false" style="color:#DAA520">entre ton email</a> pour activer ton accès.</p>
