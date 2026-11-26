@@ -44,6 +44,13 @@ export function priceToTier(price, env) {
   if (is(env.STRIPE_PRICE_LEGEND)) return "legend";
   if (is(env.STRIPE_PRICE_ULTRA)) return "ultra";
   if (is(env.STRIPE_PRICE_PRO)) return "pro";
+  // Secours : le prix mensuel en SEK (les identifiants peuvent changer entre le bac à sable et le mode réel)
+  if (price && typeof price === "object" && String(price.currency || "").toLowerCase() === "sek") {
+    const a = Number(price.unit_amount);
+    if (a === 50000) return "legend";
+    if (a === 35000) return "ultra";
+    if (a === 20000) return "pro";
+  }
   return "free";
 }
 
@@ -79,6 +86,63 @@ async function applyState(env, st, customer) {
   await env.SUBSCRIPTIONS.put(st.email, JSON.stringify(value));
 }
 
+// ── E-mails de résiliation (Stripe n'en envoie pas) : envoyés par Resend, une seule fois par abonnement et par étape ──
+const PLAN_NAME = { pro: "Pro", ultra: "Super", legend: "Ultimate" };
+function fmtDate(ms) {
+  const d = new Date(ms);
+  return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+}
+export function cancelMail(kind, plan, endMs) {
+  const p = PLAN_NAME[plan] || "Xearnes";
+  const day = endMs ? fmtDate(endMs) : "";
+  if (kind === "scheduled") {
+    return {
+      s: "Xearnes: din prenumeration är uppsagd / your subscription is cancelled",
+      b: [
+        "Hej! Din prenumeration Xearnes " + p + " är uppsagd. Den fortsätter till " + (day || "slutet av den betalda perioden") + " och upphör sedan. Inga fler betalningar dras.",
+        "Vill du fortsätta ändå kan du återuppta prenumerationen via ”Hantera min prenumeration” i Xearnes innan dess.",
+        "",
+        "Hi! Your Xearnes " + p + " subscription is cancelled. It stays active until " + (day || "the end of the paid period") + " and then stops. No further payments will be taken.",
+        "If you change your mind, you can resume it from “Manage my subscription” in Xearnes before then.",
+        "",
+        "Bonjour ! Ton abonnement Xearnes " + p + " est résilié. Il reste actif jusqu'au " + (day || "la fin de la période payée") + ", puis il s'arrête. Aucun autre paiement ne sera prélevé.",
+        "",
+        "Frågor / Questions : xearnes.ai@gmail.com",
+        "The Xearnes team",
+      ].join("\n"),
+    };
+  }
+  return {
+    s: "Xearnes: din prenumeration har upphört / your subscription has ended",
+    b: [
+      "Hej! Din prenumeration Xearnes " + p + " har nu upphört. Du kan fortfarande använda den gratis chatten, och du kan prenumerera igen när du vill.",
+      "",
+      "Hi! Your Xearnes " + p + " subscription has now ended. You can still use the free chat, and you can subscribe again at any time.",
+      "",
+      "Bonjour ! Ton abonnement Xearnes " + p + " est terminé. Tu peux toujours utiliser le chat gratuit et te réabonner quand tu veux.",
+      "",
+      "Frågor / Questions : xearnes.ai@gmail.com",
+      "The Xearnes team",
+    ].join("\n"),
+  };
+}
+async function sendCancelMail(env, customer, subId, kind, plan, endMs) {
+  if (!env.RESEND_API_KEY || !env.MAIL_FROM || !subId) return;
+  const key = "stripe-mail:" + subId + ":" + kind + (kind === "scheduled" ? ":" + (endMs || 0) : "");
+  if (await env.SUBSCRIPTIONS.get(key)) return; // déjà envoyé
+  const to = (await readPart(env, customer, "email")).email;
+  if (!to) return;
+  const m = cancelMail(kind, plan, endMs);
+  try {
+    const r = await fetch((env.RESEND_BASE_URL || "https://api.resend.com") + "/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + env.RESEND_API_KEY },
+      body: JSON.stringify({ from: env.MAIL_FROM, to: [to], subject: m.s, text: m.b }),
+    });
+    if (r.ok) await env.SUBSCRIPTIONS.put(key, "1", { expirationTtl: 400 * 86400 });
+  } catch {}
+}
+
 export async function handleStripeWebhook(request, env) {
   if (!env.STRIPE_WEBHOOK_SECRET || !env.SUBSCRIPTIONS) return new Response("Not configured", { status: 503 });
   const body = await request.text();
@@ -109,7 +173,18 @@ export async function handleStripeWebhook(request, env) {
         status: event.type === "customer.subscription.deleted" ? "canceled" : String(obj.status || ""),
         periodEnd: end * 1000,
       };
+      // Formule inconnue sur un abonnement encore actif : on garde la formule connue avant plutôt que de faire retomber le client à « gratuit »
+      if (sub.tier === "free" && event.type !== "customer.subscription.deleted") {
+        const prev = await readPart(env, customer, "sub");
+        if (prev && RANK[prev.tier]) sub.tier = prev.tier;
+      }
       await env.SUBSCRIPTIONS.put("stripe:" + customer + ":sub", JSON.stringify(sub));
+      // Confirmation de résiliation : demandée (fin de période) ou effective
+      const pa = (event.data && event.data.previous_attributes) || {};
+      const asked = event.type === "customer.subscription.updated" &&
+        ((obj.cancel_at_period_end === true && pa.cancel_at_period_end === false) || (obj.cancel_at && "cancel_at" in pa && !pa.cancel_at));
+      if (asked) await sendCancelMail(env, customer, obj.id, "scheduled", sub.tier, obj.cancel_at ? obj.cancel_at * 1000 : sub.periodEnd);
+      if (event.type === "customer.subscription.deleted") await sendCancelMail(env, customer, obj.id, "ended", sub.tier, 0);
     } else {
       return new Response("OK");
     }

@@ -421,7 +421,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       </div>
       <textarea id="userInput" rows="1"
         onkeydown="if(event.key===&quot;Enter&quot;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg()}"
-        oninput="autoResize(this)" placeholder="Skriv ett meddelande..."></textarea>
+        oninput="autoResize(this)" placeholder="Skriv ett meddelande (inga personuppgifter)..."></textarea>
       <button class="mic-btn" onclick="document.getElementById('fileInput').click()" title="Envoyer une photo ou un fichier" style="font-size:.85rem">📎</button>
       <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Parler">&#127908;</button>
       <button class="send-btn" id="sendBtn" onclick="sendMsg()">Skicka</button>
@@ -508,14 +508,14 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 window.onerror=function(m,s,l){var d=document.createElement("div");d.style="position:fixed;top:0;left:0;right:0;padding:12px;background:#f85149;color:#fff;font:bold 13px monospace;z-index:9999;white-space:pre-wrap";d.textContent="ERREUR JS ligne "+l+": "+m;document.body.appendChild(d);};
 "use strict";
 var langs={
- sv:{code:"sv-SE",send:"Skicka",placeholder:"Skriv ett meddelande...",
+ sv:{code:"sv-SE",send:"Skicka",placeholder:"Skriv ett meddelande (inga personuppgifter)...",
   welcomeTitle:"Hej! Jag är Xearnes",
   welcomeDesc:"Ställ mig en fråga på svenska, franska eller engelska!",
   chips:["Vem skapade dig?","Vad kan du göra?","Berätta ett skämt","Hur mår du?","Vad är AI?"],
   histTitle:"Historik",testPhrase:"Hej! Jag heter Xearnes och jag pratar svenska. Välkommen!",
   defaults:["⚠️ Anslutningsproblem! Försök igen 🔄","⚠️ Xearnes kunde inte svara den här gången. Ställ frågan igen!","⚠️ Något gick fel med anslutningen. Prova igen!"],
   thinking:"Tänker"},
- fr:{code:"fr-FR",send:"Envoyer",placeholder:"Ecris un message...",
+ fr:{code:"fr-FR",send:"Envoyer",placeholder:"Écris un message (sans infos personnelles)...",
   welcomeTitle:"Bonjour ! Je suis Xearnes",
   welcomeDesc:"Pose-moi une question en francais, suedois ou anglais !",
   chips:["Recette du jour","Programme sport","Gérer mon budget","Planifier ma semaine","Je suis stressé"],
@@ -525,7 +525,7 @@ var langs={
             "Je ne sais pas encore tout, mais j\u0027apprends vite !",
             "Je n\u0027ai pas bien compris. Tu peux expliquer autrement ?"],
   thinking:"Je reflechis"},
- en:{code:"en-US",send:"Send",placeholder:"Type a message...",
+ en:{code:"en-US",send:"Send",placeholder:"Type a message (no personal info)...",
   welcomeTitle:"Hey! I am Xearnes",
   welcomeDesc:"Ask me anything in English, Swedish or French!",
   chips:["Open YouTube","Sydsvenskan news","Tell me a joke","Interactive story","Recipe of the day"],

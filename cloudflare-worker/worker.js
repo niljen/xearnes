@@ -14,6 +14,7 @@ import { handleAuthRequest, handleAuthVerify, handleAuthMe, tierFromRequest } fr
 import { handleStripeWebhook } from "./stripe.js";
 import { handleWorkspace } from "./workspace.js";
 import { TIER_CHAIN, TIER_MAX_TOKENS, podConfig, loadPod, savePod, isWarm, maybeWake, askPod } from "./pods.js";
+import { cerebrasEligible, askCerebras } from "./cerebras.js";
 
 // ── RunPod Serverless (GPU) : voir pods.js. Les modèles et leur ordre dépendent du niveau de l'abonné (auth.js). ──
 
@@ -162,7 +163,7 @@ export default {
     const messages = body.messages || [];
 
     // Niveau de l'abonné : un jeton signé (obtenu avec le code reçu par email) donne le niveau lu côté serveur ; sinon gratuit.
-    const { tier } = await tierFromRequest(request, env);
+    const { tier, email } = await tierFromRequest(request, env);
     const score = difficultyScore(messages);
     const pii = hasPersonalInfo(messages);
     const ident = isIdentityQuestion(messages);
@@ -175,6 +176,20 @@ export default {
     // Diagnostic (sans contenu des messages) : pourquoi cette réponse vient d'Oracle ou de RunPod
     const dbg = ["tier=" + tier, "score=" + score, "pii=" + (pii ? 1 : 0), "ident=" + (ident ? 1 : 0), "code=" + (codeMode ? 1 : 0)];
     const dh = { "X-Xearnes-Route": dbg.join(",") };
+
+    // ── Niveau 0 : Cerebras pour les questions difficiles (portée limitée par CEREBRAS_SCOPE), jamais pour une donnée personnelle ni l'identité ──
+    // CEREBRAS_QUESTIONS = "hard" (par défaut : seulement les questions difficiles et le code) ou "all" (toutes, sauf données personnelles et identité)
+    const allQ = String(env.CEREBRAS_QUESTIONS || "hard").toLowerCase() === "all";
+    if (!pii && !ident && (allQ || codeMode || score >= (tier === "free" ? 2 : 1)) && cerebrasEligible(env, email, tier)) {
+      const room = codeMode ? 1500 : detailMode ? 1200 : 0;
+      const text = await askCerebras(env, messages, Math.max(TIER_MAX_TOKENS[tier], room));
+      if (text) {
+        bump(env, ctx, "answers:cerebras");
+        return reply(text, wantsStream, corsHeaders, "cerebras", { "X-Xearnes-Tier": tier });
+      }
+      bump(env, ctx, "failures:cerebras");
+      dbg.push("cerebras=fail");
+    }
 
     // ── Niveau 1 : RunPod, selon le niveau : Legend 20B > 14B > 8B ; Pro/Ultra 14B > 8B ; Gratuit 8B ──
     // Jamais pour une donnée personnelle ni pour une question d'identité. Les abonnés ont un seuil de difficulté plus bas.
