@@ -181,7 +181,7 @@ export default {
     // CEREBRAS_QUESTIONS = "hard" (par défaut : seulement les questions difficiles et le code) ou "all" (toutes, sauf données personnelles et identité)
     const allQ = String(env.CEREBRAS_QUESTIONS || "hard").toLowerCase() === "all";
     if (!pii && !ident && (allQ || codeMode || score >= (tier === "free" ? 2 : 1)) && cerebrasEligible(env, email, tier)) {
-      const room = codeMode ? 1500 : detailMode ? 1200 : 0;
+      const room = codeMode ? 4000 : detailMode ? 2000 : 0; // Cerebras coûte peu : plus de place pour le code et les réponses détaillées
       const text = await askCerebras(env, messages, Math.max(TIER_MAX_TOKENS[tier], room));
       if (text) {
         bump(env, ctx, "answers:cerebras");

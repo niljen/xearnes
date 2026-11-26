@@ -88,6 +88,7 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 [data-theme="light"] .lang-btn{background:#5a52e0;color:#fff}
 [data-theme="light"] .lang-btn.active{background:#fff;color:#6c63ff}
 .input-bar{background:var(--card);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;align-items:flex-end;flex-shrink:0}
+@media (max-width:600px){.popup-btn{bottom:122px;width:46px;height:46px;font-size:1.2rem}#voiceBtn{right:76px!important}.mini-popup{bottom:178px;width:calc(100vw - 32px);right:16px;height:min(420px,calc(100vh - 200px))}}
 .input-bar textarea{flex:1;background:#141414;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.9rem;font-family:inherit;resize:none;min-height:42px;max-height:120px;line-height:1.4;transition:.2s}
 .input-bar textarea:focus{outline:none;border-color:var(--accent)}
 .send-btn{background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 18px;font-size:.9rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;min-height:42px}
@@ -110,11 +111,11 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 .welcome .chip:hover{background:var(--accent);color:#000;border-color:var(--accent)}
 @media(max-width:640px){.voice-panel{position:fixed;top:0;left:0;bottom:0;z-index:100;width:260px}.hist-panel{position:fixed;top:0;right:0;bottom:0;z-index:100;width:240px}.msg{max-width:92%}}
 /* ── MINI POPUP ── */
-.popup-btn{position:fixed;bottom:22px;right:22px;z-index:1000;width:54px;height:54px;border-radius:50%;background:var(--accent);color:#000;border:none;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:.2s;display:flex;align-items:center;justify-content:center}
+.popup-btn{position:fixed;bottom:100px;right:22px;z-index:1000;width:54px;height:54px;border-radius:50%;background:var(--accent);color:#000;border:none;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:.2s;display:flex;align-items:center;justify-content:center}
 .popup-btn:hover{transform:scale(1.1);filter:brightness(1.15)}
 .popup-btn .pb-badge{position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--danger);border-radius:50%;display:none}
 .popup-btn .pb-badge.show{display:block}
-.mini-popup{position:fixed;bottom:88px;right:22px;z-index:1000;width:320px;height:420px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;transform:scale(0);transform-origin:bottom right;transition:transform .2s ease,opacity .2s ease;opacity:0;pointer-events:none}
+.mini-popup{position:fixed;bottom:166px;right:22px;z-index:1000;width:320px;height:420px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;transform:scale(0);transform-origin:bottom right;transition:transform .2s ease,opacity .2s ease;opacity:0;pointer-events:none}
 .mini-popup.open{transform:scale(1);opacity:1;pointer-events:all}
 .mp-header{background:var(--accent);color:#000;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .mp-logo{font-weight:800;font-size:.95rem;letter-spacing:2px;flex:1}
@@ -421,11 +422,12 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
       </div>
       <textarea id="userInput" rows="1"
         onkeydown="if(event.key===&quot;Enter&quot;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg()}"
-        oninput="autoResize(this)" placeholder="Skriv ett meddelande (inga personuppgifter)..."></textarea>
+        oninput="autoResize(this)" placeholder="Skriv ett meddelande..."></textarea>
       <button class="mic-btn" onclick="document.getElementById('fileInput').click()" title="Envoyer une photo ou un fichier" style="font-size:.85rem">📎</button>
       <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Parler">&#127908;</button>
       <button class="send-btn" id="sendBtn" onclick="sendMsg()">Skicka</button>
     </div>
+    <div id="piiNote" style="background:var(--card);color:var(--text2);font-size:.7rem;text-align:center;padding:0 16px 8px;flex-shrink:0">🔒 Skicka inga personuppgifter (fullständigt namn, adress, telefon, skola).</div>
   </div>
   <div class="st-panel" id="stPanel">
     <div class="ws-head"><span id="stTitle">⚙ Réglages</span><span><button onclick="stClose()">✕</button></span></div>
@@ -508,14 +510,14 @@ input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
 window.onerror=function(m,s,l){var d=document.createElement("div");d.style="position:fixed;top:0;left:0;right:0;padding:12px;background:#f85149;color:#fff;font:bold 13px monospace;z-index:9999;white-space:pre-wrap";d.textContent="ERREUR JS ligne "+l+": "+m;document.body.appendChild(d);};
 "use strict";
 var langs={
- sv:{code:"sv-SE",send:"Skicka",placeholder:"Skriv ett meddelande (inga personuppgifter)...",
+ sv:{code:"sv-SE",send:"Skicka",placeholder:"Skriv ett meddelande...",
   welcomeTitle:"Hej! Jag är Xearnes",
   welcomeDesc:"Ställ mig en fråga på svenska, franska eller engelska!",
   chips:["Vem skapade dig?","Vad kan du göra?","Berätta ett skämt","Hur mår du?","Vad är AI?"],
   histTitle:"Historik",testPhrase:"Hej! Jag heter Xearnes och jag pratar svenska. Välkommen!",
   defaults:["⚠️ Anslutningsproblem! Försök igen 🔄","⚠️ Xearnes kunde inte svara den här gången. Ställ frågan igen!","⚠️ Något gick fel med anslutningen. Prova igen!"],
   thinking:"Tänker"},
- fr:{code:"fr-FR",send:"Envoyer",placeholder:"Écris un message (sans infos personnelles)...",
+ fr:{code:"fr-FR",send:"Envoyer",placeholder:"Écris un message...",
   welcomeTitle:"Bonjour ! Je suis Xearnes",
   welcomeDesc:"Pose-moi une question en francais, suedois ou anglais !",
   chips:["Recette du jour","Programme sport","Gérer mon budget","Planifier ma semaine","Je suis stressé"],
@@ -525,7 +527,7 @@ var langs={
             "Je ne sais pas encore tout, mais j\u0027apprends vite !",
             "Je n\u0027ai pas bien compris. Tu peux expliquer autrement ?"],
   thinking:"Je reflechis"},
- en:{code:"en-US",send:"Send",placeholder:"Type a message (no personal info)...",
+ en:{code:"en-US",send:"Send",placeholder:"Type a message...",
   welcomeTitle:"Hey! I am Xearnes",
   welcomeDesc:"Ask me anything in English, Swedish or French!",
   chips:["Open YouTube","Sydsvenskan news","Tell me a joke","Interactive story","Recipe of the day"],
@@ -2373,6 +2375,8 @@ function updateCodeBtn(){
   var b=document.getElementById("codeBtn");
   if(b){b.classList.toggle("on",_codeModeOn);b.setAttribute("aria-pressed",_codeModeOn?"true":"false");}
   if(typeof wsUpdateBtn==="function")wsUpdateBtn();
+  var pn=document.getElementById("piiNote");
+  if(pn){var pt={fr:"🔒 N'envoie pas d'informations personnelles (nom complet, adresse, téléphone, école).",sv:"🔒 Skicka inga personuppgifter (fullständigt namn, adress, telefon, skola).",en:"🔒 Don't send personal information (full name, address, phone, school)."};pn.textContent=pt[currentLang]||pt.en;}
   var inp=document.getElementById("userInput");
   if(inp){
     var msg={fr:"💻 Code mode activé : décris ce que tu veux programmer...",sv:"💻 Code mode på: beskriv vad du vill programmera...",en:"💻 Code mode on: describe what you want to build..."};
