@@ -2376,7 +2376,7 @@ function updateCodeBtn(){
   if(b){b.classList.toggle("on",_codeModeOn);b.setAttribute("aria-pressed",_codeModeOn?"true":"false");}
   if(typeof wsUpdateBtn==="function")wsUpdateBtn();
   var pn=document.getElementById("piiNote");
-  if(pn){var pt={fr:"🔒 N'envoie pas d'informations personnelles (nom complet, adresse, téléphone, école).",sv:"🔒 Skicka inga personuppgifter (fullständigt namn, adress, telefon, skola).",en:"🔒 Don't send personal information (full name, address, phone, school)."};pn.textContent=pt[currentLang]||pt.en;}
+  if(pn){var pt={fr:"🔒 N'envoie pas d'informations personnelles (nom complet, adresse, téléphone, école).",sv:"🔒 Skicka inga personuppgifter (fullständigt namn, adress, telefon, skola).",en:"🔒 Don't send personal information (full name, address, phone, school).",es:"🔒 No envíes información personal (nombre completo, dirección, teléfono, escuela).",de:"🔒 Sende keine persönlichen Daten (vollständiger Name, Adresse, Telefon, Schule).",it:"🔒 Non inviare informazioni personali (nome completo, indirizzo, telefono, scuola).",pt:"🔒 Não envie informações pessoais (nome completo, endereço, telefone, escola).",ja:"🔒 個人情報（フルネーム、住所、電話番号、学校）を送らないでください。",zh:"🔒 请不要发送个人信息（全名、地址、电话、学校）。",ar:"🔒 لا ترسل معلومات شخصية (الاسم الكامل، العنوان، الهاتف، المدرسة).",ru:"🔒 Не отправляй личную информацию (полное имя, адрес, телефон, школа).",da:"🔒 Send ikke personlige oplysninger (fulde navn, adresse, telefon, skole)."};pn.textContent=pt[currentLang]||pt.en;pn.dir=currentLang==="ar"?"rtl":"ltr";}
   var inp=document.getElementById("userInput");
   if(inp){
     var msg={fr:"💻 Code mode activé : décris ce que tu veux programmer...",sv:"💻 Code mode på: beskriv vad du vill programmera...",en:"💻 Code mode on: describe what you want to build..."};
@@ -4621,23 +4621,25 @@ function cleanForSpeech(text,lang){
     text=text.replace(/\bDNA\b/g,"De En A");
     text=text.replace(/NASA/gi,"Nasa");
     text=text.replace(/IKEA/g,"I Kea");
-    text=text.replace(/Xearnes/gi,"Shearnes");
+    text=text.replace(/Xearnes/gi,"Ksärnes"); // prononcé « ksärnes » (choix de Youssef)
   }else if(lang==="fr"){
     text=text.replace(/chatbot/gi,"chabot");
     text=text.replace(/\bAI\b/g,"A I");
     text=text.replace(/Wikipedia/gi,"Wikipeedia");
     text=text.replace(/\bDNA\b/g,"De En A");
     text=text.replace(/NASA/gi,"Naza");
-    text=text.replace(/Xearnes/gi,"Ziarnes");
+    text=text.replace(/Xearnes/gi,"Ksèrness"); // « ksärnes » lu par une voix française
   }else if(lang==="ja"||lang==="zh"||lang==="ar"||lang==="ru"){
     // Scripts non-latins : garder les caractères natifs
+    if(lang==="ru")text=text.replace(/Xearnes/gi,"Ксэрнес");
     text=text.replace(/[\x00-\x1F\x7F]/g," ");
   }else{
     // Langues latines (es, de, it, pt, en)
     text=text.replace(/chatbot/gi,"chat bot");
     text=text.replace(/\bDNA\b/g,"D N A");
     text=text.replace(/NASA/gi,"Nassa");
-    text=text.replace(/Xearnes/gi,"Zearnes");
+    var _xnSay={de:"Ksärnes",da:"Ksærnes",en:"Ksairness",es:"Ksernes",it:"Ksernes",pt:"Ksernes"}; // « ksärnes » selon la langue
+    text=text.replace(/Xearnes/gi,_xnSay[lang]||"Ksernes");
     text=text.replace(/[^\x20-\x7E\xC0-ɏ]/g," ");
   }
   // 5. Limiter la longueur
