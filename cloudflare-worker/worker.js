@@ -15,6 +15,7 @@ import { handleStripeWebhook } from "./stripe.js";
 import { handleWorkspace } from "./workspace.js";
 import { TIER_CHAIN, TIER_MAX_TOKENS, podConfig, loadPod, savePod, isWarm, maybeWake, askPod } from "./pods.js";
 import { cerebrasEligible, askCerebras } from "./cerebras.js";
+import { handleTts } from "./tts.js";
 
 // ── RunPod Serverless (GPU) : voir pods.js. Les modèles et leur ordre dépendent du niveau de l'abonné (auth.js). ──
 
@@ -131,6 +132,8 @@ export default {
     const path = new URL(request.url).pathname;
     // ── Webhook Stripe (signature vérifiée dans stripe.js) ──
     if (path === "/stripe-webhook" && request.method === "POST") return handleStripeWebhook(request, env);
+    // ── Voix Kokoro sur notre serveur Oracle (voir tts.js) ──
+    if (path === "/tts" && request.method === "POST") return handleTts(request, env, corsHeaders);
     // ── Workspace privé (liste d'adresses autorisées, voir workspace.js) ──
     const wsRes = await handleWorkspace(request, env, ctx, corsHeaders);
     if (wsRes) return wsRes;

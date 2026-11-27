@@ -40,7 +40,7 @@ export const TIER_CHAIN = {
 };
 
 // Longueur maximale des réponses par niveau (jetons). Oracle reste à 600 pour tout le monde.
-export const TIER_MAX_TOKENS = { free: 600, pro: 900, ultra: 1500, legend: 2500 };
+export const TIER_MAX_TOKENS = { free: 1500, pro: 2000, ultra: 3000, legend: 4000 }; // réponses longues (demande de Youssef) ; Oracle reste limité à part
 
 const DEFAULTS = { firstTokenMs: 8000, idleMs: 60000, wakeEveryMs: 120000, pollAfterMs: 90000, dailyWakes: 6 };
 const mem = {}; // mémoire par instance (secours quand KV n'est pas disponible)

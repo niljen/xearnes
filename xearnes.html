@@ -3331,10 +3331,10 @@ function isReasoningQuestion(t){
 function _xnSystemPrompt(lang){
   var loc=lang==="fr"?"fr-FR":lang==="sv"?"sv-SE":lang==="da"?"da-DK":"en-GB";
   var d;try{d=new Date().toLocaleDateString(loc,{day:"numeric",month:"long",year:"numeric"});}catch(e){d=new Date().toDateString();}
-  if(lang==="fr")return "Tu es Xearnes, un assistant IA amical créé par Youssef, un garçon de 11 ans de Malmö. Nous sommes le "+d+". Réponds toujours en français, avec des phrases simples et correctes. Réponds en 2 à 5 phrases, sauf si la demande exige plus (histoire, recette, code, texte long). Si tu n'es pas sûr d'un fait, dis-le honnêtement au lieu d'inventer. Utilise au plus un emoji.";
-  if(lang==="sv")return "Du är Xearnes, en vänlig AI-assistent skapad av Youssef, en 11-årig pojke från Malmö. Idag är det "+d+". Svara alltid på svenska, med enkla och korrekta meningar. Svara i 2 till 5 meningar, om inte förfrågan kräver mer (berättelse, recept, kod, lång text). Om du inte är säker på ett faktum, säg det ärligt istället för att hitta på. Använd högst en emoji.";
-  if(lang==="da")return "Du er Xearnes, en venlig AI-assistent skabt af Youssef, en 11-årig dreng fra Malmö. I dag er det "+d+". Svar altid på dansk, med enkle og korrekte sætninger. Svar i 2 til 5 sætninger, medmindre forespørgslen kræver mere (historie, opskrift, kode, lang tekst). Hvis du ikke er sikker på et faktum, sig det ærligt i stedet for at opfinde. Brug højst ét emoji.";
-  return "You are Xearnes, a friendly AI assistant created by Youssef, an 11-year-old boy from Malmö. Today is "+d+". Always answer in English, with simple and correct sentences. Answer in 2 to 5 sentences, unless the request needs more (story, recipe, code, long text). If you are not sure about a fact, say so honestly instead of making things up. Use at most one emoji.";
+  if(lang==="fr")return "Tu es Xearnes, un assistant IA amical créé par Youssef, un garçon de 11 ans de Malmö. Nous sommes le "+d+". Réponds toujours en français, avec des phrases simples et correctes. Donne des réponses longues et détaillées : plusieurs paragraphes (au moins trois), avec des explications, des exemples et, quand c'est utile, des titres ou des listes. Pour une simple salutation, un merci ou une question très courte, réponds brièvement. Si tu n'es pas sûr d'un fait, dis-le honnêtement au lieu d'inventer. Utilise au plus un emoji.";
+  if(lang==="sv")return "Du är Xearnes, en vänlig AI-assistent skapad av Youssef, en 11-årig pojke från Malmö. Idag är det "+d+". Svara alltid på svenska, med enkla och korrekta meningar. Ge långa och detaljerade svar: flera stycken (minst tre), med förklaringar, exempel och, när det hjälper, rubriker eller listor. På en enkel hälsning, ett tack eller en mycket kort fråga svarar du kort. Om du inte är säker på ett faktum, säg det ärligt istället för att hitta på. Använd högst en emoji.";
+  if(lang==="da")return "Du er Xearnes, en venlig AI-assistent skabt af Youssef, en 11-årig dreng fra Malmö. I dag er det "+d+". Svar altid på dansk, med enkle og korrekte sætninger. Giv lange og detaljerede svar: flere afsnit (mindst tre), med forklaringer, eksempler og, når det hjælper, overskrifter eller lister. Til en simpel hilsen, et tak eller et meget kort spørgsmål svarer du kort. Hvis du ikke er sikker på et faktum, sig det ærligt i stedet for at opfinde. Brug højst ét emoji.";
+  return "You are Xearnes, a friendly AI assistant created by Youssef, an 11-year-old boy from Malmö. Today is "+d+". Always answer in English, with simple and correct sentences. Give long, detailed answers: several paragraphs (at least three), with explanations, examples and, when helpful, headings or lists. For a simple greeting, a thank-you or a very short question, answer briefly. If you are not sure about a fact, say so honestly instead of making things up. Use at most one emoji.";
 }
 function _modelFailReply(lang){
   var m={
@@ -4567,7 +4567,60 @@ function diagVoices(){
   html+=_isChromebook?"📱 <strong>Chromebook détecté</strong>":"💻 PC/Mac";
   el.innerHTML=html;
 }
+// ── VOIX KOKORO (notre serveur en Suède) pour en, fr, es, it, pt ; voix du navigateur pour les autres langues et en secours ──
+var _kkLangs={en:1,fr:1,es:1,it:1,pt:1},_kkSession=0,_kkAudio=null,_kkFails=0;
+function _kkOn(){try{if(localStorage.getItem("xn_kokoro")==="off")return false;}catch(e){}return !!_kkLangs[currentLang]&&_kkFails<3;}
+function _kkStop(){_kkSession++;if(_kkAudio){try{_kkAudio.pause();}catch(e){}_kkAudio=null;}}
+function _kkChunks(t){ // une phrase par morceau (les très courtes sont regroupées) : chaque morceau est prêt quand le précédent se termine
+  var parts=t.match(/[^.!?…]+[.!?…]*\s*/g)||[t],out=[],cur="";
+  parts.forEach(function(p){
+    p=p.trim();if(!p)return;
+    while(p.length>380){var cut=p.lastIndexOf(",",380);if(cut<80)cut=p.lastIndexOf(" ",380);if(cut<80)cut=380;out.push(p.slice(0,cut+1).trim());p=p.slice(cut+1).trim();}
+    if(cur&&(out.length===0||(cur+" "+p).length>90)){out.push(cur);cur=p;}else cur=cur?cur+" "+p:p;
+  });
+  if(cur)out.push(cur);
+  return out.filter(function(x){return /[\p{L}\p{N}]/u.test(x);});
+}
+function _kkFetch(chunk,lang,speed){
+  return fetch(MISTRAL_URL+"/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:chunk,lang:lang,speed:speed})})
+    .then(function(r){if(!r.ok)throw new Error("tts "+r.status);return r.blob();});
+}
+function _kkSpeak(text){
+  _kkStop();
+  try{window.speechSynthesis&&window.speechSynthesis.cancel();}catch(e){}
+  var lang=currentLang,cleaned=cleanForSpeech(text,lang);
+  if(!cleaned||!cleaned.trim())return;
+  var chunks=_kkChunks(cleaned);if(!chunks.length)return;
+  var rateEl=document.getElementById("voiceRate"),rate=rateEl?parseFloat(rateEl.value)||0.9:0.9;
+  var speed=Math.min(1.5,Math.max(0.6,rate/0.9));
+  var me=++_kkSession,dot=document.getElementById("speakDot"),next=null;
+  if(dot)dot.classList.add("active");
+  function done(){if(me===_kkSession&&dot)dot.classList.remove("active");}
+  function fallback(i){ // la suite avec la voix du navigateur
+    _kkFails++;done();
+    if(me!==_kkSession)return;
+    var rest=chunks.slice(i).join(" ");
+    if(rest&&window.speechSynthesis){var v=getBestVoice(lang);var p=document.getElementById("voicePitch");doSpeak(rest,v,rate,p?parseFloat(p.value)||1:1);}
+  }
+  function play(i,pending){
+    if(me!==_kkSession)return;
+    if(i>=chunks.length){done();return;}
+    pending.then(function(blob){
+      if(me!==_kkSession)return;
+      _kkFails=0;
+      next=i+1<chunks.length?_kkFetch(chunks[i+1],lang,speed):null; // préparer la phrase suivante pendant la lecture
+      if(next)next.catch(function(){});
+      var url=URL.createObjectURL(blob),a=new Audio(url);_kkAudio=a;
+      a.onended=function(){URL.revokeObjectURL(url);if(me===_kkSession)play(i+1,next);};
+      a.onerror=function(){URL.revokeObjectURL(url);fallback(i);};
+      var pr=a.play();if(pr&&pr.catch)pr.catch(function(){fallback(i);});
+    }).catch(function(){if(i>=chunks.length)done();else fallback(i);});
+  }
+  play(0,_kkFetch(chunks[0],lang,speed));
+}
 function speakText(text,_attempt){
+  if(_kkOn()){_kkSpeak(text);return;} // Kokoro d'abord pour ses langues
+  _kkStop();
   if(!window.speechSynthesis)return;
   // Toujours rafraîchir la liste des voix (importantes : Google charge en async)
   var fresh=window.speechSynthesis.getVoices();
