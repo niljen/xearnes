@@ -4628,7 +4628,7 @@ function cleanForSpeech(text,lang){
     text=text.replace(/Wikipedia/gi,"Wikipeedia");
     text=text.replace(/\bDNA\b/g,"De En A");
     text=text.replace(/NASA/gi,"Naza");
-    text=text.replace(/Xearnes/gi,"Ksèrness"); // « ksärnes » lu par une voix française
+    text=text.replace(/Xearnes/gi,"Ksernesse"); // « ksärnes » : vérifié avec un moteur de prononciation (ksɛʁnɛs)
   }else if(lang==="ja"||lang==="zh"||lang==="ar"||lang==="ru"){
     // Scripts non-latins : garder les caractères natifs
     if(lang==="ru")text=text.replace(/Xearnes/gi,"Ксэрнес");
@@ -4638,7 +4638,7 @@ function cleanForSpeech(text,lang){
     text=text.replace(/chatbot/gi,"chat bot");
     text=text.replace(/\bDNA\b/g,"D N A");
     text=text.replace(/NASA/gi,"Nassa");
-    var _xnSay={de:"Ksärnes",da:"Ksærnes",en:"Ksairness",es:"Ksernes",it:"Ksernes",pt:"Ksernes"}; // « ksärnes » selon la langue
+    var _xnSay={de:"Xärnes",da:"Ksærnes",en:"Xearnes",es:"Kisernes",it:"Ksèrnes",pt:"Ksèrnes"}; // « ksärnes » selon la langue ; un mot qui commence par « Ks » fait épeler le K en anglais, allemand et espagnol
     text=text.replace(/Xearnes/gi,_xnSay[lang]||"Ksernes");
     text=text.replace(/[^\x20-\x7E\xC0-ɏ]/g," ");
   }
